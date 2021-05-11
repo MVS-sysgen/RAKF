@@ -1,4 +1,4 @@
 * Installing RAKF
 * Launching Automation REXX script
-exec ../automate.rexx ../RAKF/install.txt hercules.log -d &&
+exec ../automate.rexx ../SOFTWARE/RAKF/install.txt hercules.log -d &&
 ipl 150
