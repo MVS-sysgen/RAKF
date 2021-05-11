@@ -36,7 +36,7 @@ HHC02245I 0:001C device initialized;sh ./submit.sh ../SOFTWARE/RAKF/08_rakf_recv
 /*04 IEC301A S JOB INIT     DSNAME SYS1.VSAM.MASTER.CATALOG;/r 22,sysprog
 / $HASP395 RAKFCUST ENDED;sh ./submit.sh ../SOFTWARE/RAKF/12_rakf_users_profiles.jcl
 # Default SVC244 is insecure, replacing with secure version from TK4-
-/ $HASP395 SORTIN   ENDED;sh ./submit.sh ../SOFTWARE/RAKF/13_install_rakf_svc244.jcl
+/ $HASP395 RAKFUPST ENDED;sh ./submit.sh ../SOFTWARE/RAKF/13_install_rakf_svc244.jcl
 / $HASP395 SVC244   ENDED;/$pjes2
 / $HASP085 JES2 TERMINATION COMPLETE;/z eod
 / IEE334I HALT     EOD SUCCESSFUL;/quiesce
