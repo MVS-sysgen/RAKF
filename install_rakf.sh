@@ -1,9 +1,9 @@
 # Installs RAKF
 # For use with Jay Moseley sysgen MVS only
+cd $(dirname $0)
 
 source ../../00_sysgen_functions.sh
 trap 'check_return' 0
-
 echo_step "Building User and profiles DB"
 
 # Users
@@ -64,8 +64,8 @@ mv hercules.log hercules_log.rakf.$date_time.log
 echo_step "Backing up prt00e.txt to prt00e.rakf.$date_time.txt"
 cp prt00e.txt prt00e.rakf.$date_time.txt
 
-echo_step "backing up DASD folder to dasd.rakf.$date_time.tar"
-tar cvf dasd.rakf.$date_time.tar ./dasd
+echo_step "backing up DASD folder to dasd.05.rakf.$date_time.tar"
+tar cvf dasd.05.rakf.$date_time.tar ./dasd
 cd ../..
 
 trap : 0
