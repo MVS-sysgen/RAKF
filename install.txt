@@ -31,9 +31,9 @@ HHC02245I 0:001C device initialized;sh ./submit.sh ../SOFTWARE/RAKF/08_rakf_recv
 # Installing RAKF User IDs and Profiles
 # Adding User IBMUSER
 / $HASP395 RAKFPTF2 ENDED;sh ./submit.sh ../SOFTWARE/RAKF/11_rakf_customization_auxutils.jcl
-/*02 IEC301A S JOB INIT     DSNAME SYS1.VSAM.MASTER.CATALOG;/r 22,sysprog
-/*22 IEC301A S JOB RAKFCUST DSNAME SYS1.VSAM.MASTER.CATALOG;/r 22,sysprog
-/*04 IEC301A S JOB INIT     DSNAME SYS1.VSAM.MASTER.CATALOG;/r 22,sysprog
+/*02 IEC301A S JOB INIT     DSNAME SYS1.VSAM.MASTER.CATALOG;/r 02,sysprog
+/*03 IEC301A S JOB RAKFCUST DSNAME SYS1.VSAM.MASTER.CATALOG;/r 03,sysprog
+/*04 IEC301A S JOB INIT     DSNAME SYS1.VSAM.MASTER.CATALOG;/r 04,sysprog
 / $HASP395 RAKFCUST ENDED;sh ./submit.sh ../SOFTWARE/RAKF/12_rakf_users_profiles.jcl
 # Default SVC244 is insecure, replacing with secure version from TK4-
 / $HASP395 RAKFUPST ENDED;sh ./submit.sh ../SOFTWARE/RAKF/13_install_rakf_svc244.jcl
