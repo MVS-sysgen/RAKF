@@ -6,6 +6,11 @@ source ../../00_sysgen_functions.sh
 trap 'check_return' 0
 echo_step "Building User and profiles DB"
 
+if [ $# -eq 2 ]; then
+    RAKFUSER=${1^^}
+    RAKFPASS=${2^^}
+    echo_warn "Replacing HMVS01/CUL8TR with $RAKFUSER/$RAKFPASS"
+fi
 # Users
 # If someone edited the users file before hand but didn't sort it we gotchu
 users=$(cat USERS.txt)
