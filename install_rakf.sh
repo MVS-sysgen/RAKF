@@ -25,12 +25,12 @@ u=''
 
 if [[ ! -z "${RAKFUSER}" ]]; then
 #                                   UUUUUUUU
-    users=$(echo -n "$users"|sed "s/HMVS01  /$(printf "%-8s" ${RAKFUSER})/")
+    users=$(echo -n "$users"|sed "s/HMVS01  /$(printf "%-8s" ${RAKFUSER})/g")
 fi
 
 if [[ ! -z "${RAKFPASS}" ]]; then
 #                                   PPPPPPPP
-    users=$(echo -n "$users"|sed "s/CUL8TR  /$(printf "%-8s" ${RAKFPASS})/")
+    users=$(echo -n "$users"|sed "s/CUL8TR  /$(printf "%-8s" ${RAKFPASS})/g")
 fi
 
 users=$(echo -n "$users")
