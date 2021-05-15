@@ -43,7 +43,7 @@ IEC301A S JOB ;/r 05,sysprog
 / $HASP085 JES2 TERMINATION COMPLETE;/z eod
 / IEE334I HALT     EOD SUCCESSFUL;/quiesce
 # Rebooting to Create Link Pack Area and format spools
-HHC00809I Processor CP00: disabled wait state;ipl 150
+HHC00809I Processor CP01: disabled wait state;ipl 150
 HHC00010A Enter input for console 0:0009;/r 0,clpa
 /*00 IFB010D ENTER 'IPL REASON,SUBSYSTEM ID' OR 'U';/r 0,U
 /*01 $HASP426 SPECIFY OPTIONS - HASP-II, VERSION JES2 4.1;/r 1,format,noreq
