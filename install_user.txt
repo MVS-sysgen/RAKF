@@ -1,0 +1,53 @@
+# RAKF Install
+HHC00010A Enter input for console 0:0009;/
+/*00 IFB010D ENTER 'IPL REASON,SUBSYSTEM ID' OR 'U';/r 0,u
+/*01 $HASP426 SPECIFY OPTIONS - HASP-II, VERSION JES2 4.1;/r 01,noreq
+# Installing RAKF Usermods and datasets to SYSGEN.RAKF.V#R#M#.*
+/ $HASP099 ALL AVAILABLE FUNCTIONS COMPLETE;sh ./submit.sh ../SOFTWARE/RAKF/01_rakf_a_prep.jcl
+/ $HASP395 RAKFPREP ENDED;sh ./submit.sh ../SOFTWARE/RAKF/02_rakf_b_recv.jcl
+/*IEC501A M 100,RAKF12,SL,1600 BPI,RAKFRECV,HMASMP;devinit 0100 ../SOFTWARE/RAKF/RAKF12.AWS
+/ $HASP395 RAKFRECV ENDED;sh ./submit.sh ../SOFTWARE/RAKF/03_rakf_c_apply.jcl
+/ $HASP395 RAKFAPLY ENDED;sh ./submit.sh ../SOFTWARE/RAKF/04_rakf_d_accept.jcl
+# Rebooting MVS 3.8j
+/ $HASP395 RAKFACPT ENDED;/$pjes2
+/ $HASP085 JES2 TERMINATION COMPLETE;/z eod
+/ IEE334I HALT     EOD SUCCESSFUL;/quiesce
+HHC00809I Processor CP00: disabled wait state;ipl 150
+HHC00010A Enter input for console 0:0009;/r 0,clpa
+/*00 IFB010D ENTER 'IPL REASON,SUBSYSTEM ID' OR 'U';/r 0,U
+/*01 $HASP426 SPECIFY OPTIONS - HASP-II, VERSION JES2 4.1;/r 1,format,noreq
+# Installing RAKF PTFs
+/ $HASP099 ALL AVAILABLE FUNCTIONS COMPLETE;devinit 01c ../SOFTWARE/RAKF/RRKF002E.xmi
+HHC02245I 0:001C device initialized;sh ./submit.sh ../SOFTWARE/RAKF/05_rakf_recv_RRKF002.jcl
+/ $HASP395 RAKFXMI1 ENDED;devinit 01c ../SOFTWARE/RAKF/RRKF004E.xmi
+HHC02245I 0:001C device initialized;sh ./submit.sh ../SOFTWARE/RAKF/06_rakf_recv_RRKF004.jcl
+/ $HASP395 RAKFXMI2 ENDED;devinit 01c ../SOFTWARE/RAKF/RRKF005E.xmi
+HHC02245I 0:001C device initialized;sh ./submit.sh ../SOFTWARE/RAKF/07_rakf_recv_RRKF005.jcl
+/ $HASP395 RAKFXMI3 ENDED;devinit 01c ../SOFTWARE/RAKF/RRKF006E.xmi
+HHC02245I 0:001C device initialized;sh ./submit.sh ../SOFTWARE/RAKF/08_rakf_recv_RRKF006.jcl
+/ $HASP395 RAKFXMI4 ENDED;sh ./submit.sh ../SOFTWARE/RAKF/09_rakf_pdsload_ptfs.jcl
+/ $HASP395 RAKFPTF1 ENDED;sh ./submit.sh ../SOFTWARE/RAKF/10_rakf_recv_ptfs.jcl
+# Installing RAKF customization and auxilary tools (MAWK, VTOC and IGC0024D)
+# Installing RAKF User IDs and Profiles
+# Adding User IBMUSER
+/ $HASP395 RAKFPTF2 ENDED;sh ./submit.sh ../SOFTWARE/RAKF/11_rakf_customization_auxutils.jcl
+/*02 IEC301A S JOB INIT     DSNAME SYS1.VSAM.MASTER.CATALOG;/r 02,sysprog
+/*03 IEC301A S JOB RAKFCUST DSNAME SYS1.VSAM.MASTER.CATALOG;/r 03,sysprog
+/*04 IEC301A S JOB INIT     DSNAME SYS1.VSAM.MASTER.CATALOG;/r 04,sysprog
+/ $HASP395 RAKFCUST ENDED;sh ./submit.sh ../SOFTWARE/RAKF/12_rakf_users_profiles.jcl
+# Default SVC244 is insecure, replacing with secure version from TK4-
+/ $HASP395 RAKFUPST ENDED;sh ./submit.sh ../SOFTWARE/RAKF/13_install_rakf_svc244.jcl
+/ $HASP395 SVC244   ENDED;sh ./submit.sh ../SOFTWARE/RAKF/14_optional_new_user.jcl
+IEC301A S JOB ;/r 05,sysprog
+/ $HASP395 NEWUSER  ENDED;/$pjes2
+/ $HASP085 JES2 TERMINATION COMPLETE;/z eod
+/ IEE334I HALT     EOD SUCCESSFUL;/quiesce
+# Rebooting to Create Link Pack Area and format spools
+HHC00809I Processor CP00: disabled wait state;ipl 150
+HHC00010A Enter input for console 0:0009;/r 0,clpa
+/*00 IFB010D ENTER 'IPL REASON,SUBSYSTEM ID' OR 'U';/r 0,U
+/*01 $HASP426 SPECIFY OPTIONS - HASP-II, VERSION JES2 4.1;/r 1,format,noreq
+/ $HASP099 ALL AVAILABLE FUNCTIONS COMPLETE;/$pjes2
+/ $HASP085 JES2 TERMINATION COMPLETE;/z eod
+/ IEE334I HALT     EOD SUCCESSFUL;/quiesce
+Processor CP00: disabled wait state;quit
