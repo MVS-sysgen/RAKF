@@ -55,7 +55,7 @@ Profiles are located in `SYS1.SECURE.CNTL(PROFILES)`. :warning: if you make chan
 to this file make sure it is in alphabetical order when complete. Once done with your changes
 refresh RAKF by running `/s rakfprof` from the MVS console.
 
-From here on out all jobs submitted using the socket reader will now requires a username= and
+After installing RAKF all jobs submitted using the socket reader will now requires a username= and
 password= in the jobcard. If you submit from TSO you must submit with username= and password= in
 the jobcard as well, unless you have a usermod like http://www.prycroft6.com.au/vs2mods/#zp60034
 installed.
