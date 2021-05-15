@@ -59,13 +59,14 @@ sed 's/###### USERS REPLACED BY install_rakf.sh/'"${ESCAPED_DATA}"'/' 12_rakf_us
 ESCAPED_DATA="$(echo -n "${p}" | sed ':a;N;$!ba;s/\n/\\n/g' )"
 sed -i 's/###### PROFILES REPLACED BY install_rakf.sh/'"${ESCAPED_DATA}"'/' 12_rakf_users_profiles.jcl
 
-cd ../../sysgen
 
 if [[ ! -z "${RAKFUSER}" ]]; then
     cp install_user.txt install.txt
 else
     cp install_normal.txt install.txt
 fi
+
+cd ../../sysgen
 
 echo_step "Starting Hercules: hercules -f conf/local.cnf -r ../SOFTWARE/RAKF/install.rc"
 hercules -f conf/local.cnf -r ../SOFTWARE/RAKF/install.rc > hercules.log
