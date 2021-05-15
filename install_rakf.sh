@@ -10,6 +10,7 @@ if [ $# -eq 2 ]; then
     RAKFUSER=${1^^}
     RAKFPASS=${2^^}
     echo_warn "Replacing HMVS01/CUL8TR with $RAKFUSER/$RAKFPASS"
+    sed "s/##NEWUSER##/${RAKFUSER}/" 14_optional_new_user.template > 14_optional_new_user.jcl
 fi
 # Users
 # If someone edited the users file before hand but didn't sort it we gotchu
@@ -59,6 +60,13 @@ ESCAPED_DATA="$(echo -n "${p}" | sed ':a;N;$!ba;s/\n/\\n/g' )"
 sed -i 's/###### PROFILES REPLACED BY install_rakf.sh/'"${ESCAPED_DATA}"'/' 12_rakf_users_profiles.jcl
 
 cd ../../sysgen
+
+if [[ ! -z "${RAKFUSER}" ]]; then
+    cp install_user.txt install.txt
+else
+    cp install_normal.txt install.txt
+fi
+
 echo_step "Starting Hercules: hercules -f conf/local.cnf -r ../SOFTWARE/RAKF/install.rc"
 hercules -f conf/local.cnf -r ../SOFTWARE/RAKF/install.rc > hercules.log
 
@@ -71,6 +79,6 @@ cp prt00e.txt prt00e.rakf.$date_time.txt
 
 echo_step "backing up DASD folder to dasd.05.rakf.$date_time.tar"
 tar cvf dasd.05.rakf.$date_time.tar ./dasd
-cd ../..
+cd ..
 
 trap : 0
