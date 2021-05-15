@@ -43,6 +43,23 @@ shorter/longer than 8 chars but it will be padded/truncated to 8 characters.
 
 For more information please read the documentation at `RAKFDOC#.pdf` or `RAKF_User_Guide.txt`
 
+## Using RAKF
+
+The user guide has more detail on setting up users and classes.
+
+Usernames and passwords are located in `SYS1.SECURE.CNTL(USERS)`. :warning: if you make changes
+to this file make sure it is in alphabetical order when complete. Once done with your changes
+refresh RAKF by running `/s rakfuser` from the MVS console.
+
+Profiles are located in `SYS1.SECURE.CNTL(PROFILES)`. :warning: if you make changes
+to this file make sure it is in alphabetical order when complete. Once done with your changes
+refresh RAKF by running `/s rakfprof` from the MVS console.
+
+From here on out all jobs submitted using the socket reader will now requires a username= and
+password= in the jobcard. If you submit from TSO you must submit with username= and password= in
+the jobcard as well, unless you have a usermod like http://www.prycroft6.com.au/vs2mods/#zp60034
+installed.
+
 ## Manual Install
 
 :warning: Installing RAKF is a long process. :warning:
