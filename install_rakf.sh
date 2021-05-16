@@ -26,7 +26,7 @@ u=''
 
 if [[ ! -z "${RAKFUSER}" ]]; then
 #                                   UUUUUUUU
-    users=$(echo -n "$users"|sed "s/HMVS01  /$(printf "%-7s" ${RAKFUSER:0:8})/g")
+    users=$(echo -n "$users"|sed "s/HMVS01  /$(printf "%-7s " ${RAKFUSER:0:8})/g")
 fi
 
 if [[ ! -z "${RAKFPASS}" ]]; then
