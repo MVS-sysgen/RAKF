@@ -68,8 +68,8 @@ fi
 
 cd ../../sysgen
 
-echo_step "Starting Hercules: hercules -f conf/local.cnf -r ../SOFTWARE/RAKF/install.rc"
-hercules -f conf/local.cnf -r ../SOFTWARE/RAKF/install.rc > hercules.log
+echo_step "Starting Hercules: hercules -f conf/local.cnf -r ../SOFTWARE/RAKF/install.rc -d"
+hercules -f conf/local.cnf -r ../SOFTWARE/RAKF/install.rc -d > hercules.log
 
 check_failure
 
