@@ -1,0 +1,133 @@
+         TITLE 'INITIALIZE OUR RACF CVT'                                00000123
+* CPARM='XREF(SHORT),OBJ,NODECK',LPARM='AC=1'                 CJYRCVT   00000224
+*      DD DSN=SYS1.MACLIB,DISP=SHR                                      00000322
+*      DD DSN=SYS1.MODGEN,DISP=SHR                                      00001022
+*      DD DSN=SYS3.SAF.PARMLIB,DISP=SHR                                 00010022
+         EJECT                                                          00020023
+CJYRCVT  CSECT                                                          00050004
+CJYRCVT  AMODE 31                                                       00060014
+*                                                                       00061025
+**********************************************************************  00062025
+*                                                                    *  00063025
+*    COPYRIGHT (C) 1991 BY CRAIG J. YASUNA.  ALL RIGHTS RESERVED.    *  00064025
+*                                                                    *  00065025
+*    THIS SOFTWARE PRODUCT OR ANY OF ITS COMPONENTS MUST NOT BE      *  00066025
+*    SOLD, GIVEN, OR OTHERWISE DISTRIBUTED TO ANY OTHER COMPANY      *  00067025
+*    WITHOUT THE PRIOR WRITTEN PERMISSION OF:                        *  00068025
+*                                                                    *  00069025
+*                                  CRAIG J. YASUNA, PRESIDENT        *  00069125
+*                                  ENTERPRISE SYSTEMS GROUP          *  00069225
+*                                  2 MARC COURT                      *  00069325
+*                                  EDISON, NEW JERSEY 08820          *  00069425
+*                                                                    *  00069525
+**********************************************************************  00069625
+*                                                                       00069725
+         PRINT NOGEN                                                    00070001
+         SAVE  (14,12),,CJYRCVT_&SYSDATE._&SYSTIME                      00080005
+         LR    R12,R15             USE ENTRY AS BASE                    00090001
+         USING CJYRCVT,R12         " " "                                00100004
+         ST    R13,SAVEAREA+4      SAVE CALLER'S SAVE AREA ADDR         00110001
+         LA    R2,SAVEAREA         MY SAVEAREA                          00120001
+         ST    R2,8(R13)           SAVE MY AREA                         00130001
+         LR    R13,R2              LOAD REGISTER 13 WITH SAVEAREA       00140001
+*                                                                       00150001
+         GETMAIN RU,LV=GMLEN,LOC=BELOW,SP=226 GET SQA                   00160014
+         LR    R4,R1               SAVE AREA                            00170001
+         LA    R5,GMLEN            LENGTH                               00180005
+         LR    R6,R4               TARGET                               00190001
+         LA    R7,0                ZERO FILL                            00200001
+         MVCL  R4,R6               MOVE IT                              00210001
+         LR    R4,R1               BRING BACK R1                        00220001
+         USING RCVT,R4             ADDRESS IT                           00230001
+         MVC   RCVTID,=C'RCVT'     MOVE NAME                            00240001
+         MVI   RCVTSTAT,RCVTNADS   NO ADSP                              00250001
+         MVI   RCVTVERS,X'07'      V1R7 OF RACF                         00260012
+         MVI   RCVTFLG1,RCVTTDSN+RCVTPRO TAPE & PROTECT ALL             00270006
+         MVI   RCVTSTA1,RCVTJCHK   JES EARLY VERIFY                     00280001
+         LA    R2,RCVTEND          POINT TO G.M. AREA AFTER RCVT        00290009
+         LA    R3,CJYRCVTL         LENGTH                               00300009
+         LA    R6,CJYRCVTX         POINT TO OUR CODE                    00310009
+         LR    R7,R3               LENGTH EQUAL                         00320005
+         MVCL  R2,R6               MOVE IT                              00330005
+         LA    R2,RCVTEND          ADDRESS OF CJYRCVT                   00340010
+         ST    R2,RCVTISTL         INSTALLATION POINTER                 00350009
+         LA    R2,RCVTEND+RACSTAT-CJYRCVTX CDT POINTER                  00360009
+         ST    R2,RCVTREXP         RACSTAT POINTER                      00370009
+         LA    R2,RCVTEND+CDT-CJYRCVTX CDT POINTER                      00380009
+         ST    R2,RCVTCDTP         SAVE IT                              00390005
+         LA    R2,RCVTEND+ICHAUTAB-CJYRCVTX CDT POINTER                 00400012
+         ST    R2,RCVTAUTP         SAVE IT                              00410012
+         L     R2,FLCCVT-PSA(0)    LOAD CVT                             00420014
+         ST    R4,CVTRAC-CVTMAP(R2) SAVE IN CVT                         00430001
+         WTO   'CJYRCVT1   RCVT WAS PROCESSED SUCCESSFULLY..'           00440001
+         L     R13,SAVEAREA+4      LOAD OLD REG 13                      00450004
+         RETURN (14,12),RC=0       RETURN TO CALLER                     00460001
+*                                                                       00470001
+         LTORG                                                          00480001
+SAVEAREA DS    18F                                                      00490002
+CJYRCVTX DS    XL(CJYRL)                                                00500010
+RACSTAT  SAVE  (14,12),,RACSTAT_&SYSDATE._&SYSTIME                      00510009
+         DROP  ,                                                        00520009
+         LR    R12,R15             USE ENTRY AS BASE                    00530005
+         USING RACSTAT,R12         " " "                                00540005
+         LA    R15,0               RC = 0                               00550005
+         ICM   R2,B'1111',0(R1)    CLASS TO CHECK FOR                   00560005
+         BZ    RETURN              NONE, RETURN                         00570005
+         LA    R3,CDT              CDT                                  00580005
+         LA    R4,CDTE#            NUMBER OF CDTS.                      00590005
+CDTLOOP  CLC   0(8,R2),3(R3)       US?                                  00600007
+         BE    FOUNDCDT            YES, GO ON                           00610005
+         LA    R3,CDTELEN(R3)      NEXT                                 00620005
+         BCT   R4,CDTLOOP          GO ON                                00630005
+         LA    R15,8               SORRY                                00640005
+         B     RETURN              ....                                 00650005
+FOUNDCDT LA    R15,0               RACF ACTIVE, CLASS ACTIVE            00660011
+         ICM   R2,B'1111',4(R1)    ENTRY                                00670008
+         BZ    RETURN              NONE ...                             00680005
+         ST    R3,0(R2)            SAVE CDT ADDRESS                     00690007
+RETURN   RETURN (14,12),RC=(15)    BYE ...                              00700005
+*                                                                       00710012
+CDT      DC    X'003005',C'DASDVOL GDASDVOL',X'06E0E00078',XL24'00'     00720005
+CDTELEN  EQU   *-CDT                                                    00730005
+         DC    X'003012',C'FACILITY        ',X'27F0F00118',XL24'00'     00740005
+         DC    X'00302D',C'TSOPROC         ',X'08C0E00110',XL24'00'     00750005
+         DC    X'00302E',C'ACCTNUM         ',X'27F0F00110',XL24'00'     00760005
+         DC    X'00302F',C'PERFGRP         ',X'0320200110',XL24'00'     00770005
+         DC    X'003027',C'GDASDVOLDASDVOL ',X'06E0E000E0',XL24'00'     00780005
+         DC    X'003028',C'PMBR    PROGRAM ',X'27C0E00100',XL24'00'     00790005
+         DC    X'003029',C'PROGRAM PMBR    ',X'08C0E00180',XL24'00'     00800005
+         DC    X'003030',C'TSOAUTH         ',X'08E0E00110',XL24'00'     00810005
+         DC    X'003038',C'PROPCNTL        ',X'08E0E00110',XL24'00'     00820005
+CDTE#    EQU   (*-CDT)/CDTELEN                                          00830005
+*                                                                       00840012
+ICHAUTAB DC    CL8'DSIOST',XL4'80000000'   NCCF                         00850012
+         DC    CL8'DSILAR',XL4'80000000'   NCCF                         00860012
+         DC    XL4'00000000'               END OF CHAIN                 00870012
+*                                                                       00880012
+CJYRCVTL EQU   *-CJYRCVTX                                               00890009
+*                                                                       00900010
+         ICHPRCVT                                                       00910001
+RCVTEND  DS    0H                                                       00920005
+GMLEN    EQU   *-RCVT+CJYRCVTL                                          00930009
+         CVT     DSECT=YES                                              00940001
+         IHAPSA  DSECT=YES,LIST=NO                                      00950001
+         IHASCVT                                                        00960014
+         COPY    CJYRCVTD                                               00970010
+*                                                                       00980001
+R0       EQU   00                                                       00990001
+R1       EQU   01                                                       01000001
+R2       EQU   02                                                       01010001
+R3       EQU   03                                                       01020001
+R4       EQU   04                                                       01030001
+R5       EQU   05                                                       01040001
+R6       EQU   06                                                       01050001
+R7       EQU   07                                                       01060001
+R8       EQU   08                                                       01070001
+R9       EQU   09                                                       01080001
+R10      EQU   10                                                       01090001
+R11      EQU   11                                                       01100001
+R12      EQU   12                                                       01110001
+R13      EQU   13                                                       01120001
+R14      EQU   14                                                       01130001
+R15      EQU   15                                                       01140001
+         END                                                            01150001

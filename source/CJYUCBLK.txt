@@ -1,0 +1,23 @@
+CBLK     DSECT                                                          00010000
+CBLKNEXT DS    F                  NEXT CBLK                             00020002
+CBLKGRPS DS    F                  POINTER TO GROUPS                     00030002
+CBLKUSER DS    0CL9               USERID                                00040002
+CBLKUSRL DS    X                  USERID LENGTH                         00050002
+CBLKUSRI DS    CL8                USERID NAME                           00060002
+CBLKGRP  DS    0CL9               GROUP                                 00070002
+CBLKGRPL DS    X                  GROUP LENGTH                          00080002
+CBLKGRPN DS    CL8                GROUP NAME                            00090002
+CBLKPSWD DS    0CL9               PASSWORD                              00100002
+CBLKPWDL DS    X                  PASSWORD LENGTH                       00110002
+CBLKPWDE DS    CL8                PASSWORD ENCRYPTED                    00120002
+CBLKFLG1 DS    C                  OPER AUTHORITY                        00130002
+         DS    0F                 END THE BLOCK                         00140002
+CBLKL    EQU   *-CBLK                                                   00150002
+*                                                                       00160000
+CONNGRUP DSECT ,                   CONNECTS                             00170002
+CONNNEXT DS    F                   NEXT CONNECT                         00180002
+CONNGRP  DS    0CL9                GROUP                                00190002
+CONNGRPL DS    X                   GROUP LENGTH                         00200002
+CONNGRPN DS    CL8                 GROUP NAME                           00210002
+         DS    0F                                                       00220000
+CONNL    EQU   *-CONNGRUP                                               00230001
