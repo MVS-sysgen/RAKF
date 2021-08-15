@@ -36,7 +36,7 @@ CJYRUIDS CSECT                                                          00070000
          BZ     ABEND100             YES, ABEND                         00360001
          ENQ    (SECURITY,USERS,E,,SYSTEM)                              00370001
          OPEN   (CJYUDATA,(INPUT))  OPEN INPUT FILE                     00380000
-         MODESET KEY=ZERO           MAKE SQA = KEY 0                    00390000
+         MODESET MODE=SUP,KEY=ZERO  authorize ourselves                 00390382
 *                                                                       00400001
 READLOOP GET    CJYUDATA,RECORD     GET RECORD                          00410000
          CLC    USERID,OLDUSER      IS INPUT IN SORT SEQUENCE?          00420001
@@ -131,28 +131,30 @@ ANYMORE  LTR    R5,R4              MORE ENTRIES?                        01290001
 *                                                                       01310000
          TM     TERMFLAG,TERMABND  WAS AN ABEND REQUESTED?              01320001
          BO     ABEND200               Y-ABEND                          01330001
-BYEBYE   WTO    'CJYRUIDS4  ** NORMAL TERMINATION **'                   01340005
+BYEBYE   MODESET MODE=PROB,KEY=NZERO   return to problem state          01333382
+         CLOSE (CJYUDATA)              close input dataset              01337382
+         WTO    'RAKFUIDS4  USER TABLE UPDATED'                         01340382
          L      R13,SAVEAREA+4     LOAD CALLER'S SAVE AREA ADDR         01350000
          RETURN (14,12),RC=0                                            01360000
 *                                                                       01370001
-ABEND100 WTO    'CJYRUIDS1  RCVT NOT PROPERLY INITIALIZED',DESC=(2)     01380005
-         WTO    'CJYRUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01390005
+ABEND100 WTO    'RAKFUIDS1  RCVT NOT PROPERLY INITIALIZED',DESC=(2)     01380380
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01390380
          ABEND  100,,STEP                                               01400001
 *                                                                       01410001
-ABEND2   WTO    'CJYRUIDS2  INPUT DATA INVALID OR OUT OF SEQ.',DESC=(2) 01420005
+ABEND2   WTO    'RAKFUIDS2  INPUT DATA INVALID OR OUT OF SEQ.',DESC=(2) 01420380
          MVC    PASSWORD,=C'********'                                   01430001
          MVC    BADMSG+8(80),RECORD                                     01440001
 BADMSG   WTO    '                                                      X01450001
                                            ',DESC=(2)                   01460001
-         WTO    'CJYRUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01470005
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01470380
          OI     TERMFLAG,TERMABND          SET TO ABEND @ TERMINATION   01480001
          LR     R4,R5                      GET LAST GM AREA ADDR AND    01490001
          B      ANYMORE                    GO CLEAN THE GM CHAIN.       01500001
 *                                                                       01510001
 ABEND200 ABEND  200,,STEP              Y - ABEND !                      01520001
 *                                                                       01530001
-ABEND300 WTO    'CJYRUIDS3  EMPTY INPUT FILE ?!?!',DESC=(2)             01540005
-         WTO    'CJYRUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01550005
+ABEND300 WTO    'RAKFUIDS3  EMPTY INPUT FILE ?!?!',DESC=(2)             01540380
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01550380
          ABEND  300,,STEP                                               01560001
 *                                                                       01570001
 TRTBLANK DC     XL256'00'          TABLE FOR TRT                        01580000
@@ -161,7 +163,7 @@ TRTBLANK DC     XL256'00'          TABLE FOR TRT                        01580000
          ORG                                                            01610000
 *                                                                       01620000
          PRINT  NOGEN                                                   01630000
-CJYUDATA DCB    DDNAME=INPUT,MACRF=GM,EODAD=ENDDATA,DSORG=PS            01640001
+CJYUDATA DCB    DDNAME=RAKFUSER,MACRF=GM,EODAD=ENDDATA,DSORG=PS         01640382
 *                                                                       01650000
 SAVEAREA DS     18F                                                     01660000
 LASTGM   DC     F'0'                                                    01670000
@@ -206,6 +208,6 @@ R15      EQU    15                                                      02030000
          COPY    CJYUCBLK                                               02060000
          ICHPRCVT                                                       02070000
          CVT     DSECT=YES                                              02080000
-         IHAPSA  DSECT=YES,LIST=NO                                      02090000
+         IHAPSA  DSECT=YES                                              02090380
 *                                                                       02100000
          END                                                            02110000

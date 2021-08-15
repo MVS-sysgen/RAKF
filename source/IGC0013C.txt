@@ -1,9 +1,9 @@
          TITLE 'ESG-SECURITY  SVC 133'                                  00010012
-* CPARM='XREF(SHORT),OBJ,NODECK,RENT',LPARM='RENT'            IGC0013C  00020013
+* CPARM='XREF(SHORT),OBJ,NODECK,RENT',LPARM='RENT'            RAKF013C  00020382
 *      DD DSN=SYS1.MACLIB,DISP=SHR                                      00030012
 *      DD DSN=SYS1.MODGEN,DISP=SHR                                      00040012
          EJECT                                                          00050012
-IGC0013C CSECT                                                          00060008
+RAKF013C CSECT                                                          00060382
 *                                                                       00070014
 **********************************************************************  00080014
 *                                                                    *  00090014
@@ -20,45 +20,29 @@ IGC0013C CSECT                                                          00060008
 *                                                                    *  00200014
 **********************************************************************  00210014
 *                                                                       00220014
-         USING IGC0013C,R6         SVC ENTRY R6 = EP.                   00230008
+         USING RAKF013C,R6         SVC ENTRY R6 = EP.                   00230382
          LR    R9,R1               SAVE ENTRY REG.                      00240008
          LR    R8,R14              SAVE RETURN REG.                     00250008
          GETMAIN RC,LV=GMLEN       GET STORAGE                          00260008
          LR    R13,R1              LOAD REGISTER 13 WITH GETMAINED PTR  00270008
          USING WORKAREA,R13        SET UP DATA DSECT ADDR.              00280008
-*                                                                       00290008
-         L     R15,FLCCVT-PSA(0)   ADDRESS CVT                          00300008
-         TM    CVTDCB-CVT(R15),CVTMVSE  X/A?                            00310008
-         BNO   STRTROUT            NO, GO ON                            00320008
-         LA    R15,STRTTMDE        ADDRESS OF INS.                      00330008
-         O     R15,=X'80000000'    SET 31 BIT MODE                      00340008
-         BSM   R0,R15              GO TO INSTRUCTION                    00350008
+         MVC   RACRGM,RACRREAL     move RACROUTE                        00285381
 *                                                                       00360008
-STRTTMDE L     R15,PSATOLD-PSA(0)  ADDRESS TCB                          00370008
+         L     R15,PSATOLD-PSA(0)  ADDRESS TCB                          00370382
          L     R15,TCBRBP-TCB(R15) ADDRESS RB                           00380008
          XR    R14,R14             CLEAR R14                            00390008
          ICM   R14,B'0111',RBLINKB-RBSECT(R15) PRIOR RB                 00400008
-         TM    RBOPSWA-RBSECT(R14),RBOPSWM 31 BIT MODE?                 00410008
-         BO    STRTROUT            WE WERE 31 BIT, DON'T CLEAR          00420008
 *                                                                       00430008
          LR    R10,R9              SAVE ENTRY REG.                      00440008
          ICM   R10,B'1000',=X'00'  CLEAR HIGH ORDER OF PARM ADDR.       00450008
-         MVC   RACRGM+RACRLEN-RACDLEN(RACDLEN),0(R10) MOVE PARM         00460008
+         MVC   RACRGM+RACRLEN-RACDLEN(RACDLEN-8),0(R10) MOVE PARM       00460381
          NC    RACRGM+RACRLEN-RACDLEN+8(28),=7X'00FFFFFF'               00470008
          NC    RACRGM+RACRLEN-RACDLEN+40(8),=7X'00FFFFFF'               00480008
-         B     STRTSAFR                                                 00490008
 *                                                                       00500008
-STRTROUT MVC   RACRGM+RACRLEN-RACDLEN(RACDLEN),0(R9) MOVE PARM          00510008
 STRTSAFR LA    R5,SAFWORK          FOR SAF                              00520008
          RACROUTE REQUEST=DEFINE,WORKA=(R5),MF=(E,RACRGM)               00530008
          L     R3,RACRGM           RACDEF RETURN CODE                   00540008
          L     R4,RACRGM+4         RACDEF REASON CODE                   00550008
-*                                                                       00560008
-         L     R15,FLCCVT-PSA(0)   ADDRESS CVT                          00570008
-         TM    CVTDCB-CVT(R15),CVTMVSE  X/A?                            00580008
-         BNO   RTRNFREE            NO, BYPASS BSM                       00590008
-         LA    R14,RTRNFREE        24 BIT MODE                          00600008
-         BSM   R0,R14              GO TO INSTRUCTION                    00610008
 *                                                                       00620008
 RTRNFREE FREEMAIN RC,LV=GMLEN,A=(R13)                                   00630008
          LR    R15,R3              RETURN CODE                          00640008
@@ -69,6 +53,8 @@ RTRNFREE FREEMAIN RC,LV=GMLEN,A=(R13)                                   00630008
 RACRREAL RACROUTE REQUEST=DEFINE,MF=L                                   00690008
 RACRLEN  EQU   *-RACRREAL                                               00700008
 RACDEF   RACDEF MF=L               THIS IS JUST FOR THE LENGTH          00710008
+         DC    A(0)       INSTALLATION DATA ADDRESS (missing in RACDEF) 00713381
+         DC    A(0)       ENTITY NAME ADDR FIELD    (missing in RACDEF) 00716381
 RACDLEN  EQU   *-RACDEF                                                 00720008
 *                                                                       00730008
 WORKAREA DSECT                                                          00740008
@@ -79,11 +65,7 @@ GMLEN    EQU    *-WORKAREA                                              00780008
          PRINT  NOGEN                                                   00790008
          YREGS                                                          00800008
          CVT     DSECT=YES,LIST=NO                                      00810008
-         IHAPSA  DSECT=YES,LIST=NO                                      00820008
-         IKJRB   DSECT=YES,LIST=NO                                      00830008
+         IHAPSA  DSECT=YES                                              00820380
+         IKJRB   DSECT=YES                                              00830380
          IKJTCB  DSECT=YES,LIST=NO                                      00840008
-IGC0013C CSECT                                                          00850008
-         DS    D                                                        00860010
-SVC133E  EQU   *                                                        00870008
-         ENTRY SVC133E                                                  00880008
          END                                                            00890008

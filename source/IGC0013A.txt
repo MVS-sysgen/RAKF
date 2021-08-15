@@ -1,9 +1,9 @@
          TITLE 'ESG-SECURITY  SVC 131'                                  00010017
-* CPARM='XREF(SHORT),OBJ,NODECK,RENT',LPARM='RENT'            IGC0013A  00020019
+* CPARM='XREF(SHORT),OBJ,NODECK,RENT',LPARM='RENT'            RAKF013A  00020382
 *      DD DSN=SYS1.MACLIB,DISP=SHR                                      00030017
 *      DD DSN=SYS1.MODGEN,DISP=SHR                                      00040017
          EJECT                                                          00050017
-IGC0013A CSECT                                                          00060017
+RAKF013A CSECT                                                          00060382
 *                                                                       00070020
 **********************************************************************  00080020
 *                                                                    *  00090020
@@ -20,45 +20,27 @@ IGC0013A CSECT                                                          00060017
 *                                                                    *  00200020
 **********************************************************************  00210020
 *                                                                       00220020
-         USING IGC0013A,R6         SVC ENTRY R6 = EP.                   00230013
+         USING RAKF013A,R6         SVC ENTRY R6 = EP.                   00230382
          LR    R9,R1               SAVE ENTRY REG.                      00240013
          LR    R8,R14              SAVE RETURN REG.                     00250013
          GETMAIN RC,LV=GMLEN       GET STORAGE                          00260013
          LR    R13,R1              LOAD REGISTER 13 WITH GETMAINED PTR  00270013
          USING WORKAREA,R13        SET UP DATA DSECT ADDR.              00280013
          MVC   RACRGM,RACRREAL     MOVE RACROUTE                        00290013
-*                                                                       00300013
-         L     R15,FLCCVT-PSA(0)   ADDRESS CVT                          00310013
-         TM    CVTDCB-CVT(R15),CVTMVSE  X/A?                            00320013
-         BNO   STRTROUT            NO, GO ON                            00330013
-         LA    R15,STRTTMDE        ADDRESS OF INS.                      00340013
-         O     R15,=X'80000000'    SET 31 BIT MODE                      00350013
-         BSM   R0,R15              GO TO INSTRUCTION                    00360013
 *                                                                       00370013
-STRTTMDE L     R15,PSATOLD-PSA(0)  ADDRESS TCB                          00380013
+         L     R15,PSATOLD-PSA(0)  ADDRESS TCB                          00380382
          L     R15,TCBRBP-TCB(R15) ADDRESS RB                           00390013
          XR    R14,R14             CLEAR R14                            00400013
          ICM   R14,B'0111',RBLINKB-RBSECT(R15) PRIOR RB                 00410013
-         TM    RBOPSWA-RBSECT(R14),RBOPSWM 31 BIT MODE?                 00420013
-         BO    STRTROUT            WE WERE 31 BIT, DON'T CLEAR          00430013
 *                                                                       00440013
          LR    R10,R9              SAVE ENTRY REG.                      00450013
          ICM   R10,B'1000',=X'00'  CLEAR HIGH ORDER OF PARM ADDR.       00460013
          MVC   RACRGM+RACRLEN-RACILEN(RACILEN),0(R10) MOVE PARM         00470013
          NC    RACRGM+RACRLEN-RACILEN+4(52),=13X'00FFFFFF'              00480013
-         B     STRTSAFR                                                 00490013
-*                                                                       00500013
-STRTROUT MVC   RACRGM+RACRLEN-RACILEN(RACILEN),0(R9) MOVE PARM          00510013
 STRTSAFR LA    R5,SAFWORK          FOR SAF                              00520013
          RACROUTE REQUEST=VERIFY,WORKA=(R5),MF=(E,RACRGM)               00530013
          L     R3,RACRGM           RACINIT RETURN CODE                  00540013
          L     R4,RACRGM+4         RACINIT REASON CODE                  00550013
-*                                                                       00560013
-         L     R15,FLCCVT-PSA(0)   ADDRESS CVT                          00570013
-         TM    CVTDCB-CVT(R15),CVTMVSE  X/A?                            00580013
-         BNO   RTRNFREE            NO, BYPASS BSM                       00590013
-         LA    R14,RTRNFREE        24 BIT MODE                          00600013
-         BSM   R0,R14              GO TO INSTRUCTION                    00610013
 *                                                                       00620013
 RTRNFREE FREEMAIN RC,LV=GMLEN,A=(R13)                                   00630013
          LR    R15,R3              RETURN CODE                          00640013
@@ -80,12 +62,7 @@ GMLEN    EQU    *-WORKAREA                                              00790013
          PRINT  NOGEN                                                   00800013
          YREGS                                                          00810013
          CVT     DSECT=YES,LIST=NO                                      00820013
-         IHAPSA  DSECT=YES,LIST=NO                                      00830013
-         IKJRB   DSECT=YES,LIST=NO                                      00840013
+         IHAPSA  DSECT=YES                                              00830380
+         IKJRB   DSECT=YES                                              00840380
          IKJTCB  DSECT=YES,LIST=NO                                      00850013
-*                                                                       00860013
-IGC0013A CSECT                                                          00870013
-         DS    D                                                        00880015
-SVC131E  EQU   *                                                        00890013
-         ENTRY SVC131E                                                  00900013
          END                                                            00910013

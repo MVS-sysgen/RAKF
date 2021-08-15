@@ -5,7 +5,6 @@
 *      DD DSN=SYS3.SAF.PARMLIB,DISP=SHR                                 00010022
          EJECT                                                          00020023
 CJYRCVT  CSECT                                                          00050004
-CJYRCVT  AMODE 31                                                       00060014
 *                                                                       00061025
 **********************************************************************  00062025
 *                                                                    *  00063025
@@ -31,7 +30,7 @@ CJYRCVT  AMODE 31                                                       00060014
          ST    R2,8(R13)           SAVE MY AREA                         00130001
          LR    R13,R2              LOAD REGISTER 13 WITH SAVEAREA       00140001
 *                                                                       00150001
-         GETMAIN RU,LV=GMLEN,LOC=BELOW,SP=226 GET SQA                   00160014
+         GETMAIN RU,LV=GMLEN,SP=245 GET SQA                             00160380
          LR    R4,R1               SAVE AREA                            00170001
          LA    R5,GMLEN            LENGTH                               00180005
          LR    R6,R4               TARGET                               00190001
@@ -40,10 +39,10 @@ CJYRCVT  AMODE 31                                                       00060014
          LR    R4,R1               BRING BACK R1                        00220001
          USING RCVT,R4             ADDRESS IT                           00230001
          MVC   RCVTID,=C'RCVT'     MOVE NAME                            00240001
-         MVI   RCVTSTAT,RCVTNADS   NO ADSP                              00250001
-         MVI   RCVTVERS,X'07'      V1R7 OF RACF                         00260012
-         MVI   RCVTFLG1,RCVTTDSN+RCVTPRO TAPE & PROTECT ALL             00270006
-         MVI   RCVTSTA1,RCVTJCHK   JES EARLY VERIFY                     00280001
+         MVI   RCVTVERS,X'06'      V1R7 OF RACF                         00260380
+         MVI   RCVTFLG1,RCVTTAPE TAPE                                   00270380
+         MVI   RCVTSTA1,X'FF'                                           00274380
+         MVI   RCVTAUOP,X'7A'                                           00278380
          LA    R2,RCVTEND          POINT TO G.M. AREA AFTER RCVT        00290009
          LA    R3,CJYRCVTL         LENGTH                               00300009
          LA    R6,CJYRCVTX         POINT TO OUR CODE                    00310009
@@ -59,13 +58,13 @@ CJYRCVT  AMODE 31                                                       00060014
          ST    R2,RCVTAUTP         SAVE IT                              00410012
          L     R2,FLCCVT-PSA(0)    LOAD CVT                             00420014
          ST    R4,CVTRAC-CVTMAP(R2) SAVE IN CVT                         00430001
-         WTO   'CJYRCVT1   RCVT WAS PROCESSED SUCCESSFULLY..'           00440001
+         WTO   'RCVT WAS PROCESSED SUCCESSFULLY'                        00440380
          L     R13,SAVEAREA+4      LOAD OLD REG 13                      00450004
          RETURN (14,12),RC=0       RETURN TO CALLER                     00460001
 *                                                                       00470001
          LTORG                                                          00480001
 SAVEAREA DS    18F                                                      00490002
-CJYRCVTX DS    XL(CJYRL)                                                00500010
+CJYRCVTX DC    XL8'0'                                                   00505380
 RACSTAT  SAVE  (14,12),,RACSTAT_&SYSDATE._&SYSTIME                      00510009
          DROP  ,                                                        00520009
          LR    R12,R15             USE ENTRY AS BASE                    00530005
@@ -110,7 +109,7 @@ CJYRCVTL EQU   *-CJYRCVTX                                               00890009
 RCVTEND  DS    0H                                                       00920005
 GMLEN    EQU   *-RCVT+CJYRCVTL                                          00930009
          CVT     DSECT=YES                                              00940001
-         IHAPSA  DSECT=YES,LIST=NO                                      00950001
+         IHAPSA  DSECT=YES                                              00950380
          IHASCVT                                                        00960014
          COPY    CJYRCVTD                                               00970010
 *                                                                       00980001

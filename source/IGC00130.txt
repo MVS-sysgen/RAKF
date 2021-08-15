@@ -1,12 +1,9 @@
          TITLE 'ESG-SECURITY  SVC 130'                                  00010015
-* CPARM='XREF(SHORT),OBJ,NODECK,RENT',LPARM='RENT'            IGC00130  00020016
+* CPARM='XREF(SHORT),OBJ,NODECK,RENT',LPARM='RENT'            RAKF0130  00020382
 *      DD DSN=SYS1.MACLIB,DISP=SHR                                      00030015
 *      DD DSN=SYS1.MODGEN,DISP=SHR                                      00040015
-         SPACE 3                                                        00050015
-* //L.SYSLMOD DD DSN=SYS3.LINKLIB(IGC0013{),DISP=SHR                    00060015
-*  ALIAS IGC00130                                                       00070015
          EJECT                                                          00080015
-IGC00130 CSECT                                                          00090010
+RAKF0130 CSECT                                                          00090382
 *                                                                       00100017
 **********************************************************************  00110017
 *                                                                    *  00120017
@@ -23,51 +20,38 @@ IGC00130 CSECT                                                          00090010
 *                                                                    *  00230017
 **********************************************************************  00240017
 *                                                                       00250017
-         USING IGC00130,R6         SVC ENTRY R6 = EP.                   00260010
+         USING RAKF0130,R6         SVC ENTRY R6 = EP.                   00260382
          LR    R9,R1               SAVE ENTRY REG.                      00270010
          LR    R8,R14              SAVE RETURN REG.                     00280010
          GETMAIN RC,LV=GMLEN       GET STORAGE                          00290010
          LR    R13,R1              LOAD REGISTER 13 WITH GETMAINED PTR  00300010
          USING WORKAREA,R13        SET UP DATA DSECT ADDR.              00310010
          MVC   RACRGM,RACRREAL     MOVE RACROUTE                        00320010
-*                                                                       00330010
-         L     R15,FLCCVT-PSA(0)   ADDRESS CVT                          00340010
-         TM    CVTDCB-CVT(R15),CVTMVSE  X/A?                            00350010
-         BNO   STRTROUT            NO, GO ON                            00360010
-         LA    R15,STRTTMDE        ADDRESS OF INS.                      00370010
-         O     R15,=X'80000000'    SET 31 BIT MODE                      00380010
-         BSM   R0,R15              GO TO INSTRUCTION                    00390010
 *                                                                       00400010
-STRTTMDE L     R15,PSATOLD-PSA(0)  ADDRESS TCB                          00410010
+         L     R15,PSATOLD-PSA(0)  ADDRESS TCB                          00410382
          L     R15,TCBRBP-TCB(R15) ADDRESS RB                           00420010
          XR    R14,R14             CLEAR R14                            00430010
          ICM   R14,B'0111',RBLINKB-RBSECT(R15) PRIOR RB                 00440010
-         TM    RBOPSWA-RBSECT(R14),RBOPSWM 31 BIT MODE?                 00450010
-         BO    STRTROUT            WE WERE 31 BIT, DON'T CLEAR          00460010
 *                                                                       00470010
          LR    R10,R9              SAVE ENTRY REG.                      00480010
          ICM   R10,B'1000',=X'00'  CLEAR HIGH ORDER OF PARM ADDR.       00490010
          MVC   RACRGM+RACRLEN-RACCLEN(RACCLEN),0(R10) MOVE PARM         00500010
          NC    RACRGM+RACRLEN-RACCLEN+16(40),=10X'00FFFFFF'             00510010
-         B     STRTSAFR                                                 00520010
-*                                                                       00530010
-STRTROUT MVC   RACRGM+RACRLEN-RACCLEN(RACCLEN),0(R9) MOVE PARM          00540010
 STRTSAFR LA    R5,SAFWORK          FOR SAF                              00550010
          RACROUTE REQUEST=AUTH,WORKA=(R5),MF=(E,RACRGM)                 00560010
          L     R3,RACRGM           RACHECK RETURN CODE                  00570010
          L     R4,RACRGM+4         RACHECK REASON CODE                  00580010
-*                                                                       00590010
-         L     R15,FLCCVT-PSA(0)   ADDRESS CVT                          00600010
-         TM    CVTDCB-CVT(R15),CVTMVSE  X/A?                            00610010
-         BNO   RTRNFREE            NO, BYPASS BSM                       00620010
-         LA    R14,RTRNFREE        24 BIT MODE                          00630010
-         BSM   R0,R14              GO TO INSTRUCTION                    00640010
 *                                                                       00650010
 RTRNFREE FREEMAIN RC,LV=GMLEN,A=(R13)                                   00660010
          LR    R15,R3              RETURN CODE                          00670010
          LR    R0,R4               REASON CODE                          00680010
          LR    R1,R9               RETURN R1                            00690010
-         BR    R8                  RETURN TO ORIG. R14                  00700010
+         USING ACHKLIST,R9         RACHECK parameter list               00691382
+         TM    ACHKFLG1,ACHKCSA    profile to be returned in CSA?       00693382
+         BNO   RETURN              no  --> exit                         00695382
+         XR    R1,R1               yes --> return zero address to       00697382
+*                                          signal unsupported function  00699382
+RETURN   BR    R8                  RETURN TO ORIG. R14                  00700382
          LTORG                                                          00710010
 RACRREAL RACROUTE REQUEST=AUTH,MF=L                                     00720010
 RACRLEN  EQU   *-RACRREAL                                               00730010
@@ -82,11 +66,8 @@ GMLEN    EQU    *-WORKAREA                                              00810010
          PRINT  NOGEN                                                   00820010
          YREGS                                                          00830010
          CVT     DSECT=YES,LIST=NO                                      00840010
-         IHAPSA  DSECT=YES,LIST=NO                                      00850010
-         IKJRB   DSECT=YES,LIST=NO                                      00860010
+         IHAPSA  DSECT=YES                                              00850380
+         IKJRB   DSECT=YES                                              00860380
          IKJTCB  DSECT=YES,LIST=NO                                      00870010
-IGC00130 CSECT                                                          00880010
-         DS    D                                                        00890013
-SVC130E  EQU   *                                                        00900010
-         ENTRY SVC130E                                                  00910010
+         ICHACHKL                                                       00890382
          END                                                            00920010

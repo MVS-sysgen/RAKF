@@ -4,6 +4,10 @@
 *      DD DSN=SYS1.MODGEN,DISP=SHR                                      00040006
 *      DD DSN=SYS3.SAF.PARMLIB,DISP=SHR                                 00050006
          EJECT                                                          00051006
+         MACRO                                                          00054380
+&LABEL   BASMAC &R1,&S2                                                 00055382
+&LABEL.  DC    0XL4'00',X'4D',AL.4(&R1.,0),S(&S2.)                      00056380
+         MEND                                                           00057380
 CJYRPROF CSECT                                                          00060001
 *                                                                       00060109
 **********************************************************************  00060209
@@ -38,7 +42,7 @@ CJYRPROF CSECT                                                          00060001
 OK2GO    DS    0H                      NO, CONTINUE                     00370001
          ENQ   (SECURITY,PROFS,E,,SYSTEM),RET=HAVE                      00380001
          OPEN  (CJYPDATA,(INPUT))      OPEN INPUT FILE                  00390001
-         MODESET KEY=ZERO              SET KEY FOR GETMAIN              00400001
+         MODESET MODE=SUP,KEY=ZERO     authorize ourselves              00400382
 *                                                                       00410001
 READLOOP DS    0H                                                       00420001
          MVC   INRECOLD,INRECNEW       SAVE OLD I/P FOR COMPARE         00430001
@@ -139,12 +143,12 @@ EOFILE   DS    0H                                                       01350001
          L     R11,CJYPROFS            SAVE ADDRESS OF OLD CHAIN        01380001
          MVC   CJYPROFS,LASTRPE        ACTIVATE NEW CHAIN               01390001
          DROP  R8                                                       01400001
-         BAS   R14,MORERPE             START TO FREE RPE'S              01410001
+         BASMAC R14,MORERPE            START TO FREE RPE'S              01410382
 *                                                                       01420001
          DEQ   (SECURITY,PROFS,,SYSTEM)    RELEASE ENQ                  01430001
-         MODESET KEY=NZERO             SET KEY BACK FOR CLOSE           01440001
+         MODESET MODE=PROB,KEY=NZERO   return to problem state          01440382
          CLOSE (CJYPDATA)              CLOSE I/P DATASET                01450001
-         WTO   'CJYRPROF7  **  NORMAL END OF PROGRAM  **'               01460001
+         WTO   'RAKFPROF7  RAKF PROFILES UPDATED'                       01460380
          L     R13,4(R13)              RESTORE HSA                      01470001
          RETURN (14,12),,RC=0          END O.K.                         01480001
 FREERPE  DS    0H                                                       01490001
@@ -162,56 +166,56 @@ MOREACC  DS    0H                                                       01550001
 MORERPE  DS    0H                                                       01610001
          LTR   R10,R11                 ANYMORE RPE'S?                   01620001
          BNZ   FREERPE                 YES, FREE THEM                   01630001
-         BSM   0,R14                   RETURN TO END RUN                01640001
+         BR    R14                     RETURN TO END RUN                01640380
 *                                                                       01650001
 NOGOOD   DS    0H                                                       01660001
-         WTO   'CJYRPROF1  RCVT NOT PROPERLY INITIALIZED'               01670001
-         WTO   'CJYRPROF1  **  PROGRAM TERMINATED  **'                  01680001
+         WTO   'RAKFPROF1  RCVT NOT PROPERLY INITIALIZED'               01670380
+         WTO   'RAKFPROF1  **  PROGRAM TERMINATED  **'                  01680380
          ABEND 100,,STEP                                                01690001
 *                                                                       01700001
 NOREC    DS    0H                                                       01710001
-         WTO   'CJYRPROF2  NO RECORDS INPUT FROM CJYPDATA'              01720001
-         WTO   'CJYRPROF2  **  PROGRAM TERMINATED  **'                  01730001
+         WTO   'RAKFPROF2  NO RECORDS INPUT FROM CJYPDATA'              01720380
+         WTO   'RAKFPROF2  **  PROGRAM TERMINATED  **'                  01730380
          ABEND 200,,STEP                                                01740001
 *                                                                       01750001
 OUTOFORD DS    0H                                                       01760001
          L     R11,LASTRPE             SETUP FOR RPE CLEANUP            01770001
-         BAS   R14,MORERPE             GO CLEANUP AND RETURN HERE       01780001
-         BAS   R14,BADMSG              WRITE BADMSG                     01790001
-         WTO   'CJYRPROF3  I/P RECORDS OUT OF ORDER'                    01800001
-         WTO   'CJYRPROF3  **  PROGRAM TERMINATED  **'                  01810001
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       01780382
+         BASMAC R14,BADMSG             WRITE BADMSG                     01790382
+         WTO   'RAKFPROF3  I/P RECORDS OUT OF ORDER'                    01800380
+         WTO   'RAKFPROF3  **  PROGRAM TERMINATED  **'                  01810380
          ABEND 300,,STEP                                                01820001
 *                                                                       01830001
 NOUAR    DS    0H                                                       01840001
          L     R11,LASTRPE             SETUP FOR RPE CLEANUP            01850001
-         BAS   R14,MORERPE             GO CLEANUP AND RETURN HERE       01860001
-         BAS   R14,BADMSG              WRITE BADMSG                     01870001
-         WTO   'CJYRPROF4  PERMIT RECORD WITHOUT UNIVERSAL ACCESS RECOR*01880001
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       01860382
+         BASMAC R14,BADMSG             WRITE BADMSG                     01870382
+         WTO   'RAKFPROF4  PERMIT RECORD WITHOUT UNIVERSAL ACCESS RECOR*01880380
                D'                                                       01890001
-         WTO   'CJYRPROF4  **  PROGRAM TERMINATED  **'                  01900001
+         WTO   'RAKFPROF4  **  PROGRAM TERMINATED  **'                  01900380
          ABEND 400,,STEP                                                01910001
 *                                                                       01920001
 PERMINVL DS    0H                                                       01930001
          L     R11,LASTRPE             SETUP FOR RPE CLEANUP            01940001
-         BAS   R14,MORERPE             GO CLEANUP AND RETURN HERE       01950001
-         BAS   R14,BADMSG              WRITE BADMSG                     01960001
-         WTO   'CJYRPROF5  PERMIT RECORD WITHOUT GROUPID/USERID'        01970001
-         WTO   'CJYRPROF5  **  PROGRAM TERMINATED  **'                  01980001
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       01950382
+         BASMAC R14,BADMSG             WRITE BADMSG                     01960382
+         WTO   'RAKFPROF5  PERMIT RECORD WITHOUT GROUPID/USERID'        01970380
+         WTO   'RAKFPROF5  **  PROGRAM TERMINATED  **'                  01980380
          ABEND 500,,STEP                                                01990001
 *                                                                       02000001
 NOACCAUT DS    0H                                                       02010001
          L     R11,LASTRPE             SETUP FOR RPE CLEANUP            02020001
-         BAS   R14,MORERPE             GO CLEANUP AND RETURN HERE       02030001
-         BAS   R14,BADMSG              WRITE BADMSG                     02040001
-         WTO   'CJYRPROF6  ENTITY RECORD WITH NO ACCESS AUTHORITY'      02050001
-         WTO   'CJYRPROF6  **  PROGRAM TERMINATED  **'                  02060001
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       02030382
+         BASMAC R14,BADMSG             WRITE BADMSG                     02040382
+         WTO   'RAKFPROF6  ENTITY RECORD WITH NO ACCESS AUTHORITY'      02050380
+         WTO   'RAKFPROF6  **  PROGRAM TERMINATED  **'                  02060380
          ABEND 500,,STEP                                                02070001
 *                                                                       02080001
 BADMSG   DS    0H                                                       02090001
          MVC   BADMSGN+18(80),INRECNEW                                  02100001
-BADMSGN  WTO   'CJYRPROF8                                              X02110001
+BADMSGN  WTO   'RAKFPROF8                                              X02110380
                                                   '                     02120001
-         BSM   0,R14                                                    02130001
+         BR    R14                                                      02130380
 **********************                                                  02140001
          PRINT NOGEN                                                    02150001
 SAVEAREA DS    18F                                                      02160001
@@ -242,7 +246,7 @@ TRTTEST  DC    XL256'00'               TABLE TO FIND BLANK/ASTERISK     02380001
          ORG   TRTTEST+C'*'            SETUP FLAG FOR ASTERISK          02410001
          DC    X'04'                                                    02420001
          ORG                                                            02430001
-CJYPDATA DCB   MACRF=GM,EODAD=EOFILE,DDNAME=INPUT,DSORG=PS              02440001
+CJYPDATA DCB   MACRF=GM,EODAD=EOFILE,DDNAME=RAKFPROF,DSORG=PS           02440382
          COPY  CJYRCVTD                                                 02450001
          COPY  CJYPCBLK                                                 02460001
          IHAPSA DSECT=YES                                               02470001
