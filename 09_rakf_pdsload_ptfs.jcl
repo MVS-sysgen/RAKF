@@ -4,6 +4,315 @@
 //             MSGCLASS=A,
 //             MSGLEVEL=(1,1)
 //*
+//*  Add missing macro
+//*
+//STEP1   EXEC PGM=PDSLOAD
+//STEPLIB  DD  DSN=SYSC.LINKLIB,DISP=SHR
+//SYSPRINT DD  SYSOUT=*
+//SYSUT2   DD  DSN=SYSGEN.RAKF.RRKF005.RACIND,DISP=SHR
+//SYSUT1   DD  DATA,DLM=@@
+./ ADD NAME=IEZCTGPL
+* %GOTO CTGPLX01; /*                                                    00050000
+         MACRO                                                          00100000
+         IEZCTGPL ,                                                     00150000
+         DSECT ,                        */                              00160000
+* %CTGPLX01:;                                                           00200000
+*/********************************************************************/ 03000000
+*/*                                                                  */ 03001000
+*/*   MACRO NAME = IEZCTGPL                                          */ 03002000
+*/*                                                                  */ 03003000
+*/*   DESCRIPTIVE NAME = CATALOG PARAMETER LIST                      */ 03004000
+*/*                                                                  */ 03005000
+*/*   FUNCTION = THE CATALOG PARAMETER LIST (CTGPL) DEFINES THE      */ 03006000
+*/*              CATALOG MANAGEMENT REQUEST AND ITS OPTIONS, THE     */ 03007000
+*/*              CATALOG RECORD TO BE PROCESSED, AND THE VSAM        */ 03008000
+*/*              CATALOG THAT CONTAINES THE RECORD.  THE CTGPL IS    */ 03009000
+*/*              BUILT BEFORE AN OS/VS COMPONENT ISSUES THE CATLG    */ 03010000
+*/*              MACRO INSTRUCTION (SVC 26) TO PROCESS A CATALOG     */ 03011000
+*/*              RECORD.  WHEN THE CATALOG MANAGEMENT ROUTINES       */ 03012000
+*/*              BUILD A CCA TO SUPPORT THE REQUEST, THE ADDRESS     */ 03013000
+*/*              OF THE CTGPL IS PUT INTO THE CCA (CCACPL).          */ 03014000
+*/*                                                                  */ 03015000
+*/*   CONTROL BLOCK STRUCTURE = THE CTGPL IS POINTED TO BY           */ 03016000
+*/*                             REGISTER 1.                          */ 03017000
+*/*                                                                  */ 03018000
+*/*   INCLUDED MACROS = NONE                                         */ 03019000
+*/*                                                                  */ 03020000
+*/*   METHOD OF ACCESS = PL/S - NO DECLARES NECESSARY                */ 03021000
+*/*                                                                  */ 03022000
+*/*   STATUS = VS/2 RELEASE 4   (CHANGE FLAG @Z40WSXX)       @Z40WSSG*/ 03023000
+*/*   A 343000 A 346000                                      @ZA18274*/ 03024000
+*/*                                                                  */ 03024600
+*/*   DATE OF LAST CHANGE = 03 DEC 76                        @ZA18274*/ 03025200
+*/*   JES3 SUPPORT - I 850084,892500,895500                          */ 03025300
+*/*                                                              @HES*/ 03026000
+*/********************************************************************/ 03027000
+*%GOTO CTGPLX03;                                                        03077000
+*/*                                                                     03200000
+         AGO   .CTGPL01                 */                              03250000
+*%CTGPLX03:;                                                            03300000
+*%DECLARE (CTGPLLEN, CTGPL999, CTGPLLVL) CHAR;                          04000000
+*%CTGPLLEN = 'LENGTH(CTGPL)';       /* LENGTH OF CTGPL               */ 04500000
+*%IF CTGPL999 ^= ','                /* IF BLOCK NOT CONTINUED,       */ 05000000
+*   %THEN %CTGPL999 = ';';          /*   THEN CLOSE DCL STATEMENT    */ 06000000
+*%IF CTGPLLVL  = ''                 /* IF BLOCK NOT CONCATENATED,    */ 07000000
+*   %THEN %GOTO CTGPL001;           /*   THEN GENERATE DCL           */ 08000000
+*%CTGPLDUM = CTGPLLVL||' CTGPL';    /* SET MINOR LEVEL NUMBER        */ 09000000
+*        CTGPLDUM                   /* CTGPL CONCATENATED LEVEL      */ 10000000
+*%GOTO CTGPL002;                    /* SKIP DECLARE                  */ 11000000
+*%CTGPL001:;                        /* DECLARE                       */ 12000000
+*   DECLARE                                                             12500000
+*     1 CTGPL BASED(CTGPLPTR)       /* DECLARE CTGPL LEVEL ONE       */ 13000000
+*%CTGPL002:;                        /* SKIP DECLARE                  */ 14000000
+*        BDY(WORD),                 /* WORD BOUNDARY                 */ 15000000
+*       5 CTGOPTN1 BIT(8),          /* FIRST OPTION INDICATOR        */ 16000000
+*         10 CTGBYPSS BIT(1),       /* BYPASS                        */ 17000000
+*         10 CTGMAST  BIT(1),       /* VERIFY MASTER PASSWORD        */ 18000000
+*         10 CTGCI    BIT(1),       /* VERIFY CONTROL INTERVAL       */ 19000000
+*         10 CTGUPD   BIT(1),       /* VERIFY UPDATE                 */ 20000000
+*         10 CTGREAD  BIT(1),       /* VERIFY READ                   */ 21000000
+*         10 CTGNAME  BIT(1),       /* 1 = 44-BYTE NAME OR VOL SER,  */ 22000000
+*                                   /* 0 = ENTRY ID NUMBER           */ 23000000
+*         10 CTGCNAME BIT(1),       /* 1 = 44-BYTE NAME,             */ 24000000
+*                                   /* 0 = ACB ADDRESS               */ 25000000
+*         10 CTGGENLD BIT(1),       /* GENERIC LOCATE REQUEST  Y02020*/ 26000000
+*       5 CTGOPTN2 BIT(8),          /* SECOND OPTION INDICATOR       */ 27000000
+*         10 CTGEXT   BIT(1),       /* EXTEND       (UPDATE)         */ 28000000
+*            15 CTGNSVS BIT(1),     /* CATLG CLEANUP REQUEST @ZA00605*/ 28050000
+*         10 CTGERASE BIT(1),       /* ERASE        (DELETE)         */ 29000000
+*            15 CTGSMF   BIT(1),    /* WRITE SMF    (LSPACE)         */ 30000000
+*               20 CTGREL   BIT(1), /* RELEASE      (UPDATE)         */ 31000000
+*                  25 CTGGTALL BIT(1),/* CONCAT SEARCH  FOR    Y02020*/ 31050000
+*                                   /* (LISTCAT)               Y02020*/ 31100000
+*         10 CTGPURG  BIT(1),       /* PURGE        (DELETE)         */ 32000000
+*           15 CTGVMNT BIT(1),      /* VOLUME MOUNT CALLER           */ 33000000
+*              20 CTGRCATN BIT(1),  /* RTN CATLG NAME(GLOC)    Y02020*/ 33010000
+*                 25 CTGSWAP BIT(1),/* SWAPSPACE (DEFINE)    @Z40WSSG*/ 33050000
+*         10 CTGGTNXT BIT(1),       /* GET NEXT     (LIST CATALOG)   */ 34000000
+*           15 CTGUCRAX BIT(1),     /* UCRA EXTEND OPTION    @ZA18274*/ 34300000
+*                                   /* (WITH UPDATE)                 */ 34600000
+*         10 CTGDISC BIT(1),        /* DISCONNECT   (DELETE)         */ 35000000
+*         10 CTGOVRID BIT(1),       /* ERASE OVERRIDE (DELETE)       */ 36000000
+*         10 CTGSCR   BIT(1),       /* SCRATCH SPACE (DELETE)        */ 37000000
+*         10 *        BIT(1),       /* RESERVED                      */ 38000000
+*       5 CTGOPTN3 BIT(8),          /* THIRD OPTION INDICATOR        */ 39000000
+*         10 CTGFUNC  BIT(3),       /* CATALOG FUNCTION              */ 40000000
+*         10 CTGSUPLT BIT(1),       /* SUPER LOCATE                  */ 45000000
+*         10 CTGGDGL  BIT(1),       /* GDG LOCATE REQUEST      Y02020*/ 46000000
+*                                   /* WITH BASE LEVEL GIVEN   Y02020*/ 46100000
+*                                   /* (CTGWAGB IN CTGWA)      Y02020*/ 46150000
+*         10 CTGSRH   BIT(1),       /* 0 = SEARCH MASTER CATLG Y02020*/ 47000000
+*                                   /*     ONLY                Y02020*/ 47050000
+*                                   /* 1 = SEARCH OS CATALOG FIRST   */ 48000000
+*         10 CTGNUM   BIT(1),       /* 0 = SEARCH BOTH CATALOGS,     */ 49000000
+*                                   /* 1 = SEARCH ONE CATALOG        */ 50000000
+*         10 CTGAM0   BIT(1),       /* VSAM REQ VERSUS NONVSAM       */ 51000000
+*       5 CTGOPTN4 BIT(8),          /* GDG FLAGS                     */ 52000000
+*         10 CTGLBASE BIT(1),       /* LOCATE GDG BASE ONLY Y02020   */ 52050000
+*         10 CTGDOCAT BIT(1),       /* DO NOT OPEN NEEDED CATALOG    */ 52100000
+*         10 CTGNPROF BIT(1),       /* NO (RAC) PROFILE SHOULD BE       52150000
+*                                      DEFINED OR DELETED    @Z40RSRC*/ 52170000
+*         10 CTGCOIN  BIT(1),       /* CONTROLLER INTERCEPT REQUESTED   52190000
+*                                                            @ZA20773*/ 52250000
+*         10 CTGBYPMT BIT(1),       /* BYPASS SECURITY PROMPTING        52300000
+*                                       TO SYSTEM OPERATOR   @ZA07531*/ 52350000
+*         10 CTGTIOT  BIT(1),       /* CALLER OWNS SYSZTIOT EXCLUSIVE   52400000
+*                                                            @ZA20773*/ 52410000
+*         10 *        BIT(2),       /* RESERVED              @ZA20773*/ 52460000
+*       5 CTGENT   PTR(31),         /* USER ENTRY ADDR OR PTR TO VOLUME 53000000
+*                                        SERIAL NUMBER (LSPACE)      */ 54000000
+*         10 CTGFVT   PTR(31),      /* FVT ADDRESS (DEFINE, ALTER)   */ 55000000
+*       5 CTGCAT   PTR(31),         /* CATALOG POINTER               */ 56000000
+*         10 CTGCVOL PTR(31),       /* CVOL PTR (SUPER LOCATE)       */ 57000000
+*       5 CTGWKA  PTR(31),          /* WORKAREA ADDR                 */ 58000000
+*       5 CTGDSORG CHAR(2),         /* DATA SET ORG - SUPERLOCATE    */ 59000000
+*         10 CTGOPTNS BIT(5),       /* CMS OPTIONS                   */ 60000000
+*         10 *        BIT(4),       /* RESERVED                  @HES*/ 60050000
+*         10 CTGHDLET BIT(1),       /* HSM HAS DELETED A MIGRATED       60100000
+*                                      DATA SET                  @HES*/ 60150000
+*         10 *        BIT(6),       /* RESERVED                  @HES*/ 60200000
+*       5 CTGTYPE  CHAR(1),         /* ENTRY TYPE - LISTCAT, DELETE  */ 66000000
+*       5 CTGNOFLD PTR(8),          /* NUMBER OF FIELD POINTERS      */ 74000000
+*       5 CTGDDNM PTR(31),          /* DD NAME ADDR                  */ 75000000
+*         10 CTGNEWNM PTR(31),      /* NEWNAME ADDRESS - ALTER       */ 76000000
+*            15 CTGFDBK  PTR(16),   /* SUPER LOCATE FEEDBACK         */ 77000000
+*            15 CTGFBFLG BIT(16),   /* SUPER LOCATE FLAGS            */ 78000000
+*               20 CTGPAR   BIT(1), /* PARALLEL MOUNT -SUPERLOCATE   */ 79000000
+*               20 CTGKEEP  BIT(1), /* FORCED KEEP - SUPERLOCATE     */ 80000000
+*               20 CTGGDGB  BIT(1), /* GDG BASE LOCATE         Y02020*/ 81000000
+*               20 CTGNGDSN BIT(1), /* GDG NAME GENERATED      Y02020*/ 81050000
+*               20 CTGCLV   BIT(1), /* CANDIDATE VOLUME LIST @ZA76423*/ 81100000
+*               20 *        BIT(11), /* RESERVED             @ZA76423*/ 81150000
+*       5 CTGJSCB  PTR(31),         /* JSCB ADDR                     */ 82000000
+*         10 CTGPSWD  PTR(31),      /* PASSWORD ADDR                 */ 83000000
+*       5 CTGFIELD(*) PTR(31) CTGPL999 /* FIELD POINTERS             */ 84000000
+*/********************************************************************/ 85000000
+*/*     CONSTANTS USED TO SET AND/OR TEST FIELDS DECLARED ABOVE      */ 85000200
+*/********************************************************************/ 85000400
+*   DECLARE                         /* CATALOG FUNCTION - CTGFUNC    */ 85000600
+*     CTGLOC   BIT(3) CONSTANT('001'B), /* LOCATE                    */ 85000900
+*     CTGLSP   BIT(3) CONSTANT('010'B), /* LSPACE                    */ 85001200
+*     CTGUPDAT BIT(3) CONSTANT('011'B), /* UPDATE                    */ 85001500
+*     CTGCMS   BIT(3) CONSTANT('100'B); /* CMS FUNCTION              */ 85001800
+*   DECLARE                         /* CMS OPTIONS - CTGOPTNS        */ 85002100
+*     CTGDEFIN BIT(5) CONSTANT('00001'B), /* DEFINE                  */ 85002400
+*     CTGALTER BIT(5) CONSTANT('00010'B), /* ALTER                   */ 85002700
+*     CTGDELET BIT(5) CONSTANT('00011'B), /* DELETE                  */ 85003000
+*     CTGLTCAT BIT(5) CONSTANT('00100'B), /* LIST CATALOG            */ 85003300
+*     CTGCNVTV BIT(5) CONSTANT('00110'B); /* CONVERTV        @Y30LSPS*/ 85003600
+*   DECLARE                           /* RECORD ENTRY TYPE - CTGTYPE */ 85003900
+*     CTGTDATA CHAR(1) CONSTANT('D'), /* DATA                        */ 85004200
+*     CTGTINDX CHAR(1) CONSTANT('I'), /* INDEX                       */ 85004500
+*     CTGTALIN CHAR(1) CONSTANT('A'), /* ALIEN                       */ 85004800
+*     CTGTUCAT CHAR(1) CONSTANT('U'), /* USER CATALOG                */ 85005100
+*     CTGTVOL  CHAR(1) CONSTANT('V'), /* VOLUME                      */ 85005400
+*     CTGTCL   CHAR(1) CONSTANT('C'), /* CLUSTER                     */ 85005700
+*     CTGTAIX  CHAR(1) CONSTANT('G'), /* ALTERNATE INDEX     @Y30SSPJ*/ 85006000
+*     CTGTPATH CHAR(1) CONSTANT('R'), /* PATH                @Y30SSPJ*/ 85006300
+*     CTGTFREE CHAR(1) CONSTANT('F'), /* FREE                @Y30SSPJ*/ 85006600
+*     CTGTPTH  CHAR(1) CONSTANT('R'), /* PATH                @Y30SSSB*/ 85006900
+*     CTGTUPG  CHAR(1) CONSTANT('Y'), /* UPGRADE             @Y30SSSB*/ 85007200
+*     CTGTGBS  CHAR(1) CONSTANT('B'), /* GDG BASE              Y02020*/ 85007500
+*     CTGTANM  CHAR(1) CONSTANT('X'), /* ALIAS NAME            Y02020*/ 85007800
+*     CTGTPGSP CHAR(1) CONSTANT('P'), /* PAGE SPACE            Y02020*/ 85008100
+*     CTGTMCAT CHAR(1) CONSTANT('M'), /* MASTER CATALOG              */ 85008400
+*     CTGTJES3 BIT(8) CONSTANT('01'X);/* JES3 ORIGINATED, SUPERLOCATE   85008500
+*                                        REQUEST                     */ 85008600
+*/********************************************************************/ 85008900
+*/*                 PROBLEM  DETERMINATION  FIELDS                   */ 85009000
+*/********************************************************************/ 85009300
+*   DECLARE                                                             85012000
+*     1 * DEF(CTGDDNM),             /* PROBLEM DETERMINATION @Y30SSJG*/ 85013000
+*       2 CTGPROB CHAR(4),          /* PROBLEM DETERMINATION @Y30SSJG*/ 85014000
+*         3 CTGMODID CHAR(2),       /* MODULE IDENTIFICATION @Y30SSJG*/ 85015000
+*         3 CTGREASN CHAR(2),       /* REASON CODE           @Y30SSJG*/ 85016000
+*           4 CTGREAS1 CHAR(1),     /* HIGH ORDER BYTE ZERO  @Y30SSJG*/ 85017000
+*           4 CTGREAS2 CHAR(1);     /* REASON CODE LOW BYTE  @Y30SSJG*/ 85018000
+* %GOTO CTGPLX02;                                                   /*  85050000
+.CTGPL01 ANOP                                                           85100000
+*                                                                       85150000
+CTGPL    DS    0H                                                       85250000
+*                                                                       85260000
+CTGOPTN1 DS    XL1                      FIRST OPTION INDICATOR          85300000
+CTGBYPSS EQU   X'80'                    BYPASS                          85350000
+CTGMAST  EQU   X'40'                    VERIFY MASTER PASSWORD          85400000
+CTGCI    EQU   X'20'                    VERIFY CONTROL INDICATOR        85450000
+CTGUPD   EQU   X'10'                    VERIFY UPDATE                   85500000
+CTGREAD  EQU   X'08'                    VERIFY READ                     85550000
+CTGNAME  EQU   X'04'                    1 - 44-BYTE NAME OR VOLSER      85600000
+*                                       0 - ENTRY ID NUMBER             85650000
+CTGCNAME EQU   X'02'                    1 - 44-BYTE NAME                85700000
+*                                       0 - ACB ADDRESS                 85750000
+CTGGENLD EQU   X'01'                    GENERIC LOCATE REQUEST          85800000
+*                                                                       85850000
+CTGOPTN2 DS    XL1                      SECOND OPTION INDICATOR         85900000
+CTGEXT   EQU   X'80'                    EXTEND(UPDATE)                  85950000
+CTGERASE EQU   X'40'                    ERASE(DELETE)                   86000000
+CTGSMF   EQU   X'40'                    WRITE SMF(LSPACE)               86050000
+CTGREL   EQU   X'40'                    RELEASE(UPDATE)                 86100000
+CTGGTALL EQU   X'40'                    CONCAT SEARCH (LISTCAT) Y02020  86150000
+CTGPURG  EQU   X'20'                    PURGE (DELETE)                  86200000
+CTGVMNT  EQU   X'20'                    VOLUME MOUNT CALLER             86250000
+CTGRCATN EQU   X'20'                    RTN CAT NAME(GLOC)      Y02020  86300000
+CTGGTNXT EQU   X'10'                    GET NEXT (LIST CTLG)            86350000
+CTGDISC  EQU   X'08'                    DISCONNECT (DELETE)             86400000
+CTGOVRID EQU   X'04'                    ERASE OVERRIDE (DELETE)         86450000
+CTGSCR   EQU   X'02'                    SCRATCH SPACE (DELETE)          86500000
+*    X'01' - RESERVED                                                   86550000
+*                                                                       86600000
+CTGOPTN3 DS    XL1                      THIRD OPTION INDICATOR          86650000
+CTGFUNC  EQU   X'E0'                    HIGH ORDER THREE BITS DEFINE    86700000
+*                                       FUNCTION                        86710000
+*   LOCATE     -   001* ****                                            86760000
+CTGLOC   EQU   X'20'                    LOCATE - BITS ON                86800000
+*   LSPACE     -   010* ****                                            86900000
+CTGLSP   EQU   X'40'                    LSPACE - BITS ON                86910000
+*   UPDATE     -   011* ****                                            86950000
+CTGUPDAT EQU   X'60'                    UPDATE - BITS ON                86960000
+*   CMS FUNCTION - 100* ****                                            87000000
+CTGCMS   EQU   X'80'                    CMS FUNCTION - BITS ON          87050000
+*                                                                       87150000
+CTGSUPLT EQU   X'10'                    SUPER LOCATE                    87200000
+CTGGDGL  EQU   X'08'                    GDG LOCATE FUNCTION (CTGWAGB IN 87250000
+*                                       CTGWA)                          87300000
+CTGSRH   EQU   X'04'                    0 - SEARCH MASTER CAT ONLY      87350000
+*                                       1 - SEARCH OS CAT FIRST         87400000
+CTGNUM   EQU   X'02'                    0 - SEARCH BOTH CATALOGS        87450000
+*                                       1 - SEARCH ONE CATALOG          87500000
+CTGAM0   EQU   X'01'                    VSAM REQ VERSUS NONVSAM         87550000
+*                                                                       87600000
+CTGOPTN4 DS    XL1                      FOURTH OPTION INDICATOR  Y02020 87650000
+CTGLBASE EQU   X'80'                    LOCATE GDG BASE ONLY            87750000
+CTGDOCAT EQU   X'40'                    DO NOT OPEN NEEDED CATLG        87800000
+CTGNPROF EQU   X'20'                    NO (RAC) PROFILE SHOULD BE      87810000
+*                                       DEFINED OR DELETED     @Z40RSRC 87820000
+CTGCOIN  EQU   X'10'                    CONTROLLER INTERCEPT REQUESTED  87860000
+*                                                              @ZA20773 87870000
+CTGBYPMT EQU   X'08'                    BYPASS SECURITY PROMPTING TO    87880000
+*                                       SYSTEM OPERATOR        @ZA07531 87890000
+CTGTIOT  EQU   X'04'                    CALLER OWNS SYSZTIOT EXCLUSIVE  87900000
+*                                                              @ZA20773 87910000
+*        BITS 7-8 RESERVED                                     @ZA20773 87920000
+CTGENT   DS    0A                       USER ENTRY ADDRESS OR POINTER   87950000
+*                                       TO VOLUME SERIAL NUMBER(LSPACE) 88000000
+CTGFVT   DS    A                        FVT ADDRESS (DEFINE, ALTER)     88050000
+CTGCAT   DS    0A                       CATALOG POINTER                 88100000
+*                                                                       88110000
+CTGCVOL  DS    A                        CVOL PTR (SUPER LOCATE)         88150000
+*                                                                       88160000
+CTGWKA   DS    A                        WORKAREA ADDRESS                88200000
+*                                                                       88210000
+CTGDSORG DS    CL2                      DATA SET ORG (SUPER LOCATE)     88250000
+*   BITS 0-4 DEFINE ORGANIZATION                                        88300000
+CTGOPTNS EQU   X'F8'                    TOP 5 BITS                      88310000
+*   DEFINE          - 0000 1*** **** ****                               88350000
+CTGDEFIN EQU   X'08'                    DEFINE                          88360000
+*   ALTER           - 0001 0*** **** ****                               88400000
+CTGALTER EQU   X'10'                    ALTER                           88410000
+*   DELETE          - 0001 1*** **** ****                               88450000
+CTGDELET EQU   X'18'                    DELETE                          88460000
+*   LIST CATALOG    - 0010 0*** **** ****                               88500000
+CTGLTCAT EQU   X'20'                    LIST CATALOG                    88550000
+*   CONVERTV        - 0011 0*** **** ****                               88600000
+CTGCNVTV EQU   X'30'                    CONVERTV                        88610000
+*   BITS 6-16 RESERVED                                                  88650000
+*                                                                       88700000
+CTGTYPE  DS    CL1                      ENTRY TYPE-LISTCAT,DELETE       88750000
+CTGTDATA EQU   C'D'                     DATA - D                        88800000
+CTGTINDX EQU   C'I'                     INDEX - I                       88850000
+CTGTALIN EQU   C'A'                     ALIEN - A                       88900000
+CTGTUCAT EQU   C'U'                     USER CATALOG - U                88950000
+CTGTVOL  EQU   C'V'                     VOLUME - V                      89000000
+CTGTCL   EQU   C'C'                     CLUSTER - C                     89050000
+CTGTMCAT EQU   C'M'                     MASTER CATALOG - M              89100000
+CTGTGBS  EQU   C'B'                     GDG BASE - B                    89150000
+CTGTANM  EQU   C'X'                     ALIAS BASE -X                   89200000
+CTGTPGSP EQU   C'P'                     PAGE SPACE - P                  89250000
+CTGTJES3 EQU   X'01'                    JES3 SUPERLOCATE REQUEST        89270000
+*                                                                       89300000
+CTGNOFLD DS    XL1                      NUMBER FIELD POINTERS           89350000
+CTGDDNM  DS    0A                       DD NAME ADDRESS                 89400000
+CTGNEWNM DS    0A                       NEWNAME ADDRESS - ALTER         89450000
+CTGFDBK  DS    XL2                      SUPER LOCATE FEEDBACK           89500000
+CTGFBFLG DS    0XL2                     SUPER LOCATE FLAGS              89550000
+CTGREAS1 DS    XL1                      HIGH ORDER BYTE ZERO            89560000
+CTGPAR   EQU   X'80'                    PARALLEL MOUNT - SUPER LOC      89600000
+CTGKEEP  EQU   X'40'                    FORCED KEEP = SUPER LOCATE      89650000
+CTGGDGB  EQU   X'20'                    GDG BASE LOCATED                89700000
+CTGNGDSN EQU   X'10'                    GDG NAME GENERATED              89750000
+CTGCLV   EQU   X'08'                    CANDIDATE VOLUME LIST  @ZA76423 89770000
+*        6-8  RESERVED                                         @ZA76423 89790000
+CTGREAS2 DS    XL1                      REASON CODE LOW BYTE            89810000
+*                                                                       89850000
+CTGJSCB  DS    0A                       JSCB ADDRESS                    89900000
+CTGPSWD  DS    A                        PASSWORD ADDRESS                89950000
+CTGFIELD DS    A                        FIELD POINTERS - MAY BE MORE    90000000
+*                                       THAN ONE                        90050000
+CTGPLLEN EQU   *-CTGPL                  LENGTH OF CTG WITH ONE FIELD    90100000
+*                                       POINTER                         90150000
+         MEND                                                           90200000
+* */ %CTGPLX02:;                                                        90250000
+//*
 //*  Installs RAKF.PTFS
 //*
 //STEP1   EXEC PGM=PDSLOAD,PARM='UPDTE(><)'
