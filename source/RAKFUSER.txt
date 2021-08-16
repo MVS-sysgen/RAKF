@@ -1,26 +1,26 @@
-         TITLE 'ESG-SECURITY USERID TABLE LOADER'                       00010011
-* CPARM='XREF(SHORT)',LPARM='AC=1'                            CJYRUIDS  00020012
-*      DD DSN=SYS1.MACLIB,DISP=SHR                                      00030010
-*      DD DSN=SYS1.MODGEN,DISP=SHR                                      00040010
-*      DD DSN=SYS3.SAF.PARMLIB,DISP=SHR                                 00050010
-         EJECT                                                          00060010
+         TITLE 'ESG-SECURITY USERID TABLE LOADER'                       00010000
+* CPARM='XREF(SHORT)',LPARM='AC=1'                            CJYRUIDS  00020000
+*      DD DSN=SYS1.MACLIB,DISP=SHR                                      00030000
+*      DD DSN=SYS1.MODGEN,DISP=SHR                                      00040000
+*      DD DSN=SYS3.SAF.PARMLIB,DISP=SHR                                 00050000
+         EJECT                                                          00060000
 CJYRUIDS CSECT                                                          00070000
-*                                                                       00080013
-**********************************************************************  00090013
-*                                                                    *  00100013
-*    COPYRIGHT (C) 1991 BY CRAIG J. YASUNA.  ALL RIGHTS RESERVED.    *  00110013
-*                                                                    *  00120013
-*    THIS SOFTWARE PRODUCT OR ANY OF ITS COMPONENTS MUST NOT BE      *  00130013
-*    SOLD, GIVEN, OR OTHERWISE DISTRIBUTED TO ANY OTHER COMPANY      *  00140013
-*    WITHOUT THE PRIOR WRITTEN PERMISSION OF:                        *  00150013
-*                                                                    *  00160013
-*                                  CRAIG J. YASUNA, PRESIDENT        *  00170013
-*                                  ENTERPRISE SYSTEMS GROUP          *  00180013
-*                                  2 MARC COURT                      *  00190013
-*                                  EDISON, NEW JERSEY 08820          *  00200013
-*                                                                    *  00210013
-**********************************************************************  00220013
-*                                                                       00230013
+*                                                                       00080000
+**********************************************************************  00090000
+*                                                                    *  00100000
+*    COPYRIGHT (C) 1991 BY CRAIG J. YASUNA.  ALL RIGHTS RESERVED.    *  00110000
+*                                                                    *  00120000
+*    THIS SOFTWARE PRODUCT OR ANY OF ITS COMPONENTS MUST NOT BE      *  00130000
+*    SOLD, GIVEN, OR OTHERWISE DISTRIBUTED TO ANY OTHER COMPANY      *  00140000
+*    WITHOUT THE PRIOR WRITTEN PERMISSION OF:                        *  00150000
+*                                                                    *  00160000
+*                                  CRAIG J. YASUNA, PRESIDENT        *  00170000
+*                                  ENTERPRISE SYSTEMS GROUP          *  00180000
+*                                  2 MARC COURT                      *  00190000
+*                                  EDISON, NEW JERSEY 08820          *  00200000
+*                                                                    *  00210000
+**********************************************************************  00220000
+*                                                                       00230000
          SAVE   (14,12),,CJYRUIDS_&SYSDATE._&SYSTIME                    00240000
          LR     R12,R15             USE ENTRY AS BASE                   00250000
          USING  CJYRUIDS,R12        " " "                               00260000
@@ -29,37 +29,37 @@ CJYRUIDS CSECT                                                          00070000
          ST     R2,8(R13)           SAVE OUR AREA                       00290000
          LR     R13,R2              LOAD REGISTER 13 WITH SAVEAREA      00300000
 *                                                                       00310000
-         L      R8,FLCCVT-PSA(0)    GET CVT ADDR                        00320001
+         L      R8,FLCCVT-PSA(0)    GET CVT ADDR                        00320000
          ICM    R8,B'1111',CVTRAC-CVTMAP(R8) GET RCVT ADDR, IS IT 0?    00330000
-         BZ     ABEND100             Y - CJYRCVT FAILED, GO TO ABEND    00340001
+         BZ     ABEND100             Y - CJYRCVT FAILED, GO TO ABEND    00340000
          ICM    R8,B'1111',RCVTISTL-RCVT(R8) GET OUR POINTER, IS IT 0?  00350000
-         BZ     ABEND100             YES, ABEND                         00360001
-         ENQ    (SECURITY,USERS,E,,SYSTEM)                              00370001
+         BZ     ABEND100             YES, ABEND                         00360000
+         ENQ    (SECURITY,USERS,E,,SYSTEM)                              00370000
          OPEN   (CJYUDATA,(INPUT))  OPEN INPUT FILE                     00380000
-         MODESET MODE=SUP,KEY=ZERO  authorize ourselves                 00390382
-*                                                                       00400001
+         MODESET MODE=SUP,KEY=ZERO  authorize ourselves                 00390000
+*                                                                       00400000
 READLOOP GET    CJYUDATA,RECORD     GET RECORD                          00410000
-         CLC    USERID,OLDUSER      IS INPUT IN SORT SEQUENCE?          00420001
-         BE     NEWGROUP               OK ---                           00430001
-         CLI    USERID,C' '         UID?                                00440003
-         BE     ABEND2               NO ---                             00450001
-         CLI    PASSWORD,C' '       PSWD?                               00460003
-         BE     ABEND2               NO ---                             00470003
-         CLI    GROUP,C' '          GROUP.                              00480003
-         BE     ABEND2               NO ---                             00490003
-         CLI    OPERFLAG,C'Y'       FLAG ??                             00500001
-         BE     RECOK                RECORD OK                          00510001
-         CLI    OPERFLAG,C'N'       FLAG ??                             00520001
-         BNE    ABEND2               TOUGH                              00530001
-*                                                                       00540001
-RECOK    MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00550003
-         GETMAIN RU,LV=CBLKL,SP=241 GET AREA IN CSA                     00560003
+         CLC    USERID,OLDUSER      IS INPUT IN SORT SEQUENCE?          00420000
+         BE     NEWGROUP               OK ---                           00430000
+         CLI    USERID,C' '         UID?                                00440000
+         BE     ABEND2               NO ---                             00450000
+         CLI    PASSWORD,C' '       PSWD?                               00460000
+         BE     ABEND2               NO ---                             00470000
+         CLI    GROUP,C' '          GROUP.                              00480000
+         BE     ABEND2               NO ---                             00490000
+         CLI    OPERFLAG,C'Y'       FLAG ??                             00500000
+         BE     RECOK                RECORD OK                          00510000
+         CLI    OPERFLAG,C'N'       FLAG ??                             00520000
+         BNE    ABEND2               TOUGH                              00530000
+*                                                                       00540000
+RECOK    MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00550000
+         GETMAIN RU,LV=CBLKL,SP=241 GET AREA IN CSA                     00560000
          LR     R5,R1               GM AREA ADDR TO WORK REG.           00570000
          USING  CBLK,R5             HELLO BALL ---                      00580000
          XC     CBLK(CBLKL),CBLK    CLEAR TO B'0'                       00590000
          MVC    CBLKNEXT,LASTGM     GET PREV GETMAINED ADDR.            00600000
          ST     R5,LASTGM           SAVE ADDR OF GM AREA.               00610000
-         LA     R7,CBLKGRPS        POINTER FOR GROUP                    00620003
+         LA     R7,CBLKGRPS        POINTER FOR GROUP                    00620000
 *                                                                       00630000
          LA     R1,8               MAX                                  00640000
          TRT    USERID,TRTBLANK    FIND BLANK                           00650000
@@ -67,13 +67,13 @@ RECOK    MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00550003
          S      R1,=A(USERID)      SUBTRACT BEGINNING                   00670000
 MOVEUID  STC    R1,CBLKUSRL        SAVE LENGTH                          00680000
          MVC    CBLKUSRI,USERID    MOVE USERID                          00690000
-*                                                                       00700003
-         LA     R1,8               MAX                                  00710003
-         TRT    GROUP,TRTBLANK     FIND BLANK                           00720003
-         BZ     MOVEGRP            GO MOVE GROUP                        00730003
-         S      R1,=A(GROUP)       SUBTRACT BEGINNING                   00740003
-MOVEGRP  STC    R1,CBLKGRPL        SAVE LENGTH                          00750003
-         MVC    CBLKGRPN,GROUP     MOVE GROUP                           00760003
+*                                                                       00700000
+         LA     R1,8               MAX                                  00710000
+         TRT    GROUP,TRTBLANK     FIND BLANK                           00720000
+         BZ     MOVEGRP            GO MOVE GROUP                        00730000
+         S      R1,=A(GROUP)       SUBTRACT BEGINNING                   00740000
+MOVEGRP  STC    R1,CBLKGRPL        SAVE LENGTH                          00750000
+         MVC    CBLKGRPN,GROUP     MOVE GROUP                           00760000
 *                                                                       00770000
          LA     R1,8               MAX                                  00780000
          TRT    PASSWORD,TRTBLANK  FIND BLANK                           00790000
@@ -84,130 +84,130 @@ MOVEPSW  STC    R1,CBLKPWDL        SAVE LENGTH                          00820000
          BCTR   R1,0               LENGTH OF PSWD - 1 FOR EX.           00840000
          EX     R1,SCRAMBLE        SCRABLE PSWD                         00850000
          MVC    CBLKFLG1,OPERFLAG  MOVE OPER FLAG TO ENTRY.             00860000
-*                                                                       00870003
-         B      ADDGROUP           ADD CONNECTS                         00880005
-*                                                                       00890005
-SCRAMBLE XC     CBLKPWDE(0),=C'SECURITY'  SCRAMBLE PSWD                 00900001
+*                                                                       00870000
+         B      ADDGROUP           ADD CONNECTS                         00880000
+*                                                                       00890000
+SCRAMBLE XC     CBLKPWDE(0),=C'SECURITY'  SCRAMBLE PSWD                 00900000
 *                                                                       00910000
-NEWGROUP CLC    GROUP,OLDGROUP      IS INPUT IN SORT SEQUENCE?          00920001
-         BNH    ABEND2                 N - TELL ABOUT IT                00930001
-         MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00940004
-ADDGROUP GETMAIN RU,LV=CONNL,SP=241 GET AREA IN CSA                     00950005
-         LR     R6,R1              GM AREA ADDR TO WORK REG.            00960001
-         USING  CONNGRUP,R6        HELLO BALL ---                       00970001
-         XC     CONNGRUP(CONNL),CONNGRUP CLEAR AREA                     00980002
-         ST     R6,0(R7)           SAVE IN LAST POINTER                 00990001
-         LA     R7,CONNNEXT        SAVE FOR NEXT TIME                   01000001
-*                                                                       01010001
-         LA     R1,8               MAX                                  01020001
-         TRT    GROUP,TRTBLANK     FIND BLANK                           01030001
-         BZ     MOVECONN           GO MOVE GROUP                        01040003
-         S      R1,=A(GROUP)       SUBTRACT BEGINNING                   01050001
-MOVECONN STC    R1,CONNGRPL        SAVE LENGTH                          01060003
-         MVC    CONNGRPN,GROUP     MOVE GROUP                           01070001
-*                                                                       01080006
-         CLI    DFLTGRPF,C'*'      DEFAULT FLAG SET?                    01090006
-         BNE    READLOOP           NO, DON'T MOVE                       01100006
-         STC    R1,CBLKGRPL        SAVE LENGTH                          01110006
-         MVC    CBLKGRPN,GROUP     MOVE GROUP                           01120006
-         B      READLOOP           READ NEXT RECORD.                    01130001
-*                                                                       01140001
-ENDDATA  OC     OLDUSER,OLDUSER    EMPTY INPUT FILE?                    01150001
-         BZ     ABEND300              Y - TELL ABOUT IT AND TERMINATE.  01160001
-         L      R4,CJYUSERS-CJYRCVTD(R8)       GET OLD TABLE PTR        01170001
+NEWGROUP CLC    GROUP,OLDGROUP      IS INPUT IN SORT SEQUENCE?          00920000
+         BNH    ABEND2                 N - TELL ABOUT IT                00930000
+         MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00940000
+ADDGROUP GETMAIN RU,LV=CONNL,SP=241 GET AREA IN CSA                     00950000
+         LR     R6,R1              GM AREA ADDR TO WORK REG.            00960000
+         USING  CONNGRUP,R6        HELLO BALL ---                       00970000
+         XC     CONNGRUP(CONNL),CONNGRUP CLEAR AREA                     00980000
+         ST     R6,0(R7)           SAVE IN LAST POINTER                 00990000
+         LA     R7,CONNNEXT        SAVE FOR NEXT TIME                   01000000
+*                                                                       01010000
+         LA     R1,8               MAX                                  01020000
+         TRT    GROUP,TRTBLANK     FIND BLANK                           01030000
+         BZ     MOVECONN           GO MOVE GROUP                        01040000
+         S      R1,=A(GROUP)       SUBTRACT BEGINNING                   01050000
+MOVECONN STC    R1,CONNGRPL        SAVE LENGTH                          01060000
+         MVC    CONNGRPN,GROUP     MOVE GROUP                           01070000
+*                                                                       01080000
+         CLI    DFLTGRPF,C'*'      DEFAULT FLAG SET?                    01090000
+         BNE    READLOOP           NO, DON'T MOVE                       01100000
+         STC    R1,CBLKGRPL        SAVE LENGTH                          01110000
+         MVC    CBLKGRPN,GROUP     MOVE GROUP                           01120000
+         B      READLOOP           READ NEXT RECORD.                    01130000
+*                                                                       01140000
+ENDDATA  OC     OLDUSER,OLDUSER    EMPTY INPUT FILE?                    01150000
+         BZ     ABEND300              Y - TELL ABOUT IT AND TERMINATE.  01160000
+         L      R4,CJYUSERS-CJYRCVTD(R8)       GET OLD TABLE PTR        01170000
          MVC    CJYUSERS-CJYRCVTD(,R8),LASTGM  UPDATE PTR TO NEW TABLE  01180000
          B      ANYMORE                        GO CHK FOR ANY ENTRIES.  01190000
-*                                      N - FALL THROUGH                 01200001
-FREELOOP L      R4,CBLKNEXT        LOOP THRU OLD TABLE                  01210001
-         L      R7,CBLKGRPS-CBLK(R5)  GROUP LOOP                        01220002
-         B      FREECON2                                                01230002
-FREECONN L      R7,CONNNEXT        LOOP THRU OLD TABLE                  01240002
-         FREEMAIN RU,LV=CONNL,A=(R6),SP=241 FREE CURRENT ENTRY.         01250002
-FREECON2 LTR    R6,R7              MORE ENTRIES?                        01260002
-         BNZ    FREECONN               Y - NEXT ENTRY                   01270002
-         FREEMAIN RU,LV=CBLKL,A=(R5),SP=241 FREE CURRENT ENTRY.         01280001
-ANYMORE  LTR    R5,R4              MORE ENTRIES?                        01290001
-         BNZ    FREELOOP               Y - NEXT ENTRY                   01300001
+*                                      N - FALL THROUGH                 01200000
+FREELOOP L      R4,CBLKNEXT        LOOP THRU OLD TABLE                  01210000
+         L      R7,CBLKGRPS-CBLK(R5)  GROUP LOOP                        01220000
+         B      FREECON2                                                01230000
+FREECONN L      R7,CONNNEXT        LOOP THRU OLD TABLE                  01240000
+         FREEMAIN RU,LV=CONNL,A=(R6),SP=241 FREE CURRENT ENTRY.         01250000
+FREECON2 LTR    R6,R7              MORE ENTRIES?                        01260000
+         BNZ    FREECONN               Y - NEXT ENTRY                   01270000
+         FREEMAIN RU,LV=CBLKL,A=(R5),SP=241 FREE CURRENT ENTRY.         01280000
+ANYMORE  LTR    R5,R4              MORE ENTRIES?                        01290000
+         BNZ    FREELOOP               Y - NEXT ENTRY                   01300000
 *                                                                       01310000
-         TM     TERMFLAG,TERMABND  WAS AN ABEND REQUESTED?              01320001
-         BO     ABEND200               Y-ABEND                          01330001
-BYEBYE   MODESET MODE=PROB,KEY=NZERO   return to problem state          01333382
-         CLOSE (CJYUDATA)              close input dataset              01337382
-         WTO    'RAKFUIDS4  USER TABLE UPDATED'                         01340382
-         L      R13,SAVEAREA+4     LOAD CALLER'S SAVE AREA ADDR         01350000
-         RETURN (14,12),RC=0                                            01360000
-*                                                                       01370001
-ABEND100 WTO    'RAKFUIDS1  RCVT NOT PROPERLY INITIALIZED',DESC=(2)     01380380
-         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01390380
-         ABEND  100,,STEP                                               01400001
-*                                                                       01410001
-ABEND2   WTO    'RAKFUIDS2  INPUT DATA INVALID OR OUT OF SEQ.',DESC=(2) 01420380
-         MVC    PASSWORD,=C'********'                                   01430001
-         MVC    BADMSG+8(80),RECORD                                     01440001
-BADMSG   WTO    '                                                      X01450001
-                                           ',DESC=(2)                   01460001
-         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01470380
-         OI     TERMFLAG,TERMABND          SET TO ABEND @ TERMINATION   01480001
-         LR     R4,R5                      GET LAST GM AREA ADDR AND    01490001
-         B      ANYMORE                    GO CLEAN THE GM CHAIN.       01500001
-*                                                                       01510001
-ABEND200 ABEND  200,,STEP              Y - ABEND !                      01520001
-*                                                                       01530001
-ABEND300 WTO    'RAKFUIDS3  EMPTY INPUT FILE ?!?!',DESC=(2)             01540380
-         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01550380
-         ABEND  300,,STEP                                               01560001
-*                                                                       01570001
-TRTBLANK DC     XL256'00'          TABLE FOR TRT                        01580000
-         ORG    TRTBLANK+C' '      BLANK                                01590000
-         DC     X'04'                                                   01600000
-         ORG                                                            01610000
-*                                                                       01620000
-         PRINT  NOGEN                                                   01630000
-CJYUDATA DCB    DDNAME=RAKFUSER,MACRF=GM,EODAD=ENDDATA,DSORG=PS         01640382
-*                                                                       01650000
-SAVEAREA DS     18F                                                     01660000
-LASTGM   DC     F'0'                                                    01670000
-SECURITY DC     CL8'CJYRCVT'                                            01680000
-USERS    DC     CL8'CJYUSRS'                                            01690000
-TERMFLAG DC     X'00'                                                   01700000
-TERMABND EQU    X'01'                                                   01710000
-RECORD   DS     0XL80                                                   01720000
-USERID   DS     CL8                                                     01730000
-DFLTGRPF DS     X                  DEFAULT GROUP FLAG                   01740007
-GROUP    DS     CL8                                                     01750000
-         DS     X                                                       01760007
-PASSWORD DS     CL8                                                     01770000
-         DS     X                                                       01780001
-*                                                                       01790001
-OPERFLAG DS     X                                                       01800000
-         DS     XL(80-(*-RECORD))                                       01810000
-OLDREC   DS     0XL80                                                   01820000
-OLDUSER  DS     CL8                                                     01830000
-         DS     X                                                       01840001
-OLDGROUP DS     CL8                                                     01850000
-         DS     XL(80-(*-OLDREC))                                       01860001
-*                                                                       01870000
-R0       EQU    00                                                      01880000
-R1       EQU    01                                                      01890000
-R2       EQU    02                                                      01900000
-R3       EQU    03                                                      01910000
-R4       EQU    04                                                      01920000
-R5       EQU    05                                                      01930000
-R6       EQU    06                                                      01940000
-R7       EQU    07                                                      01950000
-R8       EQU    08                                                      01960000
-R9       EQU    09                                                      01970000
-R10      EQU    10                                                      01980000
-R11      EQU    11                                                      01990000
-R12      EQU    12                                                      02000000
-R13      EQU    13                                                      02010000
-R14      EQU    14                                                      02020000
-R15      EQU    15                                                      02030000
-*                                                                       02040000
-         COPY    CJYRCVTD                                               02050000
-         COPY    CJYUCBLK                                               02060000
-         ICHPRCVT                                                       02070000
-         CVT     DSECT=YES                                              02080000
-         IHAPSA  DSECT=YES                                              02090380
-*                                                                       02100000
-         END                                                            02110000
+         TM     TERMFLAG,TERMABND  WAS AN ABEND REQUESTED?              01320000
+         BO     ABEND200               Y-ABEND                          01330000
+BYEBYE   MODESET MODE=PROB,KEY=NZERO   return to problem state          01340000
+         CLOSE (CJYUDATA)              close input dataset              01350000
+         WTO    'RAKFUIDS4  USER TABLE UPDATED'                         01360000
+         L      R13,SAVEAREA+4     LOAD CALLER'S SAVE AREA ADDR         01370000
+         RETURN (14,12),RC=0                                            01380000
+*                                                                       01390000
+ABEND100 WTO    'RAKFUIDS1  RCVT NOT PROPERLY INITIALIZED',DESC=(2)     01400000
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01410000
+         ABEND  100,,STEP                                               01420000
+*                                                                       01430000
+ABEND2   WTO    'RAKFUIDS2  INPUT DATA INVALID OR OUT OF SEQ.',DESC=(2) 01440000
+         MVC    PASSWORD,=C'********'                                   01450000
+         MVC    BADMSG+8(80),RECORD                                     01460000
+BADMSG   WTO    '                                                      X01470000
+                                           ',DESC=(2)                   01480000
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01490000
+         OI     TERMFLAG,TERMABND          SET TO ABEND @ TERMINATION   01500000
+         LR     R4,R5                      GET LAST GM AREA ADDR AND    01510000
+         B      ANYMORE                    GO CLEAN THE GM CHAIN.       01520000
+*                                                                       01530000
+ABEND200 ABEND  200,,STEP              Y - ABEND !                      01540000
+*                                                                       01550000
+ABEND300 WTO    'RAKFUIDS3  EMPTY INPUT FILE ?!?!',DESC=(2)             01560000
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01570000
+         ABEND  300,,STEP                                               01580000
+*                                                                       01590000
+TRTBLANK DC     XL256'00'          TABLE FOR TRT                        01600000
+         ORG    TRTBLANK+C' '      BLANK                                01610000
+         DC     X'04'                                                   01620000
+         ORG                                                            01630000
+*                                                                       01640000
+         PRINT  NOGEN                                                   01650000
+CJYUDATA DCB    DDNAME=RAKFUSER,MACRF=GM,EODAD=ENDDATA,DSORG=PS         01660000
+*                                                                       01670000
+SAVEAREA DS     18F                                                     01680000
+LASTGM   DC     F'0'                                                    01690000
+SECURITY DC     CL8'CJYRCVT'                                            01700000
+USERS    DC     CL8'CJYUSRS'                                            01710000
+TERMFLAG DC     X'00'                                                   01720000
+TERMABND EQU    X'01'                                                   01730000
+RECORD   DS     0XL80                                                   01740000
+USERID   DS     CL8                                                     01750000
+DFLTGRPF DS     X                  DEFAULT GROUP FLAG                   01760000
+GROUP    DS     CL8                                                     01770000
+         DS     X                                                       01780000
+PASSWORD DS     CL8                                                     01790000
+         DS     X                                                       01800000
+*                                                                       01810000
+OPERFLAG DS     X                                                       01820000
+         DS     XL(80-(*-RECORD))                                       01830000
+OLDREC   DS     0XL80                                                   01840000
+OLDUSER  DS     CL8                                                     01850000
+         DS     X                                                       01860000
+OLDGROUP DS     CL8                                                     01870000
+         DS     XL(80-(*-OLDREC))                                       01880000
+*                                                                       01890000
+R0       EQU    00                                                      01900000
+R1       EQU    01                                                      01910000
+R2       EQU    02                                                      01920000
+R3       EQU    03                                                      01930000
+R4       EQU    04                                                      01940000
+R5       EQU    05                                                      01950000
+R6       EQU    06                                                      01960000
+R7       EQU    07                                                      01970000
+R8       EQU    08                                                      01980000
+R9       EQU    09                                                      01990000
+R10      EQU    10                                                      02000000
+R11      EQU    11                                                      02010000
+R12      EQU    12                                                      02020000
+R13      EQU    13                                                      02030000
+R14      EQU    14                                                      02040000
+R15      EQU    15                                                      02050000
+*                                                                       02060000
+         COPY    CJYRCVTD                                               02070000
+         COPY    CJYUCBLK                                               02080000
+         ICHPRCVT                                                       02090000
+         CVT     DSECT=YES                                              02100000
+         IHAPSA  DSECT=YES                                              02110000
+*                                                                       02120000
+         END                                                            02130000

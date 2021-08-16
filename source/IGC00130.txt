@@ -1,73 +1,73 @@
-         TITLE 'ESG-SECURITY  SVC 130'                                  00010015
-* CPARM='XREF(SHORT),OBJ,NODECK,RENT',LPARM='RENT'            RAKF0130  00020382
-*      DD DSN=SYS1.MACLIB,DISP=SHR                                      00030015
-*      DD DSN=SYS1.MODGEN,DISP=SHR                                      00040015
-         EJECT                                                          00080015
-RAKF0130 CSECT                                                          00090382
-*                                                                       00100017
-**********************************************************************  00110017
-*                                                                    *  00120017
-*    COPYRIGHT (C) 1991 BY CRAIG J. YASUNA.  ALL RIGHTS RESERVED.    *  00130017
-*                                                                    *  00140017
-*    THIS SOFTWARE PRODUCT OR ANY OF ITS COMPONENTS MUST NOT BE      *  00150017
-*    SOLD, GIVEN, OR OTHERWISE DISTRIBUTED TO ANY OTHER COMPANY      *  00160017
-*    WITHOUT THE PRIOR WRITTEN PERMISSION OF:                        *  00170017
-*                                                                    *  00180017
-*                                  CRAIG J. YASUNA, PRESIDENT        *  00190017
-*                                  ENTERPRISE SYSTEMS GROUP          *  00200017
-*                                  2 MARC COURT                      *  00210017
-*                                  EDISON, NEW JERSEY 08820          *  00220017
-*                                                                    *  00230017
-**********************************************************************  00240017
-*                                                                       00250017
-         USING RAKF0130,R6         SVC ENTRY R6 = EP.                   00260382
-         LR    R9,R1               SAVE ENTRY REG.                      00270010
-         LR    R8,R14              SAVE RETURN REG.                     00280010
-         GETMAIN RC,LV=GMLEN       GET STORAGE                          00290010
-         LR    R13,R1              LOAD REGISTER 13 WITH GETMAINED PTR  00300010
-         USING WORKAREA,R13        SET UP DATA DSECT ADDR.              00310010
-         MVC   RACRGM,RACRREAL     MOVE RACROUTE                        00320010
-*                                                                       00400010
-         L     R15,PSATOLD-PSA(0)  ADDRESS TCB                          00410382
-         L     R15,TCBRBP-TCB(R15) ADDRESS RB                           00420010
-         XR    R14,R14             CLEAR R14                            00430010
-         ICM   R14,B'0111',RBLINKB-RBSECT(R15) PRIOR RB                 00440010
-*                                                                       00470010
-         LR    R10,R9              SAVE ENTRY REG.                      00480010
-         ICM   R10,B'1000',=X'00'  CLEAR HIGH ORDER OF PARM ADDR.       00490010
-         MVC   RACRGM+RACRLEN-RACCLEN(RACCLEN),0(R10) MOVE PARM         00500010
-         NC    RACRGM+RACRLEN-RACCLEN+16(40),=10X'00FFFFFF'             00510010
-STRTSAFR LA    R5,SAFWORK          FOR SAF                              00550010
-         RACROUTE REQUEST=AUTH,WORKA=(R5),MF=(E,RACRGM)                 00560010
-         L     R3,RACRGM           RACHECK RETURN CODE                  00570010
-         L     R4,RACRGM+4         RACHECK REASON CODE                  00580010
-*                                                                       00650010
-RTRNFREE FREEMAIN RC,LV=GMLEN,A=(R13)                                   00660010
-         LR    R15,R3              RETURN CODE                          00670010
-         LR    R0,R4               REASON CODE                          00680010
-         LR    R1,R9               RETURN R1                            00690010
-         USING ACHKLIST,R9         RACHECK parameter list               00691382
-         TM    ACHKFLG1,ACHKCSA    profile to be returned in CSA?       00693382
-         BNO   RETURN              no  --> exit                         00695382
-         XR    R1,R1               yes --> return zero address to       00697382
-*                                          signal unsupported function  00699382
-RETURN   BR    R8                  RETURN TO ORIG. R14                  00700382
-         LTORG                                                          00710010
-RACRREAL RACROUTE REQUEST=AUTH,MF=L                                     00720010
-RACRLEN  EQU   *-RACRREAL                                               00730010
-RACHECK  RACHECK MF=L              THIS IS JUST FOR THE LENGTH          00740010
-RACCLEN  EQU   *-RACHECK                                                00750010
-*                                                                       00760010
-WORKAREA DSECT                                                          00770010
-SAVEAREA DS     18F                                                     00780010
-SAFWORK  DS     XL512                                                   00790010
-RACRGM   DS     XL(RACRLEN)                                             00800010
-GMLEN    EQU    *-WORKAREA                                              00810010
-         PRINT  NOGEN                                                   00820010
-         YREGS                                                          00830010
-         CVT     DSECT=YES,LIST=NO                                      00840010
-         IHAPSA  DSECT=YES                                              00850380
-         IKJRB   DSECT=YES                                              00860380
-         IKJTCB  DSECT=YES,LIST=NO                                      00870010
-         ICHACHKL                                                       00890382
-         END                                                            00920010
+         TITLE 'ESG-SECURITY  SVC 130'                                  00010000
+* CPARM='XREF(SHORT),OBJ,NODECK,RENT',LPARM='RENT'            RAKF0130  00020000
+*      DD DSN=SYS1.MACLIB,DISP=SHR                                      00030000
+*      DD DSN=SYS1.MODGEN,DISP=SHR                                      00040000
+         EJECT                                                          00050000
+RAKF0130 CSECT                                                          00060000
+*                                                                       00070000
+**********************************************************************  00080000
+*                                                                    *  00090000
+*    COPYRIGHT (C) 1991 BY CRAIG J. YASUNA.  ALL RIGHTS RESERVED.    *  00100000
+*                                                                    *  00110000
+*    THIS SOFTWARE PRODUCT OR ANY OF ITS COMPONENTS MUST NOT BE      *  00120000
+*    SOLD, GIVEN, OR OTHERWISE DISTRIBUTED TO ANY OTHER COMPANY      *  00130000
+*    WITHOUT THE PRIOR WRITTEN PERMISSION OF:                        *  00140000
+*                                                                    *  00150000
+*                                  CRAIG J. YASUNA, PRESIDENT        *  00160000
+*                                  ENTERPRISE SYSTEMS GROUP          *  00170000
+*                                  2 MARC COURT                      *  00180000
+*                                  EDISON, NEW JERSEY 08820          *  00190000
+*                                                                    *  00200000
+**********************************************************************  00210000
+*                                                                       00220000
+         USING RAKF0130,R6         SVC ENTRY R6 = EP.                   00230000
+         LR    R9,R1               SAVE ENTRY REG.                      00240000
+         LR    R8,R14              SAVE RETURN REG.                     00250000
+         GETMAIN RC,LV=GMLEN       GET STORAGE                          00260000
+         LR    R13,R1              LOAD REGISTER 13 WITH GETMAINED PTR  00270000
+         USING WORKAREA,R13        SET UP DATA DSECT ADDR.              00280000
+         MVC   RACRGM,RACRREAL     MOVE RACROUTE                        00290000
+*                                                                       00300000
+         L     R15,PSATOLD-PSA(0)  ADDRESS TCB                          00310000
+         L     R15,TCBRBP-TCB(R15) ADDRESS RB                           00320000
+         XR    R14,R14             CLEAR R14                            00330000
+         ICM   R14,B'0111',RBLINKB-RBSECT(R15) PRIOR RB                 00340000
+*                                                                       00350000
+         LR    R10,R9              SAVE ENTRY REG.                      00360000
+         ICM   R10,B'1000',=X'00'  CLEAR HIGH ORDER OF PARM ADDR.       00370000
+         MVC   RACRGM+RACRLEN-RACCLEN(RACCLEN),0(R10) MOVE PARM         00380000
+         NC    RACRGM+RACRLEN-RACCLEN+16(40),=10X'00FFFFFF'             00390000
+STRTSAFR LA    R5,SAFWORK          FOR SAF                              00400000
+         RACROUTE REQUEST=AUTH,WORKA=(R5),MF=(E,RACRGM)                 00410000
+         L     R3,RACRGM           RACHECK RETURN CODE                  00420000
+         L     R4,RACRGM+4         RACHECK REASON CODE                  00430000
+*                                                                       00440000
+RTRNFREE FREEMAIN RC,LV=GMLEN,A=(R13)                                   00450000
+         LR    R15,R3              RETURN CODE                          00460000
+         LR    R0,R4               REASON CODE                          00470000
+         LR    R1,R9               RETURN R1                            00480000
+         USING ACHKLIST,R9         RACHECK parameter list               00490000
+         TM    ACHKFLG1,ACHKCSA    profile to be returned in CSA?       00500000
+         BNO   RETURN              no  --> exit                         00510000
+         XR    R1,R1               yes --> return zero address to       00520000
+*                                          signal unsupported function  00530000
+RETURN   BR    R8                  RETURN TO ORIG. R14                  00540000
+         LTORG                                                          00550000
+RACRREAL RACROUTE REQUEST=AUTH,MF=L                                     00560000
+RACRLEN  EQU   *-RACRREAL                                               00570000
+RACHECK  RACHECK MF=L              THIS IS JUST FOR THE LENGTH          00580000
+RACCLEN  EQU   *-RACHECK                                                00590000
+*                                                                       00600000
+WORKAREA DSECT                                                          00610000
+SAVEAREA DS     18F                                                     00620000
+SAFWORK  DS     XL512                                                   00630000
+RACRGM   DS     XL(RACRLEN)                                             00640000
+GMLEN    EQU    *-WORKAREA                                              00650000
+         PRINT  NOGEN                                                   00660000
+         YREGS                                                          00670000
+         CVT     DSECT=YES,LIST=NO                                      00680000
+         IHAPSA  DSECT=YES                                              00690000
+         IKJRB   DSECT=YES                                              00700000
+         IKJTCB  DSECT=YES,LIST=NO                                      00710000
+         ICHACHKL                                                       00720000
+         END                                                            00730000

@@ -1,271 +1,271 @@
-         TITLE 'ESG-SECURITY DATA PROFILE PROCESSOR'                    00010004
-* CPARM='XREF(SHORT),OBJ,NODECK',LPARM='AC=1'                 CJYRPROF  00020008
-*      DD DSN=SYS1.MACLIB,DISP=SHR                                      00030006
-*      DD DSN=SYS1.MODGEN,DISP=SHR                                      00040006
-*      DD DSN=SYS3.SAF.PARMLIB,DISP=SHR                                 00050006
-         EJECT                                                          00051006
-         MACRO                                                          00054380
-&LABEL   BASMAC &R1,&S2                                                 00055382
-&LABEL.  DC    0XL4'00',X'4D',AL.4(&R1.,0),S(&S2.)                      00056380
-         MEND                                                           00057380
-CJYRPROF CSECT                                                          00060001
-*                                                                       00060109
-**********************************************************************  00060209
-*                                                                    *  00060309
-*    COPYRIGHT (C) 1991 BY CRAIG J. YASUNA.  ALL RIGHTS RESERVED.    *  00060409
-*                                                                    *  00060509
-*    THIS SOFTWARE PRODUCT OR ANY OF ITS COMPONENTS MUST NOT BE      *  00060609
-*    SOLD, GIVEN, OR OTHERWISE DISTRIBUTED TO ANY OTHER COMPANY      *  00060709
-*    WITHOUT THE PRIOR WRITTEN PERMISSION OF:                        *  00060809
-*                                                                    *  00060909
-*                                  CRAIG J. YASUNA, PRESIDENT        *  00061009
-*                                  ENTERPRISE SYSTEMS GROUP          *  00061109
-*                                  2 MARC COURT                      *  00061209
-*                                  EDISON, NEW JERSEY 08820          *  00061309
-*                                                                    *  00061409
-**********************************************************************  00062009
-*                                                                       00070009
-         SAVE  (14,12),,CJYRPROF_&SYSDATE._&SYSTIME._                   00230001
-         LR    R12,R15                 SETUP BASE REG.                  00240001
-         USING CJYRPROF,R12            ESTABLISH ADDRESSABILITY         00250001
-         LA    R11,SAVEAREA            OUR SAVEAREA                     00260001
-         ST    R13,SAVEAREA+4          SAVE HIGH SAVEAREA               00270001
-         ST    R11,8(R13)              SAVE LOW SAVEAREA                00280001
-         LR    R13,R11                 POINT TO OUR SAVEAREA            00290001
-         L     R8,FLCCVT-PSA(R0)       GET CVT POINTER                  00300001
-         ICM   R8,B'1111',CVTRAC-CVTMAP(R8) IS RCVT POINTER ZERO?       00310001
-         BZ    NOGOOD                       YES, ABEND                  00320001
-         ICM   R8,B'1111',RCVTISTL-RCVT(R8) IS POINTER TO OUR AREA 0?   00330001
-         BZ    NOGOOD                       YES, ABEND                  00340001
-*                                                                       00350001
-         USING CJYRCVTD,R8                                              00360001
-OK2GO    DS    0H                      NO, CONTINUE                     00370001
-         ENQ   (SECURITY,PROFS,E,,SYSTEM),RET=HAVE                      00380001
-         OPEN  (CJYPDATA,(INPUT))      OPEN INPUT FILE                  00390001
-         MODESET MODE=SUP,KEY=ZERO     authorize ourselves              00400382
-*                                                                       00410001
-READLOOP DS    0H                                                       00420001
-         MVC   INRECOLD,INRECNEW       SAVE OLD I/P FOR COMPARE         00430001
-         GET   CJYPDATA,INRECNEW                                        00440001
-         CLC   INRECNEW(ACCAUTH-INREC),INRECOLD  NEXT REC. > PREV?      00450001
-         BNH   OUTOFORD                          NO, NOT SORTED         00460001
-         CLC   INRECNEW(GROUPID-INREC),INRECOLD  SAME CLASS/ENTITY?     00470001
-         BE    PERMBLD                 YES, BUILD PERMIT RECORD         00480001
-         CLC   =CL8' ',GROUPID         IS THIS A UNIVERSAL RECORD?      00490001
-         BNE   NOUAR                   NO, A PERMIT WITHOUT UAR - ABEND 00500001
-         GETMAIN RU,LV=RPEL,SP=241                                      00510001
-         LR    R10,R1                  ESTABLISH ADDRESSABILITY         00520001
-         USING RPECBLK,R10               TO RPE                         00530001
-         XC    RPECBLK(RPEL),RPECBLK   INITIALIZE TO BINARY ZEROES      00540001
-         MVC   RPENEXT,LASTRPE         POINT TO PREVIOUS RPE            00550001
-         ST    R10,LASTRPE             SAVE -> THIS RPE                 00560001
-         LA    R11,RPEACCPT            SET PERMIT ANCHOR                00570001
-         LA    R1,L'RPECLASN           DEFAULT LENGTH IF NOTFOUND       00580001
-         TRT   CLASS,TRTTEST           SEARCH CLASS - BLANKS FOUND?     00590001
-         BZ    NOBLANKS                NO, LENGTH ALREADY IN R1         00600001
-         S     R1,=A(CLASS)            CALCULATE LENGTH OF DATA         00610001
-NOBLANKS DS    0H                                                       00620001
-         STC   R1,RPECLASL             SAVE LENGTH                      00630001
-         MVC   RPECLASN,CLASS            AND CLASS NAME                 00640001
-         XR    R2,R2                   CLEAR R2 FOR NOTFOUND            00650001
-         LA    R4,38                   PRESET LENGTH FOR FACILITY       00660001
-         CLC   =CL8'FACILITY',RPECLASN IS IT FACILITY?                  00670001
-         BE    TESTENT                 YES, TRT                         00680001
-         LA    R4,5                    PRESET LENGTH FOR DASDVOL        00690001
-         CLC   =CL8'DASDVOL',RPECLASN  IS IT DASDVOL?                   00700001
-         BE    TESTENT                 YES, TRT                         00710001
-         LA    R4,5                    PRESET LENGTH FOR TAPEVOL        00720001
-         CLC   =CL8'TAPEVOL',RPECLASN  IS IT TAPEVOL?                   00730001
-         BE    TESTENT                 YES, TRT                         00740001
-         LA    R4,43                   PRESET LENGTH FOR DATASET        00750001
-         CLC   =CL8'DATASET',RPECLASN  IS IT DATASET?                   00760001
-         BE    TESTENT                 YES, TRT                         00770001
-         LA    R4,7                    DEFAULT LENGTH IF NOTFOUND       00780001
-TESTENT  DS    0H                                                       00790001
-         LA    R1,1(R4)                DEFAULT LENGTH FOR SUBTRACTION   00800001
-         EX    R4,TRT                  EXECUTE THE TRT                  00810001
-         B     CONT                                                     00820001
-TRT      TRT   ENTITY(*-*),TRTTEST     SEARCH ENTITY FOR BLANK/*        00830001
-CONT     DS    0H                                                       00840001
-         B     BRANCTBL(R2)            AND WE FOUND...                  00850001
-BRANCTBL DS    0H                                                       00860001
-         B     NOTFND                  ... NO BLANKS/NO ASTERISKS       00870001
-         B     ASTRKFND                ... AN ASTERISK                  00880001
-         B     BLANKFND                ... A BLANK                      00890001
-BLANKFND DS    0H                                                       00900001
-         LA    R1,1(R1)                ADD 1 TO INCLUDE BLANK IN LENGTH 00910001
-ASTRKFND DS    0H                                                       00920001
-         S     R1,=A(ENTITY)           CALCULATE LENGTH                 00930001
-NOTFND   DS    0H                      IF NOTFOUND LENGTH ALREADY IN R1 00940001
-         STC   R1,RPEENTYL             SAVE LENGTH                      00950001
-         MVC   RPEENTYN,ENTITY           AND ENTITY NAME                00960001
-*                                                                       00970001
-         CLC   =CL8' ',ACCAUTH         IS THERE AN ACCESS AUTHORITY?    00980001
-         BE    NOACCAUT                NO, BLANK ACCESS AUTH. - ABEND   00990001
-*                                                                       01000001
-         LA    R1,PATTERN              BEGINNING OF TABLE               01010001
-         LA    R2,ROWLEN               LENGTH OF A ROW IN THE TABLE     01020001
-         LA    R3,PATTERN+PATTERNL-1   LAST BYTE OF TABLE               01030001
-AUTHLP1  DS    0H                                                       01040001
-         CLC   ACCAUTH,0(R1)           MATCH ON ACCESS AUTHORITY?       01050001
-         BE    MATCH1                  YES, MOVE IT IN                  01060001
-         BXLE  R1,R2,AUTHLP1           CHECK NEXT                       01070001
-MATCH1   MVC   RPEUACC,8(R1)           MOVE IN BIT PATTERN              01080001
-         B     READLOOP                SEE IF ANY MORE I/P RECORDS      01090001
-PERMBLD  DS    0H                                                       01100001
-         CLC   =CL8' ',GROUPID         IS THERE A GROUP/USERID?         01110001
-         BE    PERMINVL                NO, INVALID PERMIT RECORD- ABEND 01120001
-*                                                                       01130001
-         CLC   =CL8' ',ACCAUTH         IS THERE AN ACCESS AUTHORITY?    01140001
-         BE    NOACCAUT                NO, BLANK ACCESS AUTH. - ABEND   01150001
-*                                                                       01160001
-         GETMAIN RU,LV=RPEACCLN,SP=241                                  01170001
-         LR    R9,R1                   ESTABLISH ADDRESSABILITY         01180001
-         USING RPEACCLE,R9               TO ACCESS RECORD               01190001
-         XC    RPEACCLE(RPEACCLN),RPEACCLE INITIALIZE TO B'0'           01200001
-         ST    R9,0(R11)               ESTABLISH POINTER TO HERE        01210001
-         MVC   RPEAUSR,GROUPID         SAVE GROUP/USERID OF PERMIT      01220001
-*                                                                       01230001
-         LA    R1,PATTERN              BEGINNING OF TABLE               01240001
-         LA    R2,ROWLEN               LENGTH OF A ROW IN THE TABLE     01250001
-         LA    R3,PATTERN+PATTERNL-1   LAST BYTE OF TABLE               01260001
-AUTHLP2  DS    0H                                                       01270001
-         CLC   ACCAUTH,0(R1)           MATCH ON ACCESS AUTHORITY?       01280001
-         BE    MATCH2                  YES, MOVE IT IN                  01290001
-         BXLE  R1,R2,AUTHLP2           CHECK NEXT                       01300001
-MATCH2   MVC   RPEACS,8(R1)            MOVE IN BIT PATTERN              01310001
-         LA    R11,RPEANEXT            PROVIDE ANCHOR FOR NEXT PERMIT   01320001
-         B     READLOOP                SEE IF ANY MORE I/P RECORDS      01330001
-*                                                                       01340001
-EOFILE   DS    0H                                                       01350001
-         OC    LASTRPE,LASTRPE         WERE THERE ANY RECORDS I/P?      01360001
-         BZ    NOREC                   NO, ABEND                        01370001
-         L     R11,CJYPROFS            SAVE ADDRESS OF OLD CHAIN        01380001
-         MVC   CJYPROFS,LASTRPE        ACTIVATE NEW CHAIN               01390001
-         DROP  R8                                                       01400001
-         BASMAC R14,MORERPE            START TO FREE RPE'S              01410382
-*                                                                       01420001
-         DEQ   (SECURITY,PROFS,,SYSTEM)    RELEASE ENQ                  01430001
-         MODESET MODE=PROB,KEY=NZERO   return to problem state          01440382
-         CLOSE (CJYPDATA)              CLOSE I/P DATASET                01450001
-         WTO   'RAKFPROF7  RAKF PROFILES UPDATED'                       01460380
-         L     R13,4(R13)              RESTORE HSA                      01470001
-         RETURN (14,12),,RC=0          END O.K.                         01480001
-FREERPE  DS    0H                                                       01490001
-         L     R8,RPEACCPT             GET ACCESS LIST POINTER          01500001
-         B     MOREACC                 SEE IF ANY PERMITS               01510001
-FREEACC  DS    0H                                                       01520001
-         L     R8,RPEANEXT             GET -> NEXT ACC                  01530001
-         FREEMAIN RU,LV=RPEACCLN,A=(R9),SP=241    FREE CURRENT RPE      01540001
-MOREACC  DS    0H                                                       01550001
-         LTR   R9,R8                   ANY MORE PERMITS?                01560001
-         BNZ   FREEACC                 YES, DELETE THEM                 01570001
-*                                                                       01580001
-         L     R11,RPENEXT             GET -> NEXT RPE                  01590001
-         FREEMAIN RU,LV=RPEL,A=(R10),SP=241   FREE CURRENT RPE          01600001
-MORERPE  DS    0H                                                       01610001
-         LTR   R10,R11                 ANYMORE RPE'S?                   01620001
-         BNZ   FREERPE                 YES, FREE THEM                   01630001
-         BR    R14                     RETURN TO END RUN                01640380
-*                                                                       01650001
-NOGOOD   DS    0H                                                       01660001
-         WTO   'RAKFPROF1  RCVT NOT PROPERLY INITIALIZED'               01670380
-         WTO   'RAKFPROF1  **  PROGRAM TERMINATED  **'                  01680380
-         ABEND 100,,STEP                                                01690001
-*                                                                       01700001
-NOREC    DS    0H                                                       01710001
-         WTO   'RAKFPROF2  NO RECORDS INPUT FROM CJYPDATA'              01720380
-         WTO   'RAKFPROF2  **  PROGRAM TERMINATED  **'                  01730380
-         ABEND 200,,STEP                                                01740001
-*                                                                       01750001
-OUTOFORD DS    0H                                                       01760001
-         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            01770001
-         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       01780382
-         BASMAC R14,BADMSG             WRITE BADMSG                     01790382
-         WTO   'RAKFPROF3  I/P RECORDS OUT OF ORDER'                    01800380
-         WTO   'RAKFPROF3  **  PROGRAM TERMINATED  **'                  01810380
-         ABEND 300,,STEP                                                01820001
-*                                                                       01830001
-NOUAR    DS    0H                                                       01840001
-         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            01850001
-         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       01860382
-         BASMAC R14,BADMSG             WRITE BADMSG                     01870382
-         WTO   'RAKFPROF4  PERMIT RECORD WITHOUT UNIVERSAL ACCESS RECOR*01880380
-               D'                                                       01890001
-         WTO   'RAKFPROF4  **  PROGRAM TERMINATED  **'                  01900380
-         ABEND 400,,STEP                                                01910001
-*                                                                       01920001
-PERMINVL DS    0H                                                       01930001
-         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            01940001
-         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       01950382
-         BASMAC R14,BADMSG             WRITE BADMSG                     01960382
-         WTO   'RAKFPROF5  PERMIT RECORD WITHOUT GROUPID/USERID'        01970380
-         WTO   'RAKFPROF5  **  PROGRAM TERMINATED  **'                  01980380
-         ABEND 500,,STEP                                                01990001
-*                                                                       02000001
-NOACCAUT DS    0H                                                       02010001
-         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            02020001
-         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       02030382
-         BASMAC R14,BADMSG             WRITE BADMSG                     02040382
-         WTO   'RAKFPROF6  ENTITY RECORD WITH NO ACCESS AUTHORITY'      02050380
-         WTO   'RAKFPROF6  **  PROGRAM TERMINATED  **'                  02060380
-         ABEND 500,,STEP                                                02070001
-*                                                                       02080001
-BADMSG   DS    0H                                                       02090001
-         MVC   BADMSGN+18(80),INRECNEW                                  02100001
-BADMSGN  WTO   'RAKFPROF8                                              X02110380
-                                                  '                     02120001
-         BR    R14                                                      02130380
-**********************                                                  02140001
-         PRINT NOGEN                                                    02150001
-SAVEAREA DS    18F                                                      02160001
-LASTRPE  DC    F'0'                                                     02170001
-LASTACC  DC    F'0'                                                     02180001
-SECURITY DC    CL8'CJYRCVT'                                             02190001
-PROFS    DC    CL8'CJYPROFS'                                            02200001
-INREC    DS    0CL80                                                    02210001
-INRECNEW DS    0CL80                                                    02220001
-CLASS    DC    XL8'00'                                                  02230001
-ENTITY   DC    XL44'00'                                                 02240001
-GROUPID  DC    XL8'00'                                                  02250001
-ACCAUTH  DC    XL8'00'                                                  02260001
-         DC    XL(80-(*-INREC))'00'                                     02270001
-INRECOLD DC    XL80'00'                                                 02280001
-PATTERN  EQU   *                                                        02290001
-         DC    CL8'ALTER   ',AL1(RACFALTR)                              02300001
-ROWLEN   EQU   *-PATTERN                                                02310001
-         DC    CL8'CONTROL ',AL1(RACFCNTL)                              02320001
-         DC    CL8'UPDATE  ',AL1(RACFUPDT)                              02330001
-         DC    CL8'READ    ',AL1(RACFREAD)                              02340001
-         DC    CL8'EXEC    ',AL1(RACFEXEC)                              02350001
-         DC    CL8'NONE    ',AL1(RACFNONE)                              02360001
-PATTERNL EQU   *-PATTERN                                                02370001
-TRTTEST  DC    XL256'00'               TABLE TO FIND BLANK/ASTERISK     02380001
-         ORG   TRTTEST+C' '            SETUP FLAG FOR BLANK             02390001
-         DC    X'08'                                                    02400001
-         ORG   TRTTEST+C'*'            SETUP FLAG FOR ASTERISK          02410001
-         DC    X'04'                                                    02420001
-         ORG                                                            02430001
-CJYPDATA DCB   MACRF=GM,EODAD=EOFILE,DDNAME=RAKFPROF,DSORG=PS           02440382
-         COPY  CJYRCVTD                                                 02450001
-         COPY  CJYPCBLK                                                 02460001
-         IHAPSA DSECT=YES                                               02470001
-         CVT    DSECT=YES                                               02480001
-         ICHPRCVT                                                       02490001
-R0       EQU   00                                                       02500001
-R1       EQU   01                                                       02510001
-R2       EQU   02                                                       02520001
-R3       EQU   03                                                       02530001
-R4       EQU   04                                                       02540001
-R5       EQU   05                                                       02550001
-R6       EQU   06                                                       02560001
-R7       EQU   07                                                       02570001
-R8       EQU   08                                                       02580001
-R9       EQU   09                                                       02590001
-R10      EQU   10                                                       02600001
-R11      EQU   11                                                       02610001
-R12      EQU   12                                                       02620001
-R13      EQU   13                                                       02630001
-R14      EQU   14                                                       02640001
-R15      EQU   15                                                       02650001
-         END   CJYRPROF                                                 02660001
+         TITLE 'ESG-SECURITY DATA PROFILE PROCESSOR'                    00010000
+* CPARM='XREF(SHORT),OBJ,NODECK',LPARM='AC=1'                 CJYRPROF  00020000
+*      DD DSN=SYS1.MACLIB,DISP=SHR                                      00030000
+*      DD DSN=SYS1.MODGEN,DISP=SHR                                      00040000
+*      DD DSN=SYS3.SAF.PARMLIB,DISP=SHR                                 00050000
+         EJECT                                                          00060000
+         MACRO                                                          00070000
+&LABEL   BASMAC &R1,&S2                                                 00080000
+&LABEL.  DC    0XL4'00',X'4D',AL.4(&R1.,0),S(&S2.)                      00090000
+         MEND                                                           00100000
+CJYRPROF CSECT                                                          00110000
+*                                                                       00120000
+**********************************************************************  00130000
+*                                                                    *  00140000
+*    COPYRIGHT (C) 1991 BY CRAIG J. YASUNA.  ALL RIGHTS RESERVED.    *  00150000
+*                                                                    *  00160000
+*    THIS SOFTWARE PRODUCT OR ANY OF ITS COMPONENTS MUST NOT BE      *  00170000
+*    SOLD, GIVEN, OR OTHERWISE DISTRIBUTED TO ANY OTHER COMPANY      *  00180000
+*    WITHOUT THE PRIOR WRITTEN PERMISSION OF:                        *  00190000
+*                                                                    *  00200000
+*                                  CRAIG J. YASUNA, PRESIDENT        *  00210000
+*                                  ENTERPRISE SYSTEMS GROUP          *  00220000
+*                                  2 MARC COURT                      *  00230000
+*                                  EDISON, NEW JERSEY 08820          *  00240000
+*                                                                    *  00250000
+**********************************************************************  00260000
+*                                                                       00270000
+         SAVE  (14,12),,CJYRPROF_&SYSDATE._&SYSTIME._                   00280000
+         LR    R12,R15                 SETUP BASE REG.                  00290000
+         USING CJYRPROF,R12            ESTABLISH ADDRESSABILITY         00300000
+         LA    R11,SAVEAREA            OUR SAVEAREA                     00310000
+         ST    R13,SAVEAREA+4          SAVE HIGH SAVEAREA               00320000
+         ST    R11,8(R13)              SAVE LOW SAVEAREA                00330000
+         LR    R13,R11                 POINT TO OUR SAVEAREA            00340000
+         L     R8,FLCCVT-PSA(R0)       GET CVT POINTER                  00350000
+         ICM   R8,B'1111',CVTRAC-CVTMAP(R8) IS RCVT POINTER ZERO?       00360000
+         BZ    NOGOOD                       YES, ABEND                  00370000
+         ICM   R8,B'1111',RCVTISTL-RCVT(R8) IS POINTER TO OUR AREA 0?   00380000
+         BZ    NOGOOD                       YES, ABEND                  00390000
+*                                                                       00400000
+         USING CJYRCVTD,R8                                              00410000
+OK2GO    DS    0H                      NO, CONTINUE                     00420000
+         ENQ   (SECURITY,PROFS,E,,SYSTEM),RET=HAVE                      00430000
+         OPEN  (CJYPDATA,(INPUT))      OPEN INPUT FILE                  00440000
+         MODESET MODE=SUP,KEY=ZERO     authorize ourselves              00450000
+*                                                                       00460000
+READLOOP DS    0H                                                       00470000
+         MVC   INRECOLD,INRECNEW       SAVE OLD I/P FOR COMPARE         00480000
+         GET   CJYPDATA,INRECNEW                                        00490000
+         CLC   INRECNEW(ACCAUTH-INREC),INRECOLD  NEXT REC. > PREV?      00500000
+         BNH   OUTOFORD                          NO, NOT SORTED         00510000
+         CLC   INRECNEW(GROUPID-INREC),INRECOLD  SAME CLASS/ENTITY?     00520000
+         BE    PERMBLD                 YES, BUILD PERMIT RECORD         00530000
+         CLC   =CL8' ',GROUPID         IS THIS A UNIVERSAL RECORD?      00540000
+         BNE   NOUAR                   NO, A PERMIT WITHOUT UAR - ABEND 00550000
+         GETMAIN RU,LV=RPEL,SP=241                                      00560000
+         LR    R10,R1                  ESTABLISH ADDRESSABILITY         00570000
+         USING RPECBLK,R10               TO RPE                         00580000
+         XC    RPECBLK(RPEL),RPECBLK   INITIALIZE TO BINARY ZEROES      00590000
+         MVC   RPENEXT,LASTRPE         POINT TO PREVIOUS RPE            00600000
+         ST    R10,LASTRPE             SAVE -> THIS RPE                 00610000
+         LA    R11,RPEACCPT            SET PERMIT ANCHOR                00620000
+         LA    R1,L'RPECLASN           DEFAULT LENGTH IF NOTFOUND       00630000
+         TRT   CLASS,TRTTEST           SEARCH CLASS - BLANKS FOUND?     00640000
+         BZ    NOBLANKS                NO, LENGTH ALREADY IN R1         00650000
+         S     R1,=A(CLASS)            CALCULATE LENGTH OF DATA         00660000
+NOBLANKS DS    0H                                                       00670000
+         STC   R1,RPECLASL             SAVE LENGTH                      00680000
+         MVC   RPECLASN,CLASS            AND CLASS NAME                 00690000
+         XR    R2,R2                   CLEAR R2 FOR NOTFOUND            00700000
+         LA    R4,38                   PRESET LENGTH FOR FACILITY       00710000
+         CLC   =CL8'FACILITY',RPECLASN IS IT FACILITY?                  00720000
+         BE    TESTENT                 YES, TRT                         00730000
+         LA    R4,5                    PRESET LENGTH FOR DASDVOL        00740000
+         CLC   =CL8'DASDVOL',RPECLASN  IS IT DASDVOL?                   00750000
+         BE    TESTENT                 YES, TRT                         00760000
+         LA    R4,5                    PRESET LENGTH FOR TAPEVOL        00770000
+         CLC   =CL8'TAPEVOL',RPECLASN  IS IT TAPEVOL?                   00780000
+         BE    TESTENT                 YES, TRT                         00790000
+         LA    R4,43                   PRESET LENGTH FOR DATASET        00800000
+         CLC   =CL8'DATASET',RPECLASN  IS IT DATASET?                   00810000
+         BE    TESTENT                 YES, TRT                         00820000
+         LA    R4,7                    DEFAULT LENGTH IF NOTFOUND       00830000
+TESTENT  DS    0H                                                       00840000
+         LA    R1,1(R4)                DEFAULT LENGTH FOR SUBTRACTION   00850000
+         EX    R4,TRT                  EXECUTE THE TRT                  00860000
+         B     CONT                                                     00870000
+TRT      TRT   ENTITY(*-*),TRTTEST     SEARCH ENTITY FOR BLANK/*        00880000
+CONT     DS    0H                                                       00890000
+         B     BRANCTBL(R2)            AND WE FOUND...                  00900000
+BRANCTBL DS    0H                                                       00910000
+         B     NOTFND                  ... NO BLANKS/NO ASTERISKS       00920000
+         B     ASTRKFND                ... AN ASTERISK                  00930000
+         B     BLANKFND                ... A BLANK                      00940000
+BLANKFND DS    0H                                                       00950000
+         LA    R1,1(R1)                ADD 1 TO INCLUDE BLANK IN LENGTH 00960000
+ASTRKFND DS    0H                                                       00970000
+         S     R1,=A(ENTITY)           CALCULATE LENGTH                 00980000
+NOTFND   DS    0H                      IF NOTFOUND LENGTH ALREADY IN R1 00990000
+         STC   R1,RPEENTYL             SAVE LENGTH                      01000000
+         MVC   RPEENTYN,ENTITY           AND ENTITY NAME                01010000
+*                                                                       01020000
+         CLC   =CL8' ',ACCAUTH         IS THERE AN ACCESS AUTHORITY?    01030000
+         BE    NOACCAUT                NO, BLANK ACCESS AUTH. - ABEND   01040000
+*                                                                       01050000
+         LA    R1,PATTERN              BEGINNING OF TABLE               01060000
+         LA    R2,ROWLEN               LENGTH OF A ROW IN THE TABLE     01070000
+         LA    R3,PATTERN+PATTERNL-1   LAST BYTE OF TABLE               01080000
+AUTHLP1  DS    0H                                                       01090000
+         CLC   ACCAUTH,0(R1)           MATCH ON ACCESS AUTHORITY?       01100000
+         BE    MATCH1                  YES, MOVE IT IN                  01110000
+         BXLE  R1,R2,AUTHLP1           CHECK NEXT                       01120000
+MATCH1   MVC   RPEUACC,8(R1)           MOVE IN BIT PATTERN              01130000
+         B     READLOOP                SEE IF ANY MORE I/P RECORDS      01140000
+PERMBLD  DS    0H                                                       01150000
+         CLC   =CL8' ',GROUPID         IS THERE A GROUP/USERID?         01160000
+         BE    PERMINVL                NO, INVALID PERMIT RECORD- ABEND 01170000
+*                                                                       01180000
+         CLC   =CL8' ',ACCAUTH         IS THERE AN ACCESS AUTHORITY?    01190000
+         BE    NOACCAUT                NO, BLANK ACCESS AUTH. - ABEND   01200000
+*                                                                       01210000
+         GETMAIN RU,LV=RPEACCLN,SP=241                                  01220000
+         LR    R9,R1                   ESTABLISH ADDRESSABILITY         01230000
+         USING RPEACCLE,R9               TO ACCESS RECORD               01240000
+         XC    RPEACCLE(RPEACCLN),RPEACCLE INITIALIZE TO B'0'           01250000
+         ST    R9,0(R11)               ESTABLISH POINTER TO HERE        01260000
+         MVC   RPEAUSR,GROUPID         SAVE GROUP/USERID OF PERMIT      01270000
+*                                                                       01280000
+         LA    R1,PATTERN              BEGINNING OF TABLE               01290000
+         LA    R2,ROWLEN               LENGTH OF A ROW IN THE TABLE     01300000
+         LA    R3,PATTERN+PATTERNL-1   LAST BYTE OF TABLE               01310000
+AUTHLP2  DS    0H                                                       01320000
+         CLC   ACCAUTH,0(R1)           MATCH ON ACCESS AUTHORITY?       01330000
+         BE    MATCH2                  YES, MOVE IT IN                  01340000
+         BXLE  R1,R2,AUTHLP2           CHECK NEXT                       01350000
+MATCH2   MVC   RPEACS,8(R1)            MOVE IN BIT PATTERN              01360000
+         LA    R11,RPEANEXT            PROVIDE ANCHOR FOR NEXT PERMIT   01370000
+         B     READLOOP                SEE IF ANY MORE I/P RECORDS      01380000
+*                                                                       01390000
+EOFILE   DS    0H                                                       01400000
+         OC    LASTRPE,LASTRPE         WERE THERE ANY RECORDS I/P?      01410000
+         BZ    NOREC                   NO, ABEND                        01420000
+         L     R11,CJYPROFS            SAVE ADDRESS OF OLD CHAIN        01430000
+         MVC   CJYPROFS,LASTRPE        ACTIVATE NEW CHAIN               01440000
+         DROP  R8                                                       01450000
+         BASMAC R14,MORERPE            START TO FREE RPE'S              01460000
+*                                                                       01470000
+         DEQ   (SECURITY,PROFS,,SYSTEM)    RELEASE ENQ                  01480000
+         MODESET MODE=PROB,KEY=NZERO   return to problem state          01490000
+         CLOSE (CJYPDATA)              CLOSE I/P DATASET                01500000
+         WTO   'RAKFPROF7  RAKF PROFILES UPDATED'                       01510000
+         L     R13,4(R13)              RESTORE HSA                      01520000
+         RETURN (14,12),,RC=0          END O.K.                         01530000
+FREERPE  DS    0H                                                       01540000
+         L     R8,RPEACCPT             GET ACCESS LIST POINTER          01550000
+         B     MOREACC                 SEE IF ANY PERMITS               01560000
+FREEACC  DS    0H                                                       01570000
+         L     R8,RPEANEXT             GET -> NEXT ACC                  01580000
+         FREEMAIN RU,LV=RPEACCLN,A=(R9),SP=241    FREE CURRENT RPE      01590000
+MOREACC  DS    0H                                                       01600000
+         LTR   R9,R8                   ANY MORE PERMITS?                01610000
+         BNZ   FREEACC                 YES, DELETE THEM                 01620000
+*                                                                       01630000
+         L     R11,RPENEXT             GET -> NEXT RPE                  01640000
+         FREEMAIN RU,LV=RPEL,A=(R10),SP=241   FREE CURRENT RPE          01650000
+MORERPE  DS    0H                                                       01660000
+         LTR   R10,R11                 ANYMORE RPE'S?                   01670000
+         BNZ   FREERPE                 YES, FREE THEM                   01680000
+         BR    R14                     RETURN TO END RUN                01690000
+*                                                                       01700000
+NOGOOD   DS    0H                                                       01710000
+         WTO   'RAKFPROF1  RCVT NOT PROPERLY INITIALIZED'               01720000
+         WTO   'RAKFPROF1  **  PROGRAM TERMINATED  **'                  01730000
+         ABEND 100,,STEP                                                01740000
+*                                                                       01750000
+NOREC    DS    0H                                                       01760000
+         WTO   'RAKFPROF2  NO RECORDS INPUT FROM CJYPDATA'              01770000
+         WTO   'RAKFPROF2  **  PROGRAM TERMINATED  **'                  01780000
+         ABEND 200,,STEP                                                01790000
+*                                                                       01800000
+OUTOFORD DS    0H                                                       01810000
+         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            01820000
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       01830000
+         BASMAC R14,BADMSG             WRITE BADMSG                     01840000
+         WTO   'RAKFPROF3  I/P RECORDS OUT OF ORDER'                    01850000
+         WTO   'RAKFPROF3  **  PROGRAM TERMINATED  **'                  01860000
+         ABEND 300,,STEP                                                01870000
+*                                                                       01880000
+NOUAR    DS    0H                                                       01890000
+         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            01900000
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       01910000
+         BASMAC R14,BADMSG             WRITE BADMSG                     01920000
+         WTO   'RAKFPROF4  PERMIT RECORD WITHOUT UNIVERSAL ACCESS RECOR*01930000
+               D'                                                       01940000
+         WTO   'RAKFPROF4  **  PROGRAM TERMINATED  **'                  01950000
+         ABEND 400,,STEP                                                01960000
+*                                                                       01970000
+PERMINVL DS    0H                                                       01980000
+         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            01990000
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       02000000
+         BASMAC R14,BADMSG             WRITE BADMSG                     02010000
+         WTO   'RAKFPROF5  PERMIT RECORD WITHOUT GROUPID/USERID'        02020000
+         WTO   'RAKFPROF5  **  PROGRAM TERMINATED  **'                  02030000
+         ABEND 500,,STEP                                                02040000
+*                                                                       02050000
+NOACCAUT DS    0H                                                       02060000
+         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            02070000
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       02080000
+         BASMAC R14,BADMSG             WRITE BADMSG                     02090000
+         WTO   'RAKFPROF6  ENTITY RECORD WITH NO ACCESS AUTHORITY'      02100000
+         WTO   'RAKFPROF6  **  PROGRAM TERMINATED  **'                  02110000
+         ABEND 500,,STEP                                                02120000
+*                                                                       02130000
+BADMSG   DS    0H                                                       02140000
+         MVC   BADMSGN+18(80),INRECNEW                                  02150000
+BADMSGN  WTO   'RAKFPROF8                                              X02160000
+                                                  '                     02170000
+         BR    R14                                                      02180000
+**********************                                                  02190000
+         PRINT NOGEN                                                    02200000
+SAVEAREA DS    18F                                                      02210000
+LASTRPE  DC    F'0'                                                     02220000
+LASTACC  DC    F'0'                                                     02230000
+SECURITY DC    CL8'CJYRCVT'                                             02240000
+PROFS    DC    CL8'CJYPROFS'                                            02250000
+INREC    DS    0CL80                                                    02260000
+INRECNEW DS    0CL80                                                    02270000
+CLASS    DC    XL8'00'                                                  02280000
+ENTITY   DC    XL44'00'                                                 02290000
+GROUPID  DC    XL8'00'                                                  02300000
+ACCAUTH  DC    XL8'00'                                                  02310000
+         DC    XL(80-(*-INREC))'00'                                     02320000
+INRECOLD DC    XL80'00'                                                 02330000
+PATTERN  EQU   *                                                        02340000
+         DC    CL8'ALTER   ',AL1(RACFALTR)                              02350000
+ROWLEN   EQU   *-PATTERN                                                02360000
+         DC    CL8'CONTROL ',AL1(RACFCNTL)                              02370000
+         DC    CL8'UPDATE  ',AL1(RACFUPDT)                              02380000
+         DC    CL8'READ    ',AL1(RACFREAD)                              02390000
+         DC    CL8'EXEC    ',AL1(RACFEXEC)                              02400000
+         DC    CL8'NONE    ',AL1(RACFNONE)                              02410000
+PATTERNL EQU   *-PATTERN                                                02420000
+TRTTEST  DC    XL256'00'               TABLE TO FIND BLANK/ASTERISK     02430000
+         ORG   TRTTEST+C' '            SETUP FLAG FOR BLANK             02440000
+         DC    X'08'                                                    02450000
+         ORG   TRTTEST+C'*'            SETUP FLAG FOR ASTERISK          02460000
+         DC    X'04'                                                    02470000
+         ORG                                                            02480000
+CJYPDATA DCB   MACRF=GM,EODAD=EOFILE,DDNAME=RAKFPROF,DSORG=PS           02490000
+         COPY  CJYRCVTD                                                 02500000
+         COPY  CJYPCBLK                                                 02510000
+         IHAPSA DSECT=YES                                               02520000
+         CVT    DSECT=YES                                               02530000
+         ICHPRCVT                                                       02540000
+R0       EQU   00                                                       02550000
+R1       EQU   01                                                       02560000
+R2       EQU   02                                                       02570000
+R3       EQU   03                                                       02580000
+R4       EQU   04                                                       02590000
+R5       EQU   05                                                       02600000
+R6       EQU   06                                                       02610000
+R7       EQU   07                                                       02620000
+R8       EQU   08                                                       02630000
+R9       EQU   09                                                       02640000
+R10      EQU   10                                                       02650000
+R11      EQU   11                                                       02660000
+R12      EQU   12                                                       02670000
+R13      EQU   13                                                       02680000
+R14      EQU   14                                                       02690000
+R15      EQU   15                                                       02700000
+         END   CJYRPROF                                                 02710000
