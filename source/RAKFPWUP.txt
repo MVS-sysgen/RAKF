@@ -1,0 +1,23 @@
+         TITLE 'RAKF Password Update Program'                           00010000
+RAKFPWUP CSECT                                                          00020000
+*                                                                       00030000
+**********************************************************************  00040000
+*                                                                    *  00050000
+* NAME: RAKFPWUP                                                     *  00060000
+*                                                                    *  00070000
+* TYPE: Assembler Source                                             *  00080000
+*                                                                    *  00090000
+* DESC: Process Password Update Requests                             *  00100000
+*                                                                    *  00110000
+* FUNCTION: - retrieve username and new password from SQA            *  00120000
+*           - clear and free SQA                                     *  00130000
+*           - append username and new password to update queue       *  00140000
+*                                                                    *  00150000
+* NOTE: Yet to be implemented!                                       *  00160000
+*                                                                    *  00170000
+**********************************************************************  00180000
+*                                                                       00190000
+         PRINT NOGEN                                                    00200000
+         XR    15,15                                                    00210000
+         BR    14                                                       00220000
+         END   RAKFPWUP                                                 00230000
