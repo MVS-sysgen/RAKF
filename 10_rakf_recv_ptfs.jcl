@@ -4,6 +4,14 @@
 //             MSGCLASS=A,
 //             REGION=8192K,
 //             MSGLEVEL=(1,1)
+//ESGCOPY  EXEC PGM=IEBCOPY
+//RRKF005  DD  DISP=SHR,DSN=SYSGEN.RAKF.RRKF005.RACIND
+//RAKF     DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M0.MACLIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+ COPY INDD=((RRKF005,R)),OUTDD=RAKF
+ SELECT MEMBER=(IEZCTGFL)
+/*
 //* ------------------------------------------------------------------*
 //* SMP receive RAKF PTFs                                             *
 //* Expected return code: 00                                          *
