@@ -20,6 +20,19 @@ ICHSFR00 CSECT                                                          00070000
 *                                  EDISON, NEW JERSEY 08820          *  00200000
 *                                                                    *  00210000
 **********************************************************************  00220000
+*                                                                   @02 00220302
+*    Change History                                                 @02 00220502
+*                                                                   @02 00220702
+*    2011/04/03 TRKF120 base version                                @02 00222002
+*    2011/04/26 RRKF002 introduce change history                    @02 00222302
+*                       enable end users to change their passwords  @02 00222502
+*                       permanently: store user's password change   @02 00222702
+*                       request in fetch protected CSA and pass the @02 00224002
+*                       request address to RAKFPWUP which queues it @02 00224302
+*                       for replacement in the RAKF users table     @02 00224502
+*                       at next run of RAKFUSER                     @02 00224702
+*                                                                   @02 00226002
+********************************************************************@02 00226302
 *                                                                       00230000
          USING AUTHDS,R10                                               00240000
          USING ICHSFR00,R15                                             00250000
@@ -368,15 +381,51 @@ RACINCL2 EQU   *                                                        03660000
          ICM   R3,15,24(R8)        set new password?                    03680000
          BZ    RACIACEE            no, go make ACEE                     03690000
          MVC   WORKPASS,0(R3)      yes, move new password               03700000
-         XC    WORKPASS+1(8),=C'SECURITY' encrypt                       03710000
-         IC    R1,WORKPASS         length of new password               03720000
-         EX    R1,RACIRPWD         replace password                     03730000
-         SR    R0,R0               clear R0                             03740000
-         LA    R1,RAKFPWUP         get command address                  03750000
-         SVC   34                  execute S RAKFPWUP command           03760000
+         GETMAIN RU,LV=PWUPL,SP=227 get fetch protected CSA         @02 03702002
+         MVC   0(PWUPCMDL,R1),PWUPSTRT move SVC 34 plist to CSA area@02 03704002
+         L     R3,PWUPXTBA         get translate table address      @02 03706002
+         USING PWUPSTRT,R1         address CSA area now             @02 03708002
+         ST    R1,PWUPADDR         store CSA area address for unpack@02 03710000
+         UNPK  PWUPUNPK(9),PWUPADDR(5) unpack CSA area address      @02 03712002
+         MVC   PWUPAHEX(8),PWUPUNPK unpacked address to SVC 34 plist@02 03714002
+         TR    PWUPAHEX(8),0(R3)   translate address to printable   @02 03716002
+         DROP  R1                  revert to standard addressability@02 03718002
+         MVC   PWUPCMDL(PWUPRECL,R1),PWUP initialize change record  @02 03720000
+         IC    R3,0(,R5)           length of user                   @02 03722002
+         BCTR  R3,0                subtract 1 for MVC               @02 03724002
+         EX    R3,PWUPMVCU         copy user                        @02 03726002
+         IC    R3,WORKPASS         length of new password           @02 03728002
+         BCTR  R3,0                subtract 1 for MVC               @02 03730000
+         EX    R3,PWUPMVCP         copy new password                @02 03732002
+         XR    R0,R0               set R0 = 0 for SVC 34            @02 03734002
+         SVC   34                  S RAKFPWUP,PARM='PWUPAHEX'       @02 03736002
+         XC    WORKPASS+1(8),=C'SECURITY' encrypt                       03740000
+         IC    R1,WORKPASS         length of new password               03750000
+         EX    R1,RACIRPWD         replace password                     03760000
          B     RACIACEE            go make ACEE                         03770000
-RAKFPWUP DC    X'000E0000'         parameter list for ..                03780000
-         DC    C'S RAKFPWUP'        .. S RAKFPWUP command               03790000
+PWUPSTRT DC    AL2(PWUPCMDL)       parameter list to start RAKFPWUP>@02 03780000
+         DC    X'0000'              >is copied to CSA subpool 227  >@02 03790000
+         DC    C'S RAKFPWUP,PARM=''' >fetch protected storage with >@02 03790302
+PWUPAHEX DS    CL8                  >address passed in PARM field  >@02 03790502
+         DC    C''''                >in hexadecimal printable format@02 03790702
+PWUPCMDL EQU   *-PWUPSTRT          length of parameter list         @02 03792002
+PWUP     DS    0C                  changes queue record             @02 03792302
+PWUPUSER DC    CL8' '              userid                           @02 03792502
+         DC    C' '                filler                           @02 03792702
+PWUPPSWD DC    CL8' '              new password                     @02 03794002
+         DC    C' '                filler                           @02 03794302
+PWUPRECL EQU   *-PWUP              record length of changes queue   @02 03794502
+PWUPL    EQU   *-PWUPSTRT          total length of CSA area         @02 03794702
+         ORG   PWUP                changes queue record is >        @02 03796002
+PWUPADDR DS    F                      > temporarily used   >        @02 03796302
+         DS    X                      > for conversion of  >        @02 03796502
+PWUPUNPK DS    CL8                    > CSA area to        >        @02 03796702
+         DS    X                      > unpacked format             @02 03798002
+         ORG   PWUP+PWUPRECL       restore program counter          @02 03798302
+         USING PWUPSTRT,R1         address CSA area now             @02 03798502
+PWUPMVCU MVC   PWUPUSER(1),1(R5)   get user and new password >      @02 03798702
+PWUPMVCP MVC   PWUPPSWD(1),WORKPASS+1  > into change queue record   @02 03799002
+         DROP  R1                  revert to standard addressability@02 03799302
 RACIRPWD MVC   CBLKPWDL(1),WORKPASS replace in core password            03800000
 RACICKPW CLC   CBLKPWDL(1),WORKPASS check password                      03810000
 RACISTPW CLC   STCPASS(1),WORKPASS  check STC password                  03820000
@@ -797,10 +846,10 @@ WTOMSGEC EQU   *-WTOMSGE,8                                              07950000
 WTOMSGEE EQU   *-WTOMSGE,20                                             07970000
          DC    CL20' ',CL(60-(*-WTOMSGE))' '                            07980000
          DC    CL133' '                                                 07990000
-         DC    C'                                              '        08000000
-         DC    C'                                              '        08010000
-         DC    C'                                              '        08020000
-         DC    C'         0123456789ABCDEF'                             08030000
+*                                  spaceholder blanks removed       @02 08000000
+         DC    CL23' '             rest of spaceholder blanks       @02 08010000
+PWUPHXTB DC    C'0123456789ABCDEF' translate RAKFPWUP address to >  @02 08020000
+PWUPXTBA DC    A(PWUPHXTB-240)      > hex printable format          @02 08030000
          TITLE 'REGISTERS AND SUCH'                                     08040000
 R0       EQU   0                                                        08050000
 R1       EQU   1                                                        08060000

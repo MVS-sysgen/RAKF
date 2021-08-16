@@ -20,6 +20,27 @@ CJYRUIDS CSECT                                                          00070000
 *                                  EDISON, NEW JERSEY 08820          *  00200000
 *                                                                    *  00210000
 **********************************************************************  00220000
+*                                                                   @01 00220301
+*    Change History                                                 @01 00220601
+*                                                                   @01 00220901
+*    2011/04/03 TRKF120 base version                                @01 00221201
+*    2011/04/18 RRKF001 introduce change history                    @01 00221501
+*                       enable comment lines in UDATA and PDATA     @01 00221801
+*                       consistently don't specify msg descriptor   @01 00222101
+*                       fix S378 after error in first line of UDATA @01 00222401
+*                       add missing DEQ for SECURITY,USERS          @01 00222701
+*    2011/04/26 RRKF002 enable end users to change their passwords  @02 00223001
+*                       permanently: Before updating the incore     @02 00223301
+*                       users table RAKFUSER calls RAKFPSAV to      @02 00223602
+*                       update UDATA with the temporary password    @02 00223902
+*                       changes queued since the previous execution @02 00224202
+*    2011/04/29 RRKF003 if in-core UDATA table already exists check @03 00224502
+*                       for READ access to profile RAKFADM in the   @03 00224802
+*                       FACILITY class to ensure that only properly @03 00225103
+*                       authorized users can replace the in-core    @03 00225403
+*                       UDATA table                                 @03 00225703
+*                                                                   @03 00226003
+********************************************************************@03 00226303
 *                                                                       00230000
          SAVE   (14,12),,CJYRUIDS_&SYSDATE._&SYSTIME                    00240000
          LR     R12,R15             USE ENTRY AS BASE                   00250000
@@ -34,13 +55,28 @@ CJYRUIDS CSECT                                                          00070000
          BZ     ABEND100             Y - CJYRCVT FAILED, GO TO ABEND    00340000
          ICM    R8,B'1111',RCVTISTL-RCVT(R8) GET OUR POINTER, IS IT 0?  00350000
          BZ     ABEND100             YES, ABEND                         00360000
-         ENQ    (SECURITY,USERS,E,,SYSTEM)                              00370000
+*                                                                   @03 00360303
+         ICM    R5,B'0111',CJYUSERS-CJYRCVTD(R8) does UDATA exist?  @03 00360603
+         BZ     OK2GO                NO, go ahead                   @03 00360903
+         RACHECK ENTITY=RAKFADM,CLASS='FACILITY',ATTR=READ authorize@03 00361203
+         LTR    R15,R15             RAKFADM granted?                @03 00361503
+         BNZ    ABEND600             NO, abend                      @03 00361803
+*                                                                   @03 00362103
+OK2GO    ENQ    (SECURITY,USERS,E,,SYSTEM),RET=HAVE serialization   @03 00370000
+*                                                                   @02 00372002
+         L      R15,RAKFPSAV        get password changer address    @02 00374002
+         BALR   R14,R15             call it                         @02 00376002
+*                                                                   @02 00378002
          OPEN   (CJYUDATA,(INPUT))  OPEN INPUT FILE                     00380000
          MODESET MODE=SUP,KEY=ZERO  authorize ourselves                 00390000
+         XR     R5,R5               initialize GM chain             @01 00395001
 *                                                                       00400000
 READLOOP GET    CJYUDATA,RECORD     GET RECORD                          00410000
+         CLI    USERID,C'*'         Comment?                        @01 00413001
+         BE     READLOOP             read next record               @01 00417001
          CLC    USERID,OLDUSER      IS INPUT IN SORT SEQUENCE?          00420000
-         BE     NEWGROUP               OK ---                           00430000
+         BE     NEWGROUP             same USER, check for new group @01 00430000
+         BNH    ABEND2               not in sort seq, tell about it @01 00435001
          CLI    USERID,C' '         UID?                                00440000
          BE     ABEND2               NO ---                             00450000
          CLI    PASSWORD,C' '       PSWD?                               00460000
@@ -133,29 +169,34 @@ ANYMORE  LTR    R5,R4              MORE ENTRIES?                        01290000
          BO     ABEND200               Y-ABEND                          01330000
 BYEBYE   MODESET MODE=PROB,KEY=NZERO   return to problem state          01340000
          CLOSE (CJYUDATA)              close input dataset              01350000
+         DEQ   (SECURITY,USERS,,SYSTEM) release ENQ                 @01 01355001
          WTO    'RAKFUIDS4  USER TABLE UPDATED'                         01360000
          L      R13,SAVEAREA+4     LOAD CALLER'S SAVE AREA ADDR         01370000
          RETURN (14,12),RC=0                                            01380000
 *                                                                       01390000
-ABEND100 WTO    'RAKFUIDS1  RCVT NOT PROPERLY INITIALIZED',DESC=(2)     01400000
-         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01410000
+ABEND100 WTO    'RAKFUIDS1  RCVT NOT PROPERLY INITIALIZED'          @01 01400000
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **'               @01 01410000
          ABEND  100,,STEP                                               01420000
 *                                                                       01430000
-ABEND2   WTO    'RAKFUIDS2  INPUT DATA INVALID OR OUT OF SEQ.',DESC=(2) 01440000
+ABEND2   WTO    'RAKFUIDS2  INPUT DATA INVALID OR OUT OF SEQ.'      @01 01440000
          MVC    PASSWORD,=C'********'                                   01450000
          MVC    BADMSG+8(80),RECORD                                     01460000
 BADMSG   WTO    '                                                      X01470000
-                                           ',DESC=(2)                   01480000
-         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01490000
+                                           '                        @01 01480000
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **'               @01 01490000
          OI     TERMFLAG,TERMABND          SET TO ABEND @ TERMINATION   01500000
          LR     R4,R5                      GET LAST GM AREA ADDR AND    01510000
          B      ANYMORE                    GO CLEAN THE GM CHAIN.       01520000
 *                                                                       01530000
 ABEND200 ABEND  200,,STEP              Y - ABEND !                      01540000
 *                                                                       01550000
-ABEND300 WTO    'RAKFUIDS3  EMPTY INPUT FILE ?!?!',DESC=(2)             01560000
-         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **',DESC=(2)          01570000
+ABEND300 WTO    'RAKFUIDS3  EMPTY INPUT FILE ?!?!'                  @01 01560000
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **'               @01 01570000
          ABEND  300,,STEP                                               01580000
+*                                                                   @03 01582003
+ABEND600 WTO    'RAKF008W illegal operation -- access denied'       @03 01584003
+         WTO    'RAKF008W   ** program terminated **'               @03 01586003
+         ABEND  600,,STEP                                           @03 01588003
 *                                                                       01590000
 TRTBLANK DC     XL256'00'          TABLE FOR TRT                        01600000
          ORG    TRTBLANK+C' '      BLANK                                01610000
@@ -165,6 +206,9 @@ TRTBLANK DC     XL256'00'          TABLE FOR TRT                        01600000
          PRINT  NOGEN                                                   01650000
 CJYUDATA DCB    DDNAME=RAKFUSER,MACRF=GM,EODAD=ENDDATA,DSORG=PS         01660000
 *                                                                       01670000
+RAKFPSAV DC     V(RAKFPSAV)        password change utility          @02 01673002
+RAKFADM  DC     CL39'RAKFADM'      facility name to authorize       @03 01675003
+*                                                                   @02 01677002
 SAVEAREA DS     18F                                                     01680000
 LASTGM   DC     F'0'                                                    01690000
 SECURITY DC     CL8'CJYRCVT'                                            01700000
