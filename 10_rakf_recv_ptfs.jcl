@@ -12,6 +12,14 @@
  COPY INDD=((RRKF005,R)),OUTDD=RAKF
  SELECT MEMBER=(IEZCTGFL)
 /*
+//RAKFCOPY EXEC PGM=IEBCOPY
+//RRKF005  DD  DISP=SHR,DSN=SYSGEN.RAKF.RRKF005.RACIND
+//RAKF     DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M0.AMACLIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+ COPY INDD=((RRKF005,R)),OUTDD=RAKF
+ SELECT MEMBER=(IEZCTGFL)
+/*
 //* ------------------------------------------------------------------*
 //* SMP receive RAKF PTFs                                             *
 //* Expected return code: 00                                          *
