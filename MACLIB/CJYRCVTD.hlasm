@@ -1,0 +1,4 @@
+CJYRCVTD DSECT                                                          00010001
+CJYUSERS DS    F                    POINTER TO USERIDS                  00020000
+CJYPROFS DS    F                    POINTER TO PROFILES                 00030002
+CJYRL    EQU   *-CJYRCVTD                                               00040001

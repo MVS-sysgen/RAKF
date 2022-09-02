@@ -1,0 +1,6 @@
+//RAKF     EXEC PGM=ICHSEC00                                            00010000
+//IEFPARM  DD DCB=(LRECL=80,BLKSIZE=80,DSORG=PO),DISP=(,DELETE),        00020000
+//            UNIT=SYSDA,SPACE=(80,(1,0,1))                             00030000
+//RAKFPROF DD DSN=SYS1.SECURE.CNTL(PROFILES),DISP=SHR                   00040000
+//RAKFUSER DD DSN=SYS1.SECURE.CNTL(USERS),DISP=SHR                      00050000
+//RAKFPWUP DD DSN=SYS1.SECURE.PWUP,DISP=SHR                         @06 00060006

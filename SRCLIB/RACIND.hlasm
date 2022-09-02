@@ -1,0 +1,274 @@
+         TITLE 'Set or Clear RACF Indicator of VSAM Catalog Entries'    00010000
+RACIND   CSECT                                                          00020000
+         PRINT NOGEN                                                    00030000
+*                                                                       00040000
+**********************************************************************  00050000
+*                                                                    *  00060000
+* NAME: RACIND                                                       *  00070000
+*                                                                    *  00080000
+* TYPE: Assembler Source                                             *  00090000
+*                                                                    *  00100000
+* DESC: Set or Clear RACF Indicator of VSAM Catalog Entries          *  00110000
+*                                                                    *  00120000
+* FUNTION: Act upon control statements read from SYSIN to set or     *  00130000
+*          clear the RACF indicator of VSAM catalog entries. The     *  00140000
+*          following control statements are valid:                   *  00150000
+*                                                                    *  00160000
+*          ----+----1----+----2----+----3----+----4----+----5----+   *  00170000
+*          CATALOG   name of catalog to search for entries           *  00180000
+*          RACON     name of entry to indicate                       *  00190000
+*          RACOFF    name of entry to unindicate                     *  00200000
+*          * Comment                                                 *  00210000
+*                                                                    *  00220000
+*          Any number of control statements is allowed. The first    *  00230000
+*          none comment statement must be a CATALOG statement. A     *  00240000
+*          CATALOG statement remains active until a new CATALOG      *  00250000
+*          statement replaces it. The SYSIN dataset must have fixed  *  00260000
+*          length records with LRECL=80, padded to the right with    *  00270000
+*          blanks.                                                   *  00280000
+*                                                                    *  00290000
+* REQUIREMENTS: //SYSIN DD    defining the input control statements  *  00300000
+*               //SYSPRINT DD defining the print output listing      *  00310000
+*               The utility must be run from an authorized library   *  00320000
+*                                                                    *  00330000
+**********************************************************************  00340000
+*                                                                       00350000
+* initialize                                                            00360000
+*                                                                       00370000
+         SAVE  (14,12),,RACIND_&SYSDATE._&SYSTIME                       00380000
+         USING RACIND,R15          establish => program EP              00390000
+         ST    R13,SAVEAREA+4      save HSA                             00400000
+         LA    R11,SAVEAREA        establish => savearea                00410000
+         ST    R11,8(R13)          save LSA                             00420000
+         LR    R13,R11             setup => our savearea                00430000
+         USING SAVEAREA,R13        new addressability                   00440000
+         DROP  R15                 program EP no longer needed          00450000
+         B     CONTINUE            branch around savearea               00460000
+SAVEAREA DS    18F                 savearea                             00470000
+CONTINUE OPEN  (SYSIN,(INPUT))     open control statement dataset       00480000
+         OPEN  (SYSPRINT,(OUTPUT)) open output dataset                  00490000
+* IF RAKF ISNT INSTALLED SKIP RACHECK                            @SOF21 00491000
+         L     R1,CVTPTR           get CVT address               @SOF21 00492000
+         ICM   R1,B'1111',CVTSAF(R1) SAFV defined ?              @SOF21 00493000
+         BZ    JUSTDOIT            no RAC, skip check            @SOF21 00494000
+         USING SAFV,R1             addressability of SAFV        @SOF21 00495000
+         CLC   SAFVIDEN(4),SAFVID  SAFV initialized ?            @SOF21 00496000
+         BNE   JUSTDOIT            no RAC, skip check            @SOF21 00497000
+         DROP  R1                  SAFV no longer needed         @SOF21 00498000
+* ************                                                   @SOF21 00499000
+         RACHECK ENTITY=RAKFADM,CLASS='FACILITY',ATTR=READ authorize    00500000
+         LTR    R15,R15            RAKFADM granted?                     00510000
+         BNZ    NOAUTH              no, talk dirrty and exit            00520000
+JUSTDOIT MODESET MODE=SUP,KEY=ZERO authorize ourselves                  00530000
+         LA    R12,PL              address CTGPL                        00540000
+         USING CTGPL,R12           tell assembler                       00550000
+         LA    R11,FL              address CTGFL                        00560000
+         USING CTGFL,R11           tell assembler                       00570000
+*                                                                       00580000
+* setup catalog parameter and catalog field parameter lists             00590000
+*                                                                       00600000
+         MVI   CTGNOFLD,X'01'      number of fields in CTGPL            00610000
+         LA    R1,ENTNAME          entry name address                   00620000
+         ST    R1,CTGENT           store entry name address in CTGPL    00630000
+         LA    R1,ENTCAT           catalog name address                 00640000
+         ST    R1,CTGCAT           store catalog name address in CTGPL  00650000
+         OI    CTGOPTN1,CTGNAME+CTGCNAME indicate names provided        00660000
+         ST    R11,CTGFIELD        store field list address in CTGPL    00670000
+         LA    R1,WA               CTGPL work area address              00680000
+         ST    R1,CTGWKA           store work area address in CTGPL     00690000
+         MVI   CTGFLDNO,X'01'      number of fields in CTGFL            00700000
+         LA    R1,SECFLAGS         field name address                   00710000
+         ST    R1,CTGFLDNM         store field name address in CTGFL    00720000
+         LA    R1,FLDWA            CTGFL work area address              00730000
+         ST    R1,CTGFLDWA         store work area address in CTGFL     00740000
+*                                                                       00750000
+* read and interpret control statement                                  00760000
+*                                                                       00770000
+NEXTENT  GET   SYSIN,INPUT         read control statement               00780000
+         CLI   INPUT,C'*'          comment line?                        00790000
+         BE    NEXTENT              yes, read next control statement    00800000
+         CLC   INPUT(10),=C'CATALOG   ' CATALOG statement?              00810000
+         BE    SETCAT               yes, replace current catalog name   00820000
+         CLC   INPUT(10),=C'RACON     ' RACON statement?                00830000
+         BE    SETENT               yes, replace current entry name     00840000
+         CLC   INPUT(10),=C'RACOFF    ' RACOFF statement?               00850000
+         BE    SETENT               yes, replace current entry name     00860000
+         B     INVSTMT              alas master, what do you want?      00870000
+*                                                                       00880000
+* clear work areas                                                      00890000
+*                                                                       00900000
+ENTOK    LA    R4,WA               CTGPL work area address              00910000
+         LA    R2,3(,R4)           MVCL target is second byte of WA     00920000
+         LA    R4,2(,R4)           MVCL source is first byte of WA      00930000
+         MVI   0(R4),X'00'         clear source                         00940000
+         LA    R3,WAL-3            length of MVCL target                00950000
+         LA    R5,1                length of MVCL source with X'00' pad 00960000
+         MVCL  R2,R4               clear CTGPL work area                00970000
+         LA    R4,FLDWA            CTGFL work area address              00980000
+         LA    R2,3(,R4)           MVCL target is second byte of WA     00990000
+         LA    R4,2(,R4)           MVCL source is first byte of WA      01000000
+         MVI   0(R4),X'00'         clear source                         01010000
+         LA    R3,FLDWAL-3         length of MVCL target                01020000
+         LA    R5,1                length of MVCL source with X'00' pad 01030000
+         MVCL  R2,R4               clear CTGFL work area                01040000
+*                                                                       01050000
+* locate entry                                                          01060000
+*                                                                       01070000
+         NI    CTGOPTN3,X'00'      clear function indicator             01080000
+         OI    CTGOPTN3,CTGLOC+CTGAM0 indicate locate via CTGPL         01090000
+         LR    R1,R12              CTGPL address                        01100000
+         SVC   26                  locate entry                         01110000
+         LTR   R15,R15             found?                               01120000
+         BNZ   CATERR              no, issue catalog error message      01130000
+*                                                                       01140000
+* set or clear RACF indicator                                           01150000
+*                                                                       01160000
+         L     R5,CTGFLPT          get SECFLAGS address                 01170000
+         CLC   INPUT(10),=C'RACOFF    ' request type?                   01180000
+         BE    RACOFF              process RACOFF                       01190000
+         OI    0(R5),B'10000000'   RACON:  set RACF indicator           01200000
+         B     UPDATE              go update                            01210000
+RACOFF   NI    0(R5),B'01111111'   RACOFF: clear RACF indicator         01220000
+*                                                                       01230000
+* update entry                                                          01240000
+*                                                                       01250000
+UPDATE   NI    CTGOPTN3,X'00'      clear function indicator             01260000
+         OI    CTGOPTN3,CTGUPDAT+CTGAM0 indicate update via CTGPL       01270000
+         LR    R1,R12              CTGPL address                        01280000
+         SVC   26                  update entry                         01290000
+         LTR   R15,R15             success?                             01300000
+         BNZ   CATERR              no, issue catalog error message      01310000
+         MVC   OUTPUT(132),BLANK   clear output record                  01320000
+         MVC   OUTPUT(37),=C'IND003I RACF indicator turned xxx for'     01330000
+         MVC   OUTPUT+30(3),INPUT+3             build ..                01340000
+         MVC   OUTPUT+38(44),ENTNAME                .. message          01350000
+         PUT   SYSPRINT,OUTPUT     print message                        01360000
+         B     NEXTENT             process next entry                   01370000
+*                                                                       01380000
+* return                                                                01390000
+*                                                                       01400000
+RETURN   MODESET MODE=PROB,KEY=NZERO return to problem state            01410000
+EXIT     CLOSE (SYSIN)             close control statement dataset      01420000
+         CLOSE (SYSPRINT)          close output dataset                 01430000
+         L     R15,MAXRC           get this run's maximum return code   01440000
+         L     R13,SAVEAREA+4      get caller's savearea                01450000
+         L     R14,12(,R13)        restore ..                           01460000
+         LM    R0,R12,20(R13)                .. regs                    01470000
+         BR    R14                 return                               01480000
+*                                                                       01490000
+* process control statements                                            01500000
+*                                                                       01510000
+SETCAT   CLI   INPUT+10,C' '       process CATALOG statement            01520000
+         BE    INVCAT              first char blank, ignore statement   01530000
+         MVC   ENTCAT(44),INPUT+10 set new catalog                      01540000
+         MVC   OUTPUT(132),BLANK   clear output record                  01550000
+         MVC   OUTPUT(21),=C'IND001I using catalog' build ..            01560000
+         MVC   OUTPUT+22(44),ENTCAT                     .. message      01570000
+         PUT   SYSPRINT,OUTPUT     print message                        01580000
+         B     NEXTENT             process next entry                   01590000
+SETENT   CLI   INPUT+10,C' '       process RACxxx statement             01600000
+         BE    INVENT              first char blank, ignore statement   01610000
+         CLI   ENTCAT,C' '         catalog defined?                     01620000
+         BE    NOCAT                no, ignore statement                01630000
+         MVC   ENTNAME(44),INPUT+10 set entry name                      01640000
+         MVC   OUTPUT(132),BLANK   clear output record                  01650000
+         MVC   OUTPUT(18),=C'IND002I processing'    build ..            01660000
+         MVC   OUTPUT+19(44),ENTNAME                    .. message      01670000
+         PUT   SYSPRINT,OUTPUT     print message                        01680000
+         B     ENTOK               process entry                        01690000
+*                                                                       01700000
+* end of SYSIN dataset reached                                          01710000
+*                                                                       01720000
+DONE     MVC   OUTPUT(132),BLANK   clear output record                  01730000
+         MVC   OUTPUT(31),=C'IND004I processing ended at EOD' message   01740000
+         PUT   SYSPRINT,OUTPUT     print message                        01750000
+         B     RETURN              exit                                 01760000
+*                                                                       01770000
+* error messages                                                        01780000
+*                                                                       01790000
+INVCAT   MVC   OUTPUT(132),BLANK   clear output record                  01800000
+         MVC   OUTPUT(33),=C'IND005E CATALOG statement invalid' message 01810000
+         PUT   SYSPRINT,OUTPUT     print message                        01820000
+         B     NEXTENT             process next entry                   01830000
+INVENT   MVC   OUTPUT(132),BLANK   clear output record                  01840000
+         MVC   OUTPUT(32),=C'IND006E RACxxx statement invalid' build .. 01850000
+         MVC   OUTPUT+11(3),INPUT+3                          .. message 01860000
+         PUT   SYSPRINT,OUTPUT     print message                        01870000
+         B     NEXTENT             process next entry                   01880000
+NOCAT    MVC   OUTPUT(132),BLANK   clear output record                  01890000
+         MVC   OUTPUT(45),=C'IND007E no catalog defined, statement ignoX01900000
+               red'                build message                        01910000
+         PUT   SYSPRINT,OUTPUT     print message                        01920000
+         B     NEXTENT             process next entry                   01930000
+INVSTMT  MVC   OUTPUT(132),BLANK   clear output record                  01940000
+         MVC   OUTPUT(33),=C'IND008E invalid statement ignored' message 01950000
+         PUT   SYSPRINT,OUTPUT     print message                        01960000
+         B     NEXTENT             process next entry                   01970000
+CATERR   C     R15,MAXRC           RC higher than MAXRC?                01980000
+         BNH   CATLOW               no, don't update MAXRC              01990000
+         ST    R15,MAXRC            yes, update MAXRC                   02000000
+CATLOW   MVC   OUTPUT(132),BLANK   clear output record                  02010000
+         MVC   OUTPUT(72),=C'IND009E ** VSAM catalog return code is rrrX02020000
+                - reason code is IGG0CLxx-nnn' build message            02030000
+         MVC   OUTPUT+66(2),CTGFDBK move module id into message         02040000
+         CVD   R15,ERRDEC          convert return code to decimal       02050000
+         L     R5,ERRDEC+4         get low order decimal word           02060000
+         SLL   R5,4                separate last digit from sign        02070000
+         ST    R5,ERRDEC           store in high order decimal word     02080000
+         UNPK  ERREBC(7),ERRDEC(4) convert to EBCDIC                    02090000
+         MVC   OUTPUT+39(3),ERREBC+3 move return code into message      02100000
+         LH    R5,CTGREAS1         get reason code                      02110000
+         CVD   R5,ERRDEC           convert reason code to decimal       02120000
+         L     R5,ERRDEC+4         get low order decimal word           02130000
+         SLL   R5,4                separate last digit from sign        02140000
+         ST    R5,ERRDEC           store in high order decimal word     02150000
+         UNPK  ERREBC(7),ERRDEC(4) convert to EBCDIC                    02160000
+         MVC   OUTPUT+69(3),ERREBC+3 move reason code into message      02170000
+         PUT   SYSPRINT,OUTPUT     print message                        02180000
+         B     NEXTENT             process next entry                   02190000
+NOAUTH   MVC   OUTPUT(132),BLANK   clear output record                  02200000
+         MVC   OUTPUT(21),=C'IND010T access denied' build message       02210000
+         PUT   SYSPRINT,OUTPUT     print message                        02220000
+         LA    R15,12              set ..                               02230000
+         ST    R15,MAXRC                 .. return code ..              02240000
+         B     EXIT                                       .. and exit   02250000
+*                                                                       02260000
+* data area                                                             02270000
+*                                                                       02280000
+ENTNAME  DS    CL44                name of entry to modify              02290000
+ENTCAT   DC    CL44' '             name of catalog to search for entry  02300000
+SECFLAGS DC    CL8'SECFLAGS'       field name for CTGFL                 02310000
+MAXRC    DC    F'0'                maximum catalog return code          02320000
+PL       DC    8F'0'               catalog parameter list               02330000
+FL       DC    6F'0'               catalog field list                   02340000
+WA       DC    AL2(WAL)            CTGPL ..                             02350000
+         DS    1022X                       .. work area                 02360000
+WAL      EQU   *-WA                length of CTGPL work area            02370000
+FLDWA    DC    AL2(FLDWAL)         CTGFL ..                             02380000
+         DS    1022X                       .. work area                 02390000
+FLDWAL   EQU   *-FLDWA             length of CTGFL work area            02400000
+RAKFADM  DC    CL39'RAKFADM'       facility name to authorize           02410000
+INPUT    DS    CL80                control statement                    02420000
+BLANK    DC    C' '                blank to clear output record         02430000
+OUTPUT   DS    CL132               output record                        02440000
+ERRDEC   DS    D                   return/reason codes decimal          02450000
+ERREBC   DS    CL8                 return/reason codes EBCDIC           02460000
+SYSIN    DCB   DDNAME=SYSIN,MACRF=GM,DSORG=PS,EODAD=DONE,              X02470000
+               LRECL=80,RECFM=FB,BLKSIZE=800      control statements    02480000
+SYSPRINT DCB   DDNAME=SYSPRINT,MACRF=PM,DSORG=PS,                      X02490000
+               LRECL=132,RECFM=FB,BLKSIZE=1320    messages              02500000
+SAFVID   DC    CL4'SAFV'           SAFV eye catcher              @SOF21 02501000
+CVTSAF   EQU   248 CVTSAF doesn't exist but is a reserved field in 3.8J 02502000
+         LTORG ,                   all literals go here                 02510000
+*                                                                       02520000
+* equates                                                               02530000
+*                                                                       02540000
+         YREGS                     register equates                     02550000
+*                                                                       02560000
+* parameter list mappings                                               02570000
+*                                                                       02580000
+         IEZCTGPL                  catalog parameter list               02590000
+         IEZCTGFL                  catalog field parameter list         02600000
+         CVT   DSECT=YES           map CVT                       @SOF21 02601000
+         ICHSAFV  DSECT=YES        map SAFV                      @SOF21 02602000
+         END   RACIND              end of program                       02610000

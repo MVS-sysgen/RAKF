@@ -1,0 +1,125 @@
+         TITLE 'RAKF Password Update Program'                           00010000
+RAKFPWUP CSECT                                                          00020000
+         PRINT NOGEN                                                    00030000
+*                                                                       00040000
+**********************************************************************  00050000
+*                                                                    *  00060000
+* NAME: RAKFPWUP                                                     *  00070000
+*                                                                    *  00080000
+* TYPE: Assembler Source                                             *  00090000
+*                                                                    *  00100000
+* DESC: Process Password Update Requests                             *  00110000
+*                                                                    *  00120000
+* FUNCTION: - retrieve username and new password from CSA area       *  00130000
+*             allocated by ICHSFR00 in subpool 227 (fetch protected) *  00140000
+*           - clear and free CSA area                                *  00150000
+*           - append username and new password to the RAKF password  *  00160000
+*             change queue, a sequential dataset with LRECL=18,      *  00170000
+*             RECFM=F containing one line per password change in the *  00180000
+*             following format:                                      *  00190000
+*                                                                    *  00200000
+*             ----+----1----+---                                     *  00210000
+*             uuuuuuuu pppppppp                                      *  00220000
+*                                                                    *  00230000
+*             where uuuuuuuu is the username and pppppppp is the new *  00240000
+*             password, each padded to the right with blanks to 8    *  00250000
+*             characters.                                            *  00260000
+*                                                                    *  00270000
+* REQUIREMENTS: - RAKF password change queue pointed to by ddname    *  00280000
+*                 RAKFPWUP using DISP=MOD in the DD statement.       *  00290000
+*                                                                    *  00300000
+**********************************************************************  00310000
+*                                                                       00320000
+* initialize                                                            00330000
+*                                                                       00340000
+         SAVE  (14,12),,RAKFPWUP_&SYSDATE._&SYSTIME                     00350000
+         USING RAKFPWUP,R15        establish => program EP              00360000
+         ST    R13,SAVEAREA+4      save HSA                             00370000
+         LA    R11,SAVEAREA        establish => savearea                00380000
+         ST    R11,8(R13)          save LSA                             00390000
+         LR    R13,R11             setup => our savearea                00400000
+         USING SAVEAREA,R13        new addressability                   00410000
+         DROP  R15                 program EP no longer needed          00420000
+         B     CONTINUE            branch around savearea               00430000
+SAVEAREA DS    18F                 savearea                             00440000
+*                                                                       00450000
+* Begin of code                                                         00460000
+*                                                                       00470000
+CONTINUE LR    R5,R1               remember PARM plist address          00480000
+         MODESET MODE=SUP,KEY=ZERO authorize ourselves                  00490000
+         L     R1,0(,R5)           address of PARM field plist          00500000
+         LH    R5,0(,R1)           length of PARM field                 00510000
+         CH    R5,=H'8'            is PARM field length 8 characters?   00520000
+         BNE   INVPARM              talk dirrty and exit if not         00530000
+         MVC   ADDRHEX,2(R1)       get PARM field in check plist        00540000
+         MVC   ADDRUNPK,2(R1)      get PARM field for translate         00550000
+         TR    ADDRUNPK,HEXTBL     translate PARM field to zoned        00560000
+         PACK  ADDRESS(5),ADDRUNPK(9) pack PARM field                   00570000
+         L     R1,ADDRESS          address storage pointed to by PARM   00580000
+         CLC   0(LPWUPCMD,R1),STRTPWUP parmlist from ICHSFR00 found?    00590000
+         BNE   INVPARM              talk dirrty and exit if not         00600000
+         MVC   PWUPUSER(8),PWUPUSER-STRTPWUP(R1) get user               00610000
+         MVC   PWUPPSWD(8),PWUPPSWD-STRTPWUP(R1) get new password       00620000
+         XC    0(LPWUP,R1),0(R1)   clear ICHSFR00 parmlist storage      00630000
+         FREEMAIN RU,LV=LPWUP,A=ADDRESS,SP=227 free parmlist storage    00640000
+         ENQ    (SECURITY,USERS,E,,SYSTEM),RET=HAVE serialization       00650000
+         OPEN  (QUEUE,(OUTPUT))    open password change queue           00660000
+         PUT   QUEUE,PWUP          write entry                          00670000
+         CLOSE (QUEUE)             close password change queue          00680000
+         DEQ   (SECURITY,USERS,,SYSTEM) release ENQ                     00690000
+         MVC   SUCCESS+38(8),PWUPUSER move user into success message    00700000
+         WTO   MF=(E,SUCCESS)      tell operator                        00710000
+*                                                                       00720000
+* return                                                                00730000
+*                                                                       00740000
+RETURN   MODESET MODE=PROB,KEY=NZERO return to problem state            00750000
+         L     R13,SAVEAREA+4      get caller's savearea                00760000
+         RETURN (14,12),,RC=0      return                               00770000
+INVPARM  WTO   'RAKF006W invalid password update request ignored'       00780000
+         B     RETURN                                                   00790000
+*                                                                       00800000
+* data area                                                             00810000
+*                                                                       00820000
+STRTPWUP DC    AL2(LPWUPCMD)       parameter list that must have been.. 00830000
+         DC    X'0000'               .. used to start this RAKFPWUP ..  00840000
+         DC    C'S RAKFPWUP,PARM=''' .. run. This is used to perform .. 00850000
+ADDRHEX  DS    CL8                   .. a validity check of the CSA ..  00860000
+         DC    C''''                 .. storage addressed through ..    00870000
+LPWUPCMD EQU   *-STRTPWUP            .. the PARM field                  00880000
+PWUP     DS    0C                  changes queue record                 00890000
+PWUPUSER DC    CL8' '              userid                               00900000
+         DC    C' '                filler                               00910000
+PWUPPSWD DC    CL8' '              new password                         00920000
+         DC    C' '                filler                               00930000
+CHGLRECL EQU   *-PWUP              record length of changes queue       00940000
+LPWUP    EQU   *-STRTPWUP          total length of CSA area             00950000
+ADDRUNPK DS    CL8                 unpacked address                     00960000
+         DC    X'C0'               sign and dummy digit                 00970000
+ADDRESS  DS    F                   packed address                       00980000
+         DS    X                   dummy digit and sign after pack      00990000
+SECURITY DC     CL8'CJYRCVT'       resource name for ENQ                01000000
+USERS    DC     CL8'CJYUSRS'       resource name for ENQ                01010000
+QUEUE    DCB   DDNAME=RAKFPWUP,MACRF=PM,DSORG=PS password change queue  01020000
+SUCCESS  WTO   'RAKF007I password update for user UUUUUUUU queued',MF=L 01030000
+*                 0 1 2 3 4 5 6 7 8 9 A B C D E F                       01040000
+HEXTBL   DC    X'00000000000000000000000000000000' 0                    01050000
+         DC    X'00000000000000000000000000000000' 1                    01060000
+         DC    X'00000000000000000000000000000000' 2                    01070000
+         DC    X'00000000000000000000000000000000' 3                    01080000
+         DC    X'00000000000000000000000000000000' 4                    01090000
+         DC    X'00000000000000000000000000000000' 5 translate table    01100000
+         DC    X'00000000000000000000000000000000' 6 to convert CSA     01110000
+         DC    X'00000000000000000000000000000000' 7 address from PARM  01120000
+         DC    X'00000000000000000000000000000000' 8 field to zoned     01130000
+         DC    X'00000000000000000000000000000000' 9 format             01140000
+         DC    X'00000000000000000000000000000000' A                    01150000
+         DC    X'00000000000000000000000000000000' B                    01160000
+         DC    X'00FAFBFCFDFEFF000000000000000000' C                    01170000
+         DC    X'00000000000000000000000000000000' D                    01180000
+         DC    X'00000000000000000000000000000000' E                    01190000
+         DC    X'F0F1F2F3F4F5F6F7F8F9000000000000' F                    01200000
+*                                                                       01210000
+* equates                                                               01220000
+*                                                                       01230000
+         YREGS                     register equates                     01240000
+         END   RAKFPWUP            end of program                       01250000

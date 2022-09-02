@@ -1,0 +1,158 @@
+         TITLE 'RAKF Initialization Program'                            00010000
+ICHSEC00 CSECT                                                          00020000
+*                                                                       00030000
+**********************************************************************  00040000
+*                                                                    *  00050000
+* NAME: ICHSEC00                                                     *  00060000
+*                                                                    *  00070000
+* TYPE: Assembler Source                                             *  00080000
+*                                                                    *  00090000
+* DESC: Initialize RAKF                                              *  00100000
+*                                                                    *  00110000
+* FUNCTION: - output banner to console                               *  00120000
+*           - check if SAFV is already defined and initialized       *  00130000
+*             o if yes: skip initialization and go directly to       *  00140000
+*                       profile and user table initialization        *  00150000
+*           - try to read initialization directive from              *  00160000
+*             parmlib member RAKFINIT:                               *  00170000
+*             o if first line of member starts with YES:    continue *  00180000
+*             o if first line of member starts with NO:     exit     *  00190000
+*             o else, of if member doesn't exist:                    *  00200000
+*               + ask operator for permission to initialize          *  00210000
+*                 if operator denies permission:            exit     *  00220000
+*           - get SQA storage for SAFV and initialize it             *  00230000
+*           - put entry address of SAF router ICHSFR00 in SAFV       *  00240000
+*           - initialize RCVT                                        *  00250000
+*           - initialize profile table                               *  00260000
+*           - initialize user table                                  *  00270000
+*                                                                    *  00280000
+* REQUIREMENTS: - ICHSFR00 in LPA                                    *  00290000
+*               - RAKFPROF and RAKFUSER in linklist                  *  00300000
+*               - parmlib defined through ddname IEFPARM             *  00310000
+*               - user and profile table DDs as needed               *  00320000
+*                 by RAKFPROF and RAKFUSER                           *  00330000
+*                                                                    *  00340000
+**********************************************************************  00350000
+*                                                                       00360000
+         PRINT NOGEN                                                    00370000
+         SAVE  (14,12),,ICHSEC00_&SYSDATE._&SYSTIME                     00380000
+         USING ICHSEC00,R15        establish => program EP              00390000
+         ST    R13,SAVEAREA+4      save HSA                             00400000
+         LA    R11,SAVEAREA        establish => savearea                00410000
+         ST    R11,8(R13)          save LSA                             00420000
+         LR    R13,R11             setup => our savearea                00430000
+         USING SAVEAREA,R13        new addressability                   00440000
+         DROP  R15                 program EP no longer needed          00450000
+         B     CONTINUE            branch around savearea               00460000
+SAVEAREA DS    18F                 savearea                             00470000
+*                                                                       00480000
+* identify                                                              00490000
+*                                                                       00500000
+CONTINUE WTO   'RAKF is based on the ESG Security System'               00510000
+         WTO   'written by Craig J. Yasuna               (Mar 1991)'    00520000
+         WTO   'adapted to MVS 3.8J: A. Philip Dickinson (Aug 2005)'    00530000
+         WTO   '                     Phil Roberts        (Apr 2011)'    00540000
+         WTO   '                     Juergen Winkelmann  (Apr 2011)'    00550000
+*                                                                       00560000
+* RAKF already active?                                                  00570000
+*                                                                       00580000
+         L     R2,FLCCVT-PSA(0)    get CVT address from PSA             00590000
+         ICM   R3,B'1111',CVTSAF(R2) SAFV already defined?              00600000
+         BZ    GOFORIT             no RAC active, continue activation   00610000
+         USING SAFV,R3             addressability of SAFV               00620000
+         CLC   SAFVIDEN(4),SAFVID  SAFV initialized?                    00630000
+         BNE   GOFORIT             no RAC active, continue activation   00640000
+         DROP  R3                  SAFV no longer needed                00650000
+         WTO   'RAKF005I RAKF is already active' tell operator          00660000
+         B     PROFUSER            initialize user and profile table    00670000
+*                                                                       00680000
+* read parmlib                                                          00690000
+*                                                                       00700000
+GOFORIT  LA    R11,PARMLIB         establish ..                         00710000
+         USING IHADCB,R11           .. DCB addressability               00720000
+         OPEN  PARMLIB             open PARMLIB                         00730000
+         LH    R12,DCBBLKSI        get blocksize                        00740000
+         GETMAIN EU,LV=(R12),A=BLKADDR get storage for block            00750000
+         FIND  PARMLIB,RAKFINIT,D  find member RAKFINIT                 00760000
+         LTR   R15,R15             parmlib member found?                00770000
+         BNZ   CLOSE                --> no, don't read                  00780000
+         L     R12,BLKADDR         get block address                    00790000
+         READ  INDECB,SF,PARMLIB,(R12),'S' read block                   00800000
+         CHECK INDECB              wait for data to arrive              00810000
+         MVC   RAKSTART(4),0(R12)  get parmlib input                    00820000
+CLOSE    LH    R12,DCBBLKSI        get blocksize                        00830000
+         FREEMAIN EU,LV=(R12),A=BLKADDR free storage                    00840000
+         CLOSE PARMLIB             close parmlib                        00850000
+         DROP  R11                 DCB no longer needed                 00860000
+*                                                                       00870000
+* decide initialization                                                 00880000
+*                                                                       00890000
+         CLC   RAKSTART(2),NO      if RAKFINIT directive is NO ..       00900000
+         BE    NOINIT               .. talk dirrty and don't initialize 00910000
+         CLC   RAKSTART(3),YES     if RAKFINIT directive is YES ..      00920000
+         BE    INITMSG              .. initialize RAKF                  00930000
+         WTO   MF=(E,INITWTO)       .. else ask operator                00940000
+         WTOR  'RAKF002A Reply YES to continue or NO to cancel',       X00950000
+               REPLY,4,SECECB,ROUTCDE=(1) .. shall we?                  00960000
+         WAIT  ECB=SECECB          wait for reply                       00970000
+         CLC   REPLY(2),NO         if operator replied NO ..            00980000
+         BNE   INIT                 .. talk dirrty and don't initialize 00990000
+NOINIT   WTO   'RAKF004W RAKF not initialized' tell operator            01000000
+RETURN   L     R13,SAVEAREA+4      get caller's savearea                01010000
+         RETURN (14,12),,RC=0      return                               01020000
+*                                                                       01030000
+* initialize                                                            01040000
+*                                                                       01050000
+INITMSG  WTO   MF=(E,INITWTO)      tell operator                        01060000
+INIT     MODESET MODE=SUP,KEY=ZERO authorize ourselves                  01070000
+         GETMAIN RU,LV=SAFVLEN,SP=245 get SQA storage for SAFV          01080000
+         LR    R3,R1               establish ..                         01090000
+         USING SAFV,R3              .. addressability of SAFV           01100000
+         XC    SAFV(SAFVLEN),SAFV  clear SAFV                           01110000
+         MVC   SAFVIDEN(4),SAFVID  move identifier into SAFV            01120000
+         LOAD  EP=ICHSFR00         get SFR address (LPA)                01130000
+         ST    R0,SAFVSAFR         store SFR address in SAFV            01140000
+         DROP  R3                  SAFV addressability no longer needed 01150000
+         L     R2,FLCCVT-PSA(0)    get CVT address from PSA             01160000
+         ST    R3,CVTSAF(R2)       save SAFV address in CVT             01170000
+         L     R15,CJYRCVT         get RCVT loader address              01180000
+         BALR  R14,R15             call it                              01190000
+         MODESET MODE=PROB,KEY=NZERO return to problem state            01200000
+         WTO   'RAKF003I RAKF is now active',ROUTCDE=(2) tell operator  01210000
+PROFUSER LOAD  EP=RAKFPROF         load profile updater                 01220000
+         LR    R15,R0              address of entry point               01230000
+         BALR  R14,R15             call it                              01240000
+         DELETE EP=RAKFPROF        remove it                            01250000
+         LOAD  EP=RAKFUSER         load user updater                    01260000
+         LR    R15,R0              address of entry point               01270000
+         BALR  R14,R15             call it                              01280000
+         DELETE EP=RAKFUSER        remove it                            01290000
+         B     RETURN              return                               01300000
+*                                                                       01310000
+* data area                                                             01320000
+*                                                                       01330000
+BLKADDR  DS    F                   address of parmlib read buffer       01340000
+CJYRCVT  DC    V(CJYRCVT)          RCVT loader                          01350000
+RAKFINIT DC    C'RAKFINIT'         parmlib member name                  01360000
+RAKSTART DC    CL4' '              parameter read from parmlib          01370000
+REPLY    DC    CL4' '              reply from operator                  01380000
+SAFVID   DC    CL4'SAFV'           SAFV eye catcher                     01390000
+SECECB   DC    A(0)                ECB for WTOR                         01400000
+NO       DC    CL2'NO'             NO                                   01410000
+YES      DC    CL3'YES'            YES                                  01420000
+INITWTO  WTO   'RAKF001I RAKF is now being activated',                 X01430000
+               ROUTCDE=(1),MF=L    tell operator                        01440000
+PARMLIB  DCB   DDNAME=IEFPARM,DSORG=PO,MACRF=R,EODAD=CLOSE              01450000
+*                                                                       01460000
+* equates                                                               01470000
+*                                                                       01480000
+CVTSAF   EQU   248 CVTSAF doesn't exist but is a reserved field in 3.8J 01490000
+         YREGS                     register equates                     01500000
+*                                                                       01510000
+* control block mappings                                                01520000
+*                                                                       01530000
+         CVT   DSECT=YES           map CVT                              01540000
+         IHAPSA   DSECT=YES        map PSA                              01550000
+         ICHSAFV  DSECT=YES        map SAFV                             01560000
+         DCBD  DSORG=PO,DEVD=DA    map DCB                              01570000
+         END   ICHSEC00                                                 01580000

@@ -1,0 +1,48 @@
+         TITLE 'RAKF SVCs'                                              00010000
+ICHRIN00 CSECT                                                          00020000
+         ENTRY IGC0013A,IGC0013B,IGC0013C                               00030000
+*                                                                       00040000
+**********************************************************************  00050000
+*                                                                    *  00060000
+* NAME: ICHRIN00                                                     *  00070000
+*                                                                    *  00080000
+* TYPE: Assembler Source                                             *  00090000
+*                                                                    *  00100000
+* DESC: Stub module for RAKF SVCs                                    *  00110000
+*                                                                    *  00120000
+* FUNCTION: provide dummy RACF SVC 132                               *  00130000
+*           provide real RAKF SVCs 130, 131, 133                     *  00140000
+*                                                                    *  00150000
+**********************************************************************  00160000
+*                                                                       00170000
+         USING ICHRIN00,R6         SCV entry R6 = EP                    00180000
+         B     SVC130              continue with IGC00130               00190000
+         DC    C'IGC00130 RAKF  &SYSDATE. ' eye catcher                 00200000
+SVC130   L     R6,RAKF0130         address of SVC 130                   00210000
+         BR    R6                  go for it                            00220000
+*                                                                       00230000
+         USING IGC0013A,R6         SCV entry R6 = EP                    00240000
+IGC0013A B     SVC131              continue with IGC0013A               00250000
+         DC    C'IGC0013A RAKF  &SYSDATE. ' eye catcher                 00260000
+SVC131   L     R6,RAKF013A         address of SVC 131                   00270000
+         BR    R6                  go for it                            00280000
+*                                                                       00290000
+         USING IGC0013B,R6         SCV entry R6 = EP                    00300000
+IGC0013B B     SVC132              continue with IGC0013B (dummy)       00310000
+         DC    C'ICHRIN00 DUMMY &SYSDATE. ' eye catcher                 00320000
+SVC132   LA    R15,0               indicate RACLIST successful ..       00330000
+         LA    R0,4                 .. but no profiles mapped           00340000
+         BR    R14                 return to the caller                 00350000
+*                                                                       00360000
+         USING IGC0013C,R6         SCV entry R6 = EP                    00370000
+IGC0013C B     SVC133              continue with IGC0013C               00380000
+         DC    C'IGC0013C RAKF  &SYSDATE. ' eye catcher                 00390000
+SVC133   L     R6,RAKF013C         address of SVC 133                   00400000
+         BR    R6                  go for it                            00410000
+*                                                                       00420000
+*                                                                       00430000
+RAKF0130 DC    V(RAKF0130)         SVC 130 (RACHECK)                    00440000
+RAKF013A DC    V(RAKF013A)         SVC 131 (RACINIT)                    00450000
+RAKF013C DC    V(RAKF013C)         SVC 133 (RACDEF)                     00460000
+         YREGS                     register equates                     00470000
+         END   ICHRIN00                                                 00480000

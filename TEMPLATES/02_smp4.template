@@ -1,0 +1,59 @@
+??
+/*
+//SMPCNTL  DD  *
+ /* REJECT SELECT(TRKF126) . */
+ RESETRC.
+ RECEIVE SELECT(TRKF126) .
+/*
+//*
+//* ------------------------------------------------------------------*
+//* SMP apply of RAKF 1.2.6                                           *
+//* Expected APPLY step return code: 04 or lower                      *
+//*                                   |                               *
+//*                                    --> resulting from RC=8 in SMP *
+//*                                        generated LINKEDITs.       *
+//*                                                                   *
+//* After successful APPLY continue as outlined in member $$$$INST    *
+//* of the installation JCL-Library, step 5 (Run Job D_ACCPT) to      *
+//* SMP ACCEPT RAKF or step 6 (IPL CLPA) if you want to skip the      *
+//* SMP ACCEPT for now.                                               *
+//* ------------------------------------------------------------------*
+//APPLYR  EXEC SMPAPP
+//SYSLIB   DD
+//         DD
+//         DD
+//         DD
+//         DD
+//         DD
+//         DD
+//         DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.MACLIB
+//MACLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.MACLIB
+//SAMPLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.SAMPLIB
+//SRCLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.SRCLIB
+//SMPCNTL  DD  *
+ APPLY S(TRKF126) DIS(WRITE) .
+/*
+//* ------------------------------------------------------------------*
+//* SMP accept of RAKF 1.2.6                                          *
+//* Expected return code: 00                                          *
+//* ------------------------------------------------------------------*
+//ACCEPTR EXEC SMPAPP
+//SYSLIB   DD
+//         DD
+//         DD
+//         DD
+//         DD
+//         DD
+//         DD
+//         DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.AMACLIB
+//AMACLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.AMACLIB
+//APARMLIB DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.APARMLIB
+//APROCLIB DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.APROCLIB
+//ASAMPLIB DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.ASAMPLIB
+//MACLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.MACLIB
+//SAMPLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.SAMPLIB
+//ASRCLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.ASRCLIB
+//SRCLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.SRCLIB
+//SMPCNTL  DD  *
+ ACCEPT S(TRKF126) DIS(WRITE) .
+/*

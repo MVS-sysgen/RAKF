@@ -1,0 +1,26 @@
+RPECBLK  DSECT ,                    RESOURCE PROFILE ELEMENT            00010000
+RPENEXT  DS    F                    NEXT RPE                            00020001
+RPECLASS DS    0XL9                 CLASS LEN/NAME                      00030007
+RPECLASL DS    X                    CLASS NAME                          00040007
+RPECLASN DS    XL8                  CLASS NAME                          00050007
+RPEENTTY DS    0XL45                ENTITY LENGTH/NAME                  00060007
+RPEENTYL DS    X                    ENTITY LENGTH                       00070007
+RPEENTYN DS    XL44                 ENTITY                              00080007
+RPEUACC  DS    X                    UNIVERSAL ACCESS                    00090001
+RPEACCPT DS    F                    POINTER TO RPE PERMITS              00100008
+RPEEND   DS    0F                   END OF FIXED PART                   00110002
+RPEL     EQU   *-RPECBLK                                                00120004
+*                                                                       00130000
+RPEACCLE DSECT ,                    ACCESS LIST                         00140000
+RPEANEXT DS    F                    NEXT RPE                            00150008
+RPEAUSR  DS    CL8                  USER/GROUP ID                       00160008
+RPEACS   DS    BL1                  ACCESS AUTHORITY                    00170000
+         DS    0F                                                       00180009
+RPEACCLN EQU   *-RPEACCLE                                               00190000
+*                                                                       00200004
+RACFALTR EQU   X'80'                ALTER AUTHORITY                     00210004
+RACFCNTL EQU   X'40'                CONTROL AUTHORITY                   00220006
+RACFUPDT EQU   X'20'                UPDATE AUTHORITY                    00230006
+RACFREAD EQU   X'10'                READ AUTHORITY                      00240006
+RACFEXEC EQU   X'09'                EXEC AUTHORITY                      00250004
+RACFNONE EQU   X'01'                NONE AUTHORITY                      00260006
