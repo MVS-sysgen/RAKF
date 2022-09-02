@@ -53,6 +53,7 @@ CONTINUE WTO   'RAKF is based on the ESG Security System'               00510000
          WTO   'adapted to MVS 3.8J: A. Philip Dickinson (Aug 2005)'    00530000
          WTO   '                     Phil Roberts        (Apr 2011)'    00540000
          WTO   '                     Juergen Winkelmann  (Apr 2011)'    00550000
+         WTO   'RAKF V1R2M6 from https://github.com/MVS-sysgen/RAKF'    00551000
 *                                                                       00560000
 * RAKF already active?                                                  00570000
 *                                                                       00580000
