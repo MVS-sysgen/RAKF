@@ -77,69 +77,69 @@ TERMINAL*                                                   READ
 //SYSPRINT DD SYSOUT=*
 //SYSIN DD DUMMY
 //SYSUT1    DD *
-say ''
-say '******************************************'
-say '* REXX Sort USERS and PROFILES           *'
-say '******************************************'
-say ''
-say '*** Processing LISTCAT UCAT Output'
+SAY ''
+SAY '******************************************'
+SAY '* REXX SORT USERS AND PROFILES           *'
+SAY '******************************************'
+SAY ''
+SAY '*** PROCESSING LISTCAT UCAT OUTPUT'
 
-"EXECIO * DISKR USERS (FINIS STEM sortin."
-if rc > 0 then do
-    say "(T_T) Error reading INDD:" rc
-    exit 1
-end
-say '*** Number of user entries' sortin.0
-say '*** Sorting'
-call rxsort
-say '*** done'
+"EXECIO * DISKR USERS (FINIS STEM SORTIN."
+IF RC > 0 THEN DO
+    SAY "(T_T) ERROR READING INDD:" RC
+    EXIT 1
+END
+SAY '*** NUMBER OF USER ENTRIES' SORTIN.0
+SAY '*** SORTING'
+CALL RXSORT
+SAY '*** DONE'
 
-do i=1 to sortin.0
-    say sortin.i
-    users.i = sortin.i
-end
+DO I=1 TO SORTIN.0
+    SAY SORTIN.I
+    USERS.I = SORTIN.I
+END
 
-users.0 = sortin.0
+USERS.0 = SORTIN.0
 
-"EXECIO * DISKR PROFILES (FINIS STEM sortin."
+"EXECIO * DISKR PROFILES (FINIS STEM SORTIN."
 
-say '*** Number of profile entries' sortin.0
-say '*** Sorting'
-call rxsort
-say '*** done'
-
-
-do i=1 to sortin.0
-    say sortin.i
-    profiles.i = sortin.i
-end
-profiles.0 = sortin.0
-
-say "*** Generating PDSLOAD statements"
-
-outdd.1 = './ ADD NAME=USERS'
-
-do i=1 to users.0
-    x = i + 1
-    outdd.x = users.i
-end
-x = x + 1
-outdd.x = "./ ADD NAME=PROFILES"
-do i=1 to profiles.0
-    x = i + 2 + users.0
-    outdd.x = profiles.i
-end
-say users.0  profiles.0
-outdd.0 = 2 + users.0 + profiles.0
+SAY '*** NUMBER OF PROFILE ENTRIES' SORTIN.0
+SAY '*** SORTING'
+CALL RXSORT
+SAY '*** DONE'
 
 
-"EXECIO * DISKW OUTDD (STEM outdd. FINIS"
-if rc > 0 then do
-    say "(T_T) Error reading OUTDD:" rc
-    exit 1
-end
-say "*** Done"
-say ''
+DO I=1 TO SORTIN.0
+    SAY SORTIN.I
+    PROFILES.I = SORTIN.I
+END
+PROFILES.0 = SORTIN.0
+
+SAY "*** GENERATING PDSLOAD STATEMENTS"
+
+OUTDD.1 = './ ADD NAME=USERS'
+
+DO I=1 TO USERS.0
+    X = I + 1
+    OUTDD.X = USERS.I
+END
+X = X + 1
+OUTDD.X = "./ ADD NAME=PROFILES"
+DO I=1 TO PROFILES.0
+    X = I + 2 + USERS.0
+    OUTDD.X = PROFILES.I
+END
+SAY USERS.0  PROFILES.0
+OUTDD.0 = 2 + USERS.0 + PROFILES.0
+
+
+"EXECIO * DISKW OUTDD (STEM OUTDD. FINIS"
+IF RC > 0 THEN DO
+    SAY "(T_T) ERROR READING OUTDD:" RC
+    EXIT 1
+END
+SAY "*** DONE"
+SAY ''
 /*
 //SYSUT2   DD DSN=&&RXSORT,DISP=(,PASS),UNIT=VIO,
 //            SPACE=(TRK,(5,5))
