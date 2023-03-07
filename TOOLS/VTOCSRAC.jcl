@@ -1,24 +1,24 @@
 //VTOCSRAC JOB (RACIND),
-//             'Set RACF Indicator',
+//             'SET RACF INDICATOR',
 //             CLASS=A,REGION=4M,
 //             MSGCLASS=A,
 //             MSGLEVEL=(0,0)
 //********************************************************************
 //*
-//* Name: VTOCSRAC
+//* NAME: VTOCSRAC
 //*
-//* Desc: Set RACF Indicator in VTOC ON or OFF for all datasets
-//*       on all online DASDs except:
-//*       - all VSAM dataspaces
-//*       - all temporary datasets SYSnnnnn.Tnnnnnn.RAnnn
-//*       - the PASSWORD dataset
+//* DESC: SET RACF INDICATOR IN VTOC ON OR OFF FOR ALL DATASETS
+//*       ON ALL ONLINE DASDS EXCEPT:
+//*       - ALL VSAM DATASPACES
+//*       - ALL TEMPORARY DATASETS SYSNNNNN.TNNNNNN.RANNN
+//*       - THE PASSWORD DATASET
 //*
-//* Note: If DASD volumes are present in your system that should not
-//* ----- be modified (i.e. IPL and SPOOL volumes for other systems
-//*       like START1 and SPOOL0 in TK3 systems), these should be
-//*       varied offline before submitting this job.
+//* NOTE: IF DASD VOLUMES ARE PRESENT IN YOUR SYSTEM THAT SHOULD NOT
+//* ----- BE MODIFIED (I.E. IPL AND SPOOL VOLUMES FOR OTHER SYSTEMS
+//*       LIKE START1 AND SPOOL0 IN TK3 SYSTEMS), THESE SHOULD BE
+//*       VARIED OFFLINE BEFORE SUBMITTING THIS JOB.
 //*
-//* Requirements: BREXX V2R5M2 or greater must be installed
+//* REQUIREMENTS: BREXX V2R5M2 OR GREATER MUST BE INSTALLED
 //*
 //********************************************************************
 //VTOCB4   EXEC PGM=IKJEFT01,DYNAMNBR=20
@@ -39,65 +39,65 @@ VTOC ALL LIM(DSO NE VS) P(NEW (DSN V)) S(DSN A) NOH
 //SYSPRINT DD SYSOUT=*
 //SYSIN DD DUMMY
 //SYSUT1    DD *
-parse arg racf .
-say ''
-say '******************************************'
-say '* REXX Script to generate CDSCB commands *'
-say '******************************************'
-say ''
-say '*** Setting RACF indicator to' racf
-say '*** Processing VTOC Output'
+PARSE ARG RACF .
+SAY ''
+SAY '******************************************'
+SAY '* REXX SCRIPT TO GENERATE CDSCB COMMANDS *'
+SAY '******************************************'
+SAY ''
+SAY '*** SETTING RACF INDICATOR TO' RACF
+SAY '*** PROCESSING VTOC OUTPUT'
 
-"EXECIO * DISKR INDD (FINIS STEM indata."
-if rc > 0 then do
-    say "(T_T) Error reading SYSUT1:" rc
-    exit 1
-end
-say '*** Number of entries' indata.0 - 2
-total = 1
-do i = 2 to indata.0
-    if indata.i = 'END' then iterate
+"EXECIO * DISKR INDD (FINIS STEM INDATA."
+IF RC > 0 THEN DO
+    SAY "(T_T) ERROR READING SYSUT1:" RC
+    EXIT 1
+END
+SAY '*** NUMBER OF ENTRIES' INDATA.0 - 2
+TOTAL = 1
+DO I = 2 TO INDATA.0
+    IF INDATA.I = 'END' THEN ITERATE
 
-    if substr(indata.i,3,6) = 'TOTALS' & index(indata.i,'.') = 0 THEN
-        iterate
-
-    parse var indata.i dataset volume
-
-    /* Do not racf indicate temp dataset */
-
-    parse var dataset first '.' second '.' third '.' .
-
-    sys = datatype(SUBSTR(first,4),W)
-    t = datatype(SUBSTR(second,2),W)
-    ra = datatype(SUBSTR(third,3),W)
-
-    if (sys &  t & ra) | 'PASSWORD' = dataset THEN DO
-        say '*** Skipping temp data set' dataset '('||strip(volume)||')'
+    IF SUBSTR(INDATA.I,3,6) = 'TOTALS' & INDEX(INDATA.I,'.') = 0 THEN
         ITERATE
-    end
 
-    if substr(dataset,1,1) = "1" then
-        dataset = substr(dataset,2)
+    PARSE VAR INDATA.I DATASET VOLUME
 
-    outcdscb.total = "CDSCB '"||dataset||"' VOL("||,
-         strip(volume)        ||,
-         ") UNIT(SYSALLDA) SHR" racf
+    /* DO NOT RACF INDICATE TEMP DATASET */
 
-    drop indata.i
+    PARSE VAR DATASET FIRST '.' SECOND '.' THIRD '.' .
 
-    total = total + 1
-end
+    SYS = DATATYPE(SUBSTR(FIRST,4),W)
+    T = DATATYPE(SUBSTR(SECOND,2),W)
+    RA = DATATYPE(SUBSTR(THIRD,3),W)
 
-drop indata.0
+    IF (SYS &  T & RA) | 'PASSWORD' = DATASET THEN DO
+        SAY '*** SKIPPING TEMP DATA SET' DATASET '('||STRIP(VOLUME)||')'
+        ITERATE
+    END
 
-say "***" total "available datasets"
+    IF SUBSTR(DATASET,1,1) = "1" THEN
+        DATASET = SUBSTR(DATASET,2)
 
-outcdscb.0 = total - 1
+    OUTCDSCB.TOTAL = "CDSCB '"||DATASET||"' VOL("||,
+         STRIP(VOLUME)        ||,
+         ") UNIT(SYSALLDA) SHR" RACF
 
-"EXECIO * DISKW OUTDD (STEM outcdscb. FINIS"
+    DROP INDATA.I
 
-say "*** Done"
-say ''
+    TOTAL = TOTAL + 1
+END
+
+DROP INDATA.0
+
+SAY "***" TOTAL "AVAILABLE DATASETS"
+
+OUTCDSCB.0 = TOTAL - 1
+
+"EXECIO * DISKW OUTDD (STEM OUTCDSCB. FINIS"
+
+SAY "*** DONE"
+SAY ''
 /*
 //SYSUT2   DD DSN=&&RACIND,DISP=(,PASS),UNIT=VIO,
 //            SPACE=(TRK,(5,5))
