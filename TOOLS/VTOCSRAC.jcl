@@ -18,7 +18,7 @@
 //*       like START1 and SPOOL0 in TK3 systems), these should be
 //*       varied offline before submitting this job.
 //*
-//* Requirements: BREXX V2R5M0 or greater must be installed
+//* Requirements: BREXX V2R5M2 or greater must be installed
 //*
 //********************************************************************
 //VTOCB4   EXEC PGM=IKJEFT01,DYNAMNBR=20
@@ -105,7 +105,7 @@ say ''
 //* CHANGE RACF BELOW TO NORACF TO REMOVE RACF INDICATOR
 //EXEC     EXEC PGM=BREXX,PARM='RXRUN RACF',REGION=8192K
 //RXRUN    DD   DSN=&&RACIND,DISP=SHR
-//RXLIB    DD   DSN=BREXX.V2R5M0.RXLIB,DISP=SHR
+//RXLIB    DD   DSN=BREXX.V2R5M2.RXLIB,DISP=SHR
 //STDIN    DD   DUMMY
 //INDD     DD   DSN=&&LISTCC,DISP=SHR
 //OUTDD    DD   DSN=&&CDSCB,DISP=(,PASS),UNIT=VIO,SPACE=(TRK,(5,5)),

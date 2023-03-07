@@ -47,7 +47,8 @@ DATASET SYS1.SECURE.*                                       NONE
 DATASET SYS1.SECURE.*                               ADMIN   NONE
 DATASET SYS1.SECURE.*                               RAKFADM UPDATE
 DATASET SYS1.STGINDEX                                       NONE
-DATASET SYS1.UCAT.TSO                                       UPDATE
+DATASET UCPUB000                                            UPDATE
+DATASET UCPUB001                                            UPDATE
 FACILITYDIAG8                                               NONE
 FACILITYDIAG8                                       ADMIN   READ
 FACILITYDIAG8                                       STCGROUPREAD
@@ -145,7 +146,7 @@ say ''
 //* **********************************************************
 //EXECSORT EXEC PGM=BREXX,PARM='RXRUN',REGION=8192K
 //RXRUN    DD   DSN=&&RXSORT,DISP=SHR
-//RXLIB    DD   DSN=BREXX.V2R5M0.RXLIB,DISP=SHR
+//RXLIB    DD   DSN=BREXX.V2R5M2.RXLIB,DISP=SHR
 //STDIN    DD   DUMMY
 //USERS    DD   DSN=&&USERS,DISP=SHR
 //PROFILES DD   DSN=&&PROF,DISP=SHR
@@ -165,11 +166,3 @@ say ''
 //SYSPRINT DD  SYSOUT=*
 //SYSUT2   DD  DISP=SHR,DSN=SYS1.SECURE.CNTL
 //SYSUT1   DD  DSN=&&STAGIN,DISP=SHR
-
-
-
-
-
-
-
-
