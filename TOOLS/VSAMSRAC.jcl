@@ -1,13 +1,13 @@
 //VSAMLRAC JOB (RACIND),
-//             'Set RACF Indicator',
+//             'SET RACF INDICATOR',
 //             CLASS=A,REGION=4M,
 //             MSGCLASS=A,
 //             MSGLEVEL=(1,1)
 //********************************************************************
 //*
-//* Name: VSAMLRAC
+//* NAME: VSAMLRAC
 //*
-//* Desc: List RACF Indicator Status of all VSAM Objects
+//* DESC: LIST RACF INDICATOR STATUS OF ALL VSAM OBJECTS
 //*
 //********************************************************************
 //LISTUCAT EXEC PGM=IDCAMS
@@ -20,40 +20,40 @@
 //SYSPRINT DD SYSOUT=*
 //SYSIN DD DUMMY
 //SYSUT1    DD *
-say ''
-say '******************************************'
-say '* REXX Script to generate CDSCB commands *'
-say '******************************************'
-say ''
-say '*** Processing LISTCAT UCAT Output'
+SAY ''
+SAY '******************************************'
+SAY '* REXX SCRIPT TO GENERATE CDSCB COMMANDS *'
+SAY '******************************************'
+SAY ''
+SAY '*** PROCESSING LISTCAT UCAT OUTPUT'
 
-"EXECIO * DISKR INDD (FINIS STEM indata."
-if rc > 0 then do
-    say "(T_T) Error reading SYSUT1:" rc
-    exit 1
-end
-say '*** Number of entries' indata.0
+"EXECIO * DISKR INDD (FINIS STEM INDATA."
+IF RC > 0 THEN DO
+    SAY "(T_T) ERROR READING SYSUT1:" RC
+    EXIT 1
+END
+SAY '*** NUMBER OF ENTRIES' INDATA.0
 
-outdd.1 = " LISTCAT ALL"
+OUTDD.1 = " LISTCAT ALL"
 
-j = 2
-do i = 1 to indata.0
-    parse var indata.i . . cat .
-    if index(indata.i,'0USERCATALOG') > 0 then do
-        outdd.j = " LISTCAT ALL CAT("||cat||")"
-        j = j + 1
-    end
-end
-outdd.0 = j -1
-say "*** Commands:"
-do i=1 to outdd.0
-    say outdd.i
-end
+J = 2
+DO I = 1 TO INDATA.0
+    PARSE VAR INDATA.I . . CAT .
+    IF INDEX(INDATA.I,'0USERCATALOG') > 0 THEN DO
+        OUTDD.J = " LISTCAT ALL CAT("||CAT||")"
+        J = J + 1
+    END
+END
+OUTDD.0 = J -1
+SAY "*** COMMANDS:"
+DO I=1 TO OUTDD.0
+    SAY OUTDD.I
+END
 
-"EXECIO * DISKW OUTDD (STEM outdd. FINIS"
+"EXECIO * DISKW OUTDD (STEM OUTDD. FINIS"
 
-say "*** Done"
-say ''
+SAY "*** DONE"
+SAY ''
 /*
 //SYSUT2   DD DSN=&&RXCAT,DISP=(,PASS),UNIT=VIO,
 //            SPACE=(TRK,(5,5))
@@ -62,74 +62,74 @@ say ''
 //SYSPRINT DD SYSOUT=*
 //SYSIN DD DUMMY
 //SYSUT1    DD *
-parse arg racf .
-bad_data = "VSAM.CATALOG.BASE.DATA.RECORD"
-bad_index = "VSAM.CATALOG.BASE.INDEX.RECORD"
-say ''
-say '******************************************'
-say '* Printing Catalog and VSAM dataset RACF *'
-say '******************************************'
-say ''
-say '*** Processing LISTCAT Output'
+PARSE ARG RACF .
+BAD_DATA = "VSAM.CATALOG.BASE.DATA.RECORD"
+BAD_INDEX = "VSAM.CATALOG.BASE.INDEX.RECORD"
+SAY ''
+SAY '******************************************'
+SAY '* PRINTING CATALOG AND VSAM DATASET RACF *'
+SAY '******************************************'
+SAY ''
+SAY '*** PROCESSING LISTCAT OUTPUT'
 
-"EXECIO * DISKR INDD (FINIS STEM indata."
-if rc > 0 then do
-    say "(T_T) Error reading INDD:" rc
-    exit 1
-end
-say '*** Number of lines' indata.0
+"EXECIO * DISKR INDD (FINIS STEM INDATA."
+IF RC > 0 THEN DO
+    SAY "(T_T) ERROR READING INDD:" RC
+    EXIT 1
+END
+SAY '*** NUMBER OF LINES' INDATA.0
 
-e = 1
+E = 1
 
-do i=1 to indata.0
-    parse var indata.i . . entry1 entry2 . cat
-    if index(indata.i, 'LISTING FROM CATALOG --') > 0 then do
-        if cat = catalog then iterate
-        say "CATALOG   " cat
-        catalog = cat
-        entries.e = "CATALOG   "||cat
-        e = e + 1
-    end
-    if index(indata.i, 'CLUSTER ') > 0 then do
-        type = "Cluster";   entry = entry1
-    end
-    if index(indata.i, '0   DATA ') > 0 then do
-        type = "Data";   entry = entry2
-    end
-    if index(indata.i, '0   INDEX ') > 0 then do
-        type = "Index";   entry = entry2
-    end
-    if index(indata.i, 'PAGESPACE ') > 0 then do
-        type = "Pagespace";   entry = entry1
-    end
-    if index(indata.i, 'PATH ') > 0 then do
-        type = "Path";   entry = entry1
-    end
-    if index(indata.i, 'RACF') > 0 then do
-        if index(indata.i, 'NO') > 0 then do
-            if entry \= bad_data & entry \= bad_index THEN DO
-                if racf = 'ON' then r = "RACON     "
-                else r = "RACOFF    "
-                say r entry
-                entries.e = r||entry
-                e = e + 1
-            end
-        end
-    end
-end
+DO I=1 TO INDATA.0
+    PARSE VAR INDATA.I . . ENTRY1 ENTRY2 . CAT
+    IF INDEX(INDATA.I, 'LISTING FROM CATALOG --') > 0 THEN DO
+        IF CAT = CATALOG THEN ITERATE
+        SAY "CATALOG   " CAT
+        CATALOG = CAT
+        ENTRIES.E = "CATALOG   "||CAT
+        E = E + 1
+    END
+    IF INDEX(INDATA.I, 'CLUSTER ') > 0 THEN DO
+        TYPE = "CLUSTER";   ENTRY = ENTRY1
+    END
+    IF INDEX(INDATA.I, '0   DATA ') > 0 THEN DO
+        TYPE = "DATA";   ENTRY = ENTRY2
+    END
+    IF INDEX(INDATA.I, '0   INDEX ') > 0 THEN DO
+        TYPE = "INDEX";   ENTRY = ENTRY2
+    END
+    IF INDEX(INDATA.I, 'PAGESPACE ') > 0 THEN DO
+        TYPE = "PAGESPACE";   ENTRY = ENTRY1
+    END
+    IF INDEX(INDATA.I, 'PATH ') > 0 THEN DO
+        TYPE = "PATH";   ENTRY = ENTRY1
+    END
+    IF INDEX(INDATA.I, 'RACF') > 0 THEN DO
+        IF INDEX(INDATA.I, 'NO') > 0 THEN DO
+            IF ENTRY \= BAD_DATA & ENTRY \= BAD_INDEX THEN DO
+                IF RACF = 'ON' THEN R = "RACON     "
+                ELSE R = "RACOFF    "
+                SAY R ENTRY
+                ENTRIES.E = R||ENTRY
+                E = E + 1
+            END
+        END
+    END
+END
 
-e = e - 1
-entries.0 = e
+E = E - 1
+ENTRIES.0 = E
 
-"EXECIO * DISKW OUTDD (STEM entries. FINIS"
+"EXECIO * DISKW OUTDD (STEM ENTRIES. FINIS"
 
-if rc > 0 then do
-    say "(T_T) Error writting OUTDD:" rc
-    exit 1
-end
+IF RC > 0 THEN DO
+    SAY "(T_T) ERROR WRITTING OUTDD:" RC
+    EXIT 1
+END
 
-say "*** Done"
-say ''
+SAY "*** DONE"
+SAY ''
 /*
 //SYSUT2   DD DSN=&&RXPRSE,DISP=(,PASS),UNIT=VIO,
 //            SPACE=(TRK,(5,5))
@@ -167,7 +167,7 @@ say ''
 //SYSUT1   DD DSN=&&RACIND,DISP=SHR
 //SYSUT2   DD SYSOUT=*
 //* **********************************************************
-//* execute RACIND utility to set or unset RACF indicators
+//* EXECUTE RACIND UTILITY TO SET OR UNSET RACF INDICATORS
 //*
 //RACIND  EXEC PGM=RACIND
 //SYSPRINT DD  SYSOUT=*
