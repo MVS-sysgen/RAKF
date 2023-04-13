@@ -76,7 +76,7 @@ READLOOP GET    CJYUDATA,RECORD     GET RECORD                          00410000
          BE     READLOOP             read next record               @01 00417001
          CLC    USERID,OLDUSER      IS INPUT IN SORT SEQUENCE?          00420000
          BE     NEWGROUP             same USER, check for new group @01 00430000
-         BNH    ABEND2               not in sort seq, tell about it @01 00435001
+*        BNH    ABEND2               not in sort seq, tell about it @01 00435001
          CLI    USERID,C' '         UID?                                00440000
          BE     ABEND2               NO ---                             00450000
          CLI    PASSWORD,C' '       PSWD?                               00460000
@@ -126,7 +126,7 @@ MOVEPSW  STC    R1,CBLKPWDL        SAVE LENGTH                          00820000
 SCRAMBLE XC     CBLKPWDE(0),=C'SECURITY'  SCRAMBLE PSWD                 00900000
 *                                                                       00910000
 NEWGROUP CLC    GROUP,OLDGROUP      IS INPUT IN SORT SEQUENCE?          00920000
-         BNH    ABEND2                 N - TELL ABOUT IT                00930000
+*        BNH    ABEND2                 N - TELL ABOUT IT                00930000
          MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00940000
 ADDGROUP GETMAIN RU,LV=CONNL,SP=241 GET AREA IN CSA                     00950000
          LR     R6,R1              GM AREA ADDR TO WORK REG.            00960000
