@@ -52,7 +52,17 @@ calls. ICHSFR00 processes the various kinds of security calls in a standard way
 that is (mostly) documented by IBM. ICHSFR00 refers to the installation-coded
 user and profile in-core tables, to make its judgments. These in-core user and
 resource tables are each reloadable at any time by the execution of their
-special started tasks.
+special started tasks, this can be done in one of two ways:
+
+1. From the master console issue the command `S RAKFPROF` and `S RAKFUSER`
+   or in the hercules console `/S RAKFPROF` and `/S RAKFUSER`
+2. From JCL:
+
+```jcl
+//RAKFUPDT JOB (RAKF),'UPDATE RAKF',CLASS=A,MSGCLASS=A
+//RAKFUSER EXEC RAKFUSER
+//RAKFPROF EXEC RAKFPROF
+```
 
 When MVS is informed that "security" is present on the system, all previously
 defined passwords, including VSAM passwords, are ignored. Any password
@@ -140,9 +150,9 @@ don't need to be explicitly allowed.
 ## Users and Profiles Tables
 
 
-In order for both the users and profiles tables to be valid, they must be in
+In order for the profiles tables to be valid, it must be in
 sort order. See Appendix C for MVTSORT jcl which can sort tables. Sort errors
-will inhibit initialization of the tables and will generate nasty error
+will inhibit initialization of the tables and will generate error
 messages.
 
 *Note that the tables may contain comment lines starting with an asterisk (*). *
@@ -170,8 +180,8 @@ You should try to find versions of these manuals being as close as possible to
 RACF™ Version 1.7 because later manuals describe features not available with
 RAKF and/or MVS 3.8j.
 
-The users and profiles tables are read from the bottom upwards which is the
-reason why the source tables need to be in ascending sort order: Reading them
+The profiles table is read from the bottom upwards which is the
+reason why the source table needs to be in ascending sort order: Reading them
 in reverse order ensures to find the most significant hit for a resource or
 user search before any less significant hits, so tables search will always be
 stopped upon the first hit.
@@ -607,7 +617,7 @@ To set or clear the RACF indicator of any catalog entry (the catalog cluster
 itself, any VSAM objects and their components) the RACIND utility is used. It
 is called as follows:
 
-```
+```jcl
 //RACIND  EXEC PGM=RACIND
 //SYSPRINT DD  SYSOUT=*
 //SYSIN    DD  *
