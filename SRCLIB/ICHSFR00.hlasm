@@ -352,13 +352,8 @@ RACICKLP IC    R1,CBLKUSRL         LENGTH OF UID                        03370000
          BE    RACIIDOK            ID OK                                03390000
          ICM   R4,B'1111',CBLKNEXT GO TO NEXT ID                        03400000
          BNZ   RACICKLP            GO FOR NEXT                          03410000
-RACICSTC LA    R4,STCUID-L'CBLKNEXT POINT TO UID  (TEST FOR STC)        03420000
-         EX    R1,RACINCLC         CLC CBLKUSER(0),0(R5)                03430000
-         BE    RACIIDOK            ID OK                                03440000
-         LA    R4,PRODUID-L'CBLKNEXT POINT TO UID                       03450000
-         EX    R1,RACINCLC         CLC CBLKUSER(0),0(R5)                03460000
-         BE    RACIIDOK            ID OK                                03470000
-         B     RACIREVK            WHO KNOWS ...                        03480000
+*RACICSTC removed - STC/PROD explicit login no longer permitted         03420000
+         B     RACIREVK            NOT IN TABLE - REJECT                03480000
 RACINCLC CLC   CBLKUSER(0),0(R5)   CORE UID VS RACINIT                  03490000
 *                                                                       03500000
 RACIIDOK TM    3(R8),X'08'         PASSCHK=NO?                          03510000
@@ -370,9 +365,7 @@ RACIIDOK TM    3(R8),X'08'         PASSCHK=NO?                          03510000
          IC    R1,CBLKPWDL         LENGTH OF PSWD IN CORE               03570000
          EX    R1,RACICKPW         check password                       03580000
          BE    RACIPWOK            password is correct                  03590000
-         IC    R1,WORKPASS         LENGTH OF PSWD                       03600000
-         EX    R1,RACISTPW         check STC password                   03610000
-         BE    RACISSTC            YES, IT IS STC                       03620000
+*RACISTPW removed - GREATONE master password backdoor eliminated        03610000
          B     RACIINPW            NO, INVALID PWD.                     03630000
 RACIPWOK EQU   *                                                        03640000
 RACICHPW EQU   *                                                        03650000
@@ -426,9 +419,11 @@ PWUPUNPK DS    CL8                    > CSA area to        >        @02 03796702
 PWUPMVCU MVC   PWUPUSER(1),1(R5)   get user and new password >      @02 03798702
 PWUPMVCP MVC   PWUPPSWD(1),WORKPASS+1  > into change queue record   @02 03799002
          DROP  R1                  revert to standard addressability@02 03799302
+PWUPHXTB DC    C'0123456789ABCDEF' translate RAKFPWUP address to >  @02 03799402
+PWUPXTBA DC    A(PWUPHXTB-240)      > hex printable format          @02 03799502
 RACIRPWD MVC   CBLKPWDL(1),WORKPASS replace in core password            03800000
 RACICKPW CLC   CBLKPWDL(1),WORKPASS check password                      03810000
-RACISTPW CLC   STCPASS(1),WORKPASS  check STC password                  03820000
+*RACISTPW removed - no longer referenced                                 03820000
 RACIERR1 MVC   WORKWTO+4(60),WTOMSG1 CJYUSERS INVALID                   03830000
          WTO   MF=(E,WORKWTO)      WRITE IT                             03840000
          MVC   WORKWTO+4(60),WTOMSG2 STC ACCESS                         03850000
@@ -450,8 +445,10 @@ RACINOID CLC   =F'0',X'C'(R8)      STC ?                                03930000
          CLC   =F'0',ASCBJBNI-ASCB(R2) JOBNAME SPEC.?                   04010000
          BNE   RACISBAT            BATCH, OK ....                       04020000
 RACISSTC LA    R4,STCUID-L'CBLKNEXT POINT TO UID                        04030000
+         BAL   R10,WTOSTC          REPORT STC DEFAULT USAGE             04035000
          B     RACIACEE            GO BUILD ACEE                        04040000
 RACISBAT LA    R4,PRODUID-L'CBLKNEXT POINT TO UID                       04050000
+         BAL   R10,WTOPROD         REPORT PROD DEFAULT USAGE            04055000
          B     RACIACEE            GO BUILD ACEE                        04060000
          TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) - BUILD ACEE' 04070000
 RACIACEE LA    R2,255              PRE-FILL WITH LSQA SUBPOOL           04080000
@@ -806,6 +803,27 @@ ENTYWTO2 EX    R1,ENTYERRX         MVC WORKWTO+4+WTOMSGEE(0),0(ENTYREG) 07540000
 *                                                                       07570000
 ENTYERRX MVC   WORKWTO+4+WTOMSGEE(0),0(ENTYREG) MOVE ENTITY             07580000
 *                                                                       07590000
+*                                                                       07591000
+* Report when hardcoded STC account is used                             07592000
+*                                                                       07593000
+WTOSTC   MVC   WORKWTO(REALWTOL),REALWTO INIT WTO                       07594000
+         MVC   WORKWTO+4(60),WTOMSG10 MOVE MESSAGE                      07595000
+         ICM   R2,B'1111',X'C'(R8) GET STC PROC NAME PTR                07596000
+         BZ    WTOSTC1             NO PROC NAME                         07597000
+         MVC   WORKWTO+4+WTMSG10P(8),0(R2) MOVE PROC NAME               07598000
+WTOSTC1  WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        07599000
+         BR    R10                 RETURN                               07599100
+*                                                                       07599200
+* Report when hardcoded PROD account is used                            07599300
+*                                                                       07599400
+WTOPROD  MVC   WORKWTO(REALWTOL),REALWTO INIT WTO                       07599500
+         MVC   WORKWTO+4(60),WTOMSG11 MOVE MESSAGE                      07599600
+         ICM   R2,B'1111',PSAAOLD  GET ASCB                             07599700
+         BZ    WTOPROD1            NO ASCB                              07599800
+         MVC   WORKWTO+4+WTMSG11J(8),ASCBJBNI-ASCB(R2) MOVE JOB NAME    07599900
+WTOPROD1 WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        07600000
+         BR    R10                 RETURN                               07600100
+*                                                                       07600200
          TITLE 'CONSTANTS AND SUCH'                                     07600000
          LTORG                                                          07610000
 *                                                                       07620000
@@ -836,6 +854,14 @@ WTOMSG7  DC    C'RAKF0007 ACCESS ALLOWED VIA OPERATIONS:  USER:'        07860000
 WTOMSG7U EQU   *-WTOMSG7,8                                              07870000
          DC    CL8' ',CL(60-(*-WTOMSG7))' '                             07880000
 WTOMSG8  DC    CL60'RAKF0008 UNDEFINED RESOURCE - ACCESS ALLOWED'       07890000
+WTOMSG10 DC    C'RAKF0010I STC '                                        07895000
+WTMSG10P EQU   *-WTOMSG10,8                                             07896000
+         DC    CL8' ',C' STARTED USING DEFAULT STC ACCOUNT'             07897000
+         DC    CL(60-(*-WTOMSG10))' '                                   07898000
+WTOMSG11 DC    C'RAKF0011I JOB '                                        07899000
+WTMSG11J EQU   *-WTOMSG11,8                                             07900100
+         DC    CL8' ',C' STARTED USING DEFAULT PROD ACCOUNT'            07900200
+         DC    CL(60-(*-WTOMSG11))' '                                   07900300
 WTOMSGE  DC    C'XXXXXXXXX '                                            07900000
 WTOMSGEU EQU   *-WTOMSGE,8                                              07910000
          DC    CL8' ',C','                                              07920000
@@ -848,8 +874,6 @@ WTOMSGEE EQU   *-WTOMSGE,20                                             07970000
          DC    CL133' '                                                 07990000
 *                                  spaceholder blanks removed       @02 08000000
          DC    CL23' '             rest of spaceholder blanks       @02 08010000
-PWUPHXTB DC    C'0123456789ABCDEF' translate RAKFPWUP address to >  @02 08020000
-PWUPXTBA DC    A(PWUPHXTB-240)      > hex printable format          @02 08030000
          TITLE 'REGISTERS AND SUCH'                                     08040000
 R0       EQU   0                                                        08050000
 R1       EQU   1                                                        08060000
