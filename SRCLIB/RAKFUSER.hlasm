@@ -89,7 +89,7 @@ READLOOP GET    CJYUDATA,RECORD     GET RECORD                          00410000
          BNE    ABEND2               TOUGH                              00530000
 *                                                                       00540000
 RECOK    MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00550000
-         GETMAIN RU,LV=CBLKL,SP=241 GET AREA IN CSA                     00560000
+         GETMAIN RU,LV=CBLKL,SP=227 GET AREA IN FETCH-PROTECTED CSA       00560000
          LR     R5,R1               GM AREA ADDR TO WORK REG.           00570000
          USING  CBLK,R5             HELLO BALL ---                      00580000
          XC     CBLK(CBLKL),CBLK    CLEAR TO B'0'                       00590000
@@ -128,7 +128,7 @@ SCRAMBLE XC     CBLKPWDE(0),=C'SECURITY'  SCRAMBLE PSWD                 00900000
 NEWGROUP CLC    GROUP,OLDGROUP      IS INPUT IN SORT SEQUENCE?          00920000
 *        BNH    ABEND2                 N - TELL ABOUT IT                00930000
          MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00940000
-ADDGROUP GETMAIN RU,LV=CONNL,SP=241 GET AREA IN CSA                     00950000
+ADDGROUP GETMAIN RU,LV=CONNL,SP=227 GET AREA IN FETCH-PROTECTED CSA     00950000
          LR     R6,R1              GM AREA ADDR TO WORK REG.            00960000
          USING  CONNGRUP,R6        HELLO BALL ---                       00970000
          XC     CONNGRUP(CONNL),CONNGRUP CLEAR AREA                     00980000
@@ -158,10 +158,10 @@ FREELOOP L      R4,CBLKNEXT        LOOP THRU OLD TABLE                  01210000
          L      R7,CBLKGRPS-CBLK(R5)  GROUP LOOP                        01220000
          B      FREECON2                                                01230000
 FREECONN L      R7,CONNNEXT        LOOP THRU OLD TABLE                  01240000
-         FREEMAIN RU,LV=CONNL,A=(R6),SP=241 FREE CURRENT ENTRY.         01250000
+         FREEMAIN RU,LV=CONNL,A=(R6),SP=227 FREE CURRENT ENTRY.         01250000
 FREECON2 LTR    R6,R7              MORE ENTRIES?                        01260000
          BNZ    FREECONN               Y - NEXT ENTRY                   01270000
-         FREEMAIN RU,LV=CBLKL,A=(R5),SP=241 FREE CURRENT ENTRY.         01280000
+         FREEMAIN RU,LV=CBLKL,A=(R5),SP=227 FREE CURRENT ENTRY.         01280000
 ANYMORE  LTR    R5,R4              MORE ENTRIES?                        01290000
          BNZ    FREELOOP               Y - NEXT ENTRY                   01300000
 *                                                                       01310000
