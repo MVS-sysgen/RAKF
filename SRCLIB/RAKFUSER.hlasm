@@ -40,7 +40,13 @@ CJYRUIDS CSECT                                                          00070000
 *                       authorized users can replace the in-core    @03 00225403
 *                       UDATA table                                 @03 00225703
 *                                                                   @03 00226003
-********************************************************************@03 00226303
+*    2026/02/28 RRKF004 The user table was stored in unprotected    @04 00227704
+*                       memory, meaning anyone with access to the   @04 00227704
+*                       LPAR could dump that table and reverse all  @04 00227704
+*                       the users information and their password    @04 00227704
+*                       Now those user tables reside in fetch       @04 00227704
+*                       protected memory                            @04 00227704
+********************************************************************@05 00228505
 *                                                                       00230000
          SAVE   (14,12),,CJYRUIDS_&SYSDATE._&SYSTIME                    00240000
          LR     R12,R15             USE ENTRY AS BASE                   00250000

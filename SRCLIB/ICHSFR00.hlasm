@@ -32,6 +32,11 @@ ICHSFR00 CSECT                                                          00070000
 *                       for replacement in the RAKF users table     @02 00224502
 *                       at next run of RAKFUSER                     @02 00224702
 *                                                                   @02 00226002
+*    2026/02/28 RRKF005 Two users, STC and PROD, were hard coded    @05 00228505
+*                       in to RAKF with a username and password     @05 00228505
+*                       added to the user table. These have since   @05 00228505
+*                       been updated so that they can't be used     @05 00228505
+*                       interactively, a new WTO has been added also@05 00228505
 ********************************************************************@02 00226302
 *                                                                       00230000
          USING AUTHDS,R10                                               00240000
