@@ -46,7 +46,16 @@ CJYRUIDS CSECT                                                          00070000
 *                       the users information and their password    @04 00227704
 *                       Now those user tables reside in fetch       @04 00227704
 *                       protected memory                            @04 00227704
-********************************************************************@05 00228505
+*    2022/10/21 RRKF007 Remove the need to sort the input in        @07 00225707
+*                       alphabetical order. Allocate a core table   @07 00225807
+*                       of 1,000 entries, read the USERS member     @07 00225907
+*                       into this table and sort the table          @07 00226003
+*                       before processing.                          @07 00226303
+*    2026/03/01         Moving CBLK to fetch protected storage, so  @07 00226407
+*                       users can't dump the user table,            @07 00226417
+*                       tested logon with FTP, TSO and JOB card.    @07 00226427
+*                       Everything seems to work.                   @07 00226437
+********************************************************************@07 00226507
 *                                                                       00230000
          SAVE   (14,12),,CJYRUIDS_&SYSDATE._&SYSTIME                    00240000
          LR     R12,R15             USE ENTRY AS BASE                   00250000
@@ -76,10 +85,61 @@ OK2GO    ENQ    (SECURITY,USERS,E,,SYSTEM),RET=HAVE serialization   @03 00370000
          OPEN   (CJYUDATA,(INPUT))  OPEN INPUT FILE                     00380000
          MODESET MODE=SUP,KEY=ZERO  authorize ourselves                 00390000
          XR     R5,R5               initialize GM chain             @01 00395001
+*                                                                   @07 00396007
+         GETMAIN RU,LV=80000           GETMAIN ROOM FOR 1000 ENT.   @07 00380107
+         LR    R2,R1                   SAVE ITS ADDRESS             @07 00380207
+         ST    R1,ADRTBL               SAVE FOR LATER USE           @07 00380307
+         XR    R9,R9                   RECORD COUNTER               @07 00380407
+GETMLOOP DS    0H                                                   @07 00380507
+         XC    0(80,R2),0(R2)          CLEAR CORE TABLE ENTRY       @07 00380607
+         GET   CJYUDATA,RECORD         READ A RECORD                @07 00380707
+         CLI   USERID,C'*'             COMMENT FIELD?               @07 00380807
+         BE    GETMLOOP                YES: SKIP                    @07 00380907
+         MVC   0(80,R2),RECORD         MOVE IN TEMPORARY TABLE      @07 00381007
+         LA    R9,1(,R9)               INCREASE COUNTER             @07 00381107
+         LA    R2,80(,R2)              NEXT ENTRY IN TABLE          @07 00381507
+         B     GETMLOOP                READ NEXT RECORD             @07 00381607
+ENDLOOP  DS    0H                                                   @07 00381707
+         L     R2,ADRTBL               POINT TO FIRST RECORD        @07 00381807
+         ICM   R1,15,0(R2)             NO DATA?                     @07 00381907
+         BZ    ABEND300            Y - TELL ABOUT IT AND TERMINATE. @07 00382007
+         STM   R4,R8,SAVESORT                                       @07 00382307
+         CH    R9,=H'2'                LESS THAN 2 RECORDS?         @07 00382407
+         BL    READLOOP                DO NOT SORT                  @07 00382507
+         BCTR  R9,0                    MINUS 1                      @07 00382807
+         MH    R9,=H'80'               ** RECORD LENGTH             @07 00383007
+         LA    R7,0(R2,R9)             POINT TO LAST RECORD         @07 00383107
+*                                                                   @07 00383507
+SORT01   DS    0H                      START SORT                   @07 00383607
+         ST    R7,SWAPLAST             LAST RECORD SWAPPED          @07 00383707
+         L     R4,ADRTBL               POINT TO FIRST RECORD        @07 00384007
+         LR    R5,R4                   NEXT                         @07 00384107
+         LA    R5,80(,R4)                   RECORD                  @07 00384407
+SORT03   DS    0H                      SORT TEMPORARY TABLE         @07 00384507
+         CL    R4,SWAPLAST             LAST RECORD REACHED?         @07 00384907
+         BNL   SORT07                  YES: LOOP COMPLETE           @07 00385007
+         CLC   0(80,R4),0(R5)          COMPARE                      @07 00385107
+         BNH   SORT05                  HIGH: SWAP THESE RECORDS     @07 00385207
+         XC    0(80,R4),0(R5)          SWAP                         @07 00385507
+         XC    0(80,R5),0(R4)              THE                      @07 00385607
+         XC    0(80,R4),0(R5)                   RECORDS             @07 00385707
+         LR    R7,R4                   LAST RECORD SWAPPED IN R7    @07 00386007
+SORT05   DS    0H                      LOAD NEXT ENTRY              @07 00386107
+         LA    R4,80(,R4)              NEXT RECORD                  @07 00386207
+         LA    R5,80(,R5)              NEXT RECORD                  @07 00386307
+         B     SORT03                  COMPARE NEXT RECORD          @07 00386707
+SORT07   DS    0H                      ALL RECORDS DONE             @07 00386807
+         CL    R7,SWAPLAST             ARE THESE SWAPS EXECUTED?    @07 00386907
+         BL    SORT01                  IF YES, THEN SORT AGAIN      @07 00387007
+*                                      ELSE END OF SORT             @07 00387307
+         L     R9,ADRTBL               START OF CORE TABLE          @07 00387407
+         SL    R9,=F'80'               POINT 1 RECORD BEFORE        @07 00387507
+         LM    R4,R8,SAVESORT          RESTORE REGISTERS            @07 00387607
 *                                                                       00400000
-READLOOP GET    CJYUDATA,RECORD     GET RECORD                          00410000
-         CLI    USERID,C'*'         Comment?                        @01 00413001
-         BE     READLOOP             read next record               @01 00417001
+READLOOP LA    R9,80(,R9)              NEXT RECORD IN TABLE         @07 00410000
+         ICM   R1,15,0(R9)             END OF DATA?                 @07 00413001
+         BZ    ENDDATA                 Y: ENTIRE TABLE PROCESSED    @07 00417001
+         MVC   RECORD,0(R9)            MOVE ENTRY                   @07 00417107
          CLC    USERID,OLDUSER      IS INPUT IN SORT SEQUENCE?          00420000
          BE     NEWGROUP             same USER, check for new group @01 00430000
 *        BNH    ABEND2               not in sort seq, tell about it @01 00435001
@@ -95,7 +155,7 @@ READLOOP GET    CJYUDATA,RECORD     GET RECORD                          00410000
          BNE    ABEND2               TOUGH                              00530000
 *                                                                       00540000
 RECOK    MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00550000
-         GETMAIN RU,LV=CBLKL,SP=227 GET AREA IN FETCH-PROTECTED CSA       00560000
+         GETMAIN RU,LV=CBLKL,SP=231 GET AREA IN FETCH-PROTECTED CSA @07 00560000
          LR     R5,R1               GM AREA ADDR TO WORK REG.           00570000
          USING  CBLK,R5             HELLO BALL ---                      00580000
          XC     CBLK(CBLKL),CBLK    CLEAR TO B'0'                       00590000
@@ -134,7 +194,7 @@ SCRAMBLE XC     CBLKPWDE(0),=C'SECURITY'  SCRAMBLE PSWD                 00900000
 NEWGROUP CLC    GROUP,OLDGROUP      IS INPUT IN SORT SEQUENCE?          00920000
 *        BNH    ABEND2                 N - TELL ABOUT IT                00930000
          MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00940000
-ADDGROUP GETMAIN RU,LV=CONNL,SP=227 GET AREA IN FETCH-PROTECTED CSA     00950000
+ADDGROUP GETMAIN RU,LV=CONNL,SP=231 GET AREA IN FETCH-PROTECTED CSA @07 00950000
          LR     R6,R1              GM AREA ADDR TO WORK REG.            00960000
          USING  CONNGRUP,R6        HELLO BALL ---                       00970000
          XC     CONNGRUP(CONNL),CONNGRUP CLEAR AREA                     00980000
@@ -164,10 +224,10 @@ FREELOOP L      R4,CBLKNEXT        LOOP THRU OLD TABLE                  01210000
          L      R7,CBLKGRPS-CBLK(R5)  GROUP LOOP                        01220000
          B      FREECON2                                                01230000
 FREECONN L      R7,CONNNEXT        LOOP THRU OLD TABLE                  01240000
-         FREEMAIN RU,LV=CONNL,A=(R6),SP=227 FREE CURRENT ENTRY.         01250000
+         FREEMAIN RU,LV=CONNL,A=(R6),SP=231 FREE CURRENT ENTRY.     @07 01250000
 FREECON2 LTR    R6,R7              MORE ENTRIES?                        01260000
          BNZ    FREECONN               Y - NEXT ENTRY                   01270000
-         FREEMAIN RU,LV=CBLKL,A=(R5),SP=227 FREE CURRENT ENTRY.         01280000
+         FREEMAIN RU,LV=CBLKL,A=(R5),SP=231 FREE CURRENT ENTRY.     @07 01280000
 ANYMORE  LTR    R5,R4              MORE ENTRIES?                        01290000
          BNZ    FREELOOP               Y - NEXT ENTRY                   01300000
 *                                                                       01310000
@@ -177,6 +237,8 @@ BYEBYE   MODESET MODE=PROB,KEY=NZERO   return to problem state          01340000
          CLOSE (CJYUDATA)              close input dataset              01350000
          DEQ   (SECURITY,USERS,,SYSTEM) release ENQ                 @01 01355001
          WTO    'RAKFUIDS4  USER TABLE UPDATED'                         01360000
+         L     R2,ADRTBL               ADDRESS OF TEMP. CORE TABLE  @07 01361007
+         FREEMAIN RU,LV=80000,A=(2)    RELEASE                      @07 01361207
          L      R13,SAVEAREA+4     LOAD CALLER'S SAVE AREA ADDR         01370000
          RETURN (14,12),RC=0                                            01380000
 *                                                                       01390000
@@ -210,7 +272,7 @@ TRTBLANK DC     XL256'00'          TABLE FOR TRT                        01600000
          ORG                                                            01630000
 *                                                                       01640000
          PRINT  NOGEN                                                   01650000
-CJYUDATA DCB    DDNAME=RAKFUSER,MACRF=GM,EODAD=ENDDATA,DSORG=PS         01660000
+CJYUDATA DCB    DDNAME=RAKFUSER,MACRF=GM,EODAD=ENDLOOP,DSORG=PS     @07 01660000
 *                                                                       01670000
 RAKFPSAV DC     V(RAKFPSAV)        password change utility          @02 01673002
 RAKFADM  DC     CL39'RAKFADM'      facility name to authorize       @03 01675003
@@ -237,6 +299,10 @@ OLDUSER  DS     CL8                                                     01850000
 OLDGROUP DS     CL8                                                     01870000
          DS     XL(80-(*-OLDREC))                                       01880000
 *                                                                       01890000
+SAVESORT DS    5F                      SAVE REGISTERS SORT          @07 01682007
+SWAPLAST DS    F                       LAST RECORD SWAPPED          @07 01682207
+ADRTBL   DS    F                       ADDRESS OF TEMP TABLE        @07 01682307
+*                                                                       01890100
 R0       EQU    00                                                      01900000
 R1       EQU    01                                                      01910000
 R2       EQU    02                                                      01920000

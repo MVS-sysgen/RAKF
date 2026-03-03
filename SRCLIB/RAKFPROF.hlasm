@@ -36,7 +36,13 @@ CJYRPROF CSECT                                                          00110000
 *                       authorized users can replace the in-core    @03 00263003
 *                       PDATA table                                 @03 00263303
 *                                                                   @03 00263603
-********************************************************************@03 00263903
+*    2022/10/21 RRKF007 Remove the need to sort the input in        @07 00263603
+*                       alphabetical order. Allocate a core table   @07 00263707
+*                       of 2,000 entries, read the PROFILES         @07 00263807
+*                       member into the table and sort the entries  @07 00263903
+*                       before processing.                          @07 00264007
+*                                                                   @07 00264207
+********************************************************************@07 00264407
 *                                                                       00270000
          SAVE  (14,12),,CJYRPROF_&SYSDATE._&SYSTIME._                   00280000
          LR    R12,R15                 SETUP BASE REG.                  00290000
@@ -62,12 +68,61 @@ OK2GO    DS    0H                      NO, CONTINUE                     00420000
          ENQ   (SECURITY,PROFS,E,,SYSTEM),RET=HAVE                      00430000
          OPEN  (CJYPDATA,(INPUT))      OPEN INPUT FILE                  00440000
          MODESET MODE=SUP,KEY=ZERO     authorize ourselves              00450000
+*                                                                   @07 00456007
+         GETMAIN RU,LV=160000          GETMAIN ROOM FOR 2000 ENT.   @07 00440107
+         LR    R2,R1                   SAVE ITS ADDRESS             @07 00440207
+         ST    R1,ADRTBL               SAVE FOR LATER USE           @07 00440307
+         XR    R7,R7                   RECORD COUNTER               @07 00440407
+GETMLOOP DS    0H                                                   @07 00440507
+         XC    0(80,R2),0(R2)          CLEAR CORE TABLE ENTRY       @07 00440607
+         GET   CJYPDATA,RECORD         READ A RECORD                @07 00440707
+         CLI   RECORD,C'*'             COMMENT FIELD?               @07 00440807
+         BE    GETMLOOP                YES: SKIP                    @07 00440907
+         MVC   0(80,R2),RECORD         MOVE IN TEMPORARY TABLE      @07 00441007
+         LA    R7,1(,R7)               INCREASE COUNTER             @07 00441107
+         LA    R2,80(,R2)              NEXT ENTRY IN TABLE          @07 00441507
+         B     GETMLOOP                READ NEXT RECORD             @07 00441607
+ENDLOOP  DS    0H                                                   @07 00441707
+         L     R2,ADRTBL               POINT TO FIRST RECORD        @07 00441807
+         STM   R4,R8,SAVESORT                                       @07 00442307
+         CH    R7,=H'2'                LESS THAN 2 RECORDS?         @07 00442407
+         BL    READLOOP                DO NOT SORT                  @07 00442507
+         BCTR  R7,0                    MINUS 1                      @07 00442807
+         MH    R7,=H'80'               ** RECORD LENGTH             @07 00443007
+         LA    R7,0(R2,R7)             POINT TO LAST RECORD         @07 00443107
+*                                                                   @07 00443507
+SORT01   DS    0H                      START SORT                   @07 00443607
+         ST    R7,SWAPLAST             LAST RECORD SWAPPED          @07 00443707
+         L     R4,ADRTBL               POINT TO FIRST RECORD        @07 00444007
+         LR    R5,R4                   NEXT                         @07 00444107
+         LA    R5,80(,R4)                   RECORD                  @07 00444407
+SORT03   DS    0H                      SORT TEMPORARY TABLE         @07 00444507
+         CL    R4,SWAPLAST             LAST RECORD REACHED?         @07 00444907
+         BNL   SORT07                  YES: LOOP COMPLETE           @07 00445007
+         CLC   0(80,R4),0(R5)          COMPARE                      @07 00445107
+         BNH   SORT05                  HIGH: SWAP THESE RECORDS     @07 00445207
+         XC    0(80,R4),0(R5)          SWAP                         @07 00445507
+         XC    0(80,R5),0(R4)              THE                      @07 00445607
+         XC    0(80,R4),0(R5)                   RECORDS             @07 00445707
+         LR    R7,R4                   LAST RECORD SWAPPED IN R7    @07 00446007
+SORT05   DS    0H                      LOAD NEXT ENTRY              @07 00446107
+         LA    R4,80(,R4)              NEXT RECORD                  @07 00446207
+         LA    R5,80(,R5)              NEXT RECORD                  @07 00446307
+         B     SORT03                  COMPARE NEXT RECORD          @07 00446707
+SORT07   DS    0H                      ALL RECORDS DONE             @07 00446807
+         CL    R7,SWAPLAST             ARE THESE SWAPS EXECUTED?    @07 00446907
+         BL    SORT01                  IF YES, THEM SORT AGAIN      @07 00447007
+*                                      ELSE END OF SORT             @07 00447307
+         LM    R4,R8,SAVESORT          RESTORE REGISTERS            @07 00447407
+         L     R7,ADRTBL               START OF CORE TABLE          @07 00447507
+         SL    R7,=F'80'               POINT 1 RECORD BEFORE        @07 00447607
 *                                                                       00460000
 READLOOP DS    0H                                                       00470000
          MVC   INRECOLD,INRECNEW       SAVE OLD I/P FOR COMPARE         00480000
-         GET   CJYPDATA,INRECNEW                                        00490000
-         CLI   CLASS,C'*'              Comment?                     @01 00493001
-         BE    READLOOP                 read next record            @01 00497001
+         LA    R7,80(,R7)              NEXT RECORD IN TABLE         @07 00490000
+         ICM   R1,15,0(R7)             END OF DATA?                 @07 00493001
+         BZ    EOFILE                  Y: ENTIRE TABLE PROCESSED    @07 00497001
+         MVC   INRECNEW,0(R7)          MOVE ENTRY                   @07 00497107
          CLC   INRECNEW(ACCAUTH-INREC),INRECOLD  NEXT REC. > PREV?      00500000
          BNH   OUTOFORD                          NO, NOT SORTED         00510000
          CLC   INRECNEW(GROUPID-INREC),INRECOLD  SAME CLASS/ENTITY?     00520000
@@ -169,6 +224,8 @@ EOFILE   DS    0H                                                       01400000
          DEQ   (SECURITY,PROFS,,SYSTEM)    RELEASE ENQ                  01480000
          MODESET MODE=PROB,KEY=NZERO   return to problem state          01490000
          CLOSE (CJYPDATA)              CLOSE I/P DATASET                01500000
+         L     R2,ADRTBL               ADDRESS OF TEMP. CORE TABLE  @07 01500207
+         FREEMAIN RU,LV=160000,A=(2)   RELEASE                      @07 01500407
          WTO   'RAKFPROF7  RAKF PROFILES UPDATED'                       01510000
          L     R13,4(R13)              RESTORE HSA                      01520000
          RETURN (14,12),,RC=0          END O.K.                         01530000
@@ -271,10 +328,15 @@ TRTTEST  DC    XL256'00'               TABLE TO FIND BLANK/ASTERISK     02430000
          ORG   TRTTEST+C'*'            SETUP FLAG FOR ASTERISK          02460000
          DC    X'04'                                                    02470000
          ORG                                                            02480000
-CJYPDATA DCB   MACRF=GM,EODAD=EOFILE,DDNAME=RAKFPROF,DSORG=PS           02490000
+CJYPDATA DCB   MACRF=GM,EODAD=ENDLOOP,DDNAME=RAKFPROF,DSORG=PS      @07 02490000
 *                                                                   @03 02491003
 RAKFADM  DC     CL39'RAKFADM'      facility name to authorize       @03 02495003
 *                                                                   @03 02499003
+SAVESORT DS    5F                      SAVE REGISTERS SORT          @07 02230207
+SWAPLAST DS    F                       LAST RECORD SWAPPED          @07 02230407
+ADRTBL   DS    F                       ADDRESS OF TEMP TABLE        @07 02230607
+RECORD   DS    CL80                                                 @07 02230807
+*                                                                   @07 02231007
          COPY  CJYRCVTD                                                 02500000
          COPY  CJYPCBLK                                                 02510000
          IHAPSA DSECT=YES                                               02520000
