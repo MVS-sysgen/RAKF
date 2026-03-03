@@ -233,12 +233,12 @@ ANYMORE  LTR    R5,R4              MORE ENTRIES?                        01290000
 *                                                                       01310000
          TM     TERMFLAG,TERMABND  WAS AN ABEND REQUESTED?              01320000
          BO     ABEND200               Y-ABEND                          01330000
+         L     R2,ADRTBL               ADDRESS OF TEMP. CORE TABLE  @07 01361007
+         FREEMAIN RU,LV=80000,A=(2)    RELEASE WHILE STILL KEY=0    @07 01361207
 BYEBYE   MODESET MODE=PROB,KEY=NZERO   return to problem state          01340000
          CLOSE (CJYUDATA)              close input dataset              01350000
          DEQ   (SECURITY,USERS,,SYSTEM) release ENQ                 @01 01355001
          WTO    'RAKFUIDS4  USER TABLE UPDATED'                         01360000
-         L     R2,ADRTBL               ADDRESS OF TEMP. CORE TABLE  @07 01361007
-         FREEMAIN RU,LV=80000,A=(2)    RELEASE                      @07 01361207
          L      R13,SAVEAREA+4     LOAD CALLER'S SAVE AREA ADDR         01370000
          RETURN (14,12),RC=0                                            01380000
 *                                                                       01390000

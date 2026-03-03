@@ -222,10 +222,10 @@ EOFILE   DS    0H                                                       01400000
          BASMAC R14,MORERPE            START TO FREE RPE'S              01460000
 *                                                                       01470000
          DEQ   (SECURITY,PROFS,,SYSTEM)    RELEASE ENQ                  01480000
+         L     R2,ADRTBL               ADDRESS OF TEMP. CORE TABLE  @07 01500207
+         FREEMAIN RU,LV=160000,A=(2)   RELEASE WHILE STILL KEY=0    @07 01500407
          MODESET MODE=PROB,KEY=NZERO   return to problem state          01490000
          CLOSE (CJYPDATA)              CLOSE I/P DATASET                01500000
-         L     R2,ADRTBL               ADDRESS OF TEMP. CORE TABLE  @07 01500207
-         FREEMAIN RU,LV=160000,A=(2)   RELEASE                      @07 01500407
          WTO   'RAKFPROF7  RAKF PROFILES UPDATED'                       01510000
          L     R13,4(R13)              RESTORE HSA                      01520000
          RETURN (14,12),,RC=0          END O.K.                         01530000
