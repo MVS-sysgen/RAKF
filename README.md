@@ -105,16 +105,45 @@ ESY1400   /* SYSTEM MODIFICATION PROGRAM 4                */
 
 A JCL jobstream to install RAKF and all its components is located under this
 repos releases and is automatically generated using `generate_release.py` 
-python script. This script can optionally take one of two arguments:
+python script. The most common arguments are:
 - `--users` use a custom users file instead of the default `users.txt`
-- `--profiles` use a custom users file instead of the default `profiles.txt`
+  (its plaintext passwords are hashed into the shadow file at generation time —
+  see *Password Hashing and the Shadow File*)
+- `--profiles` use a custom profiles file instead of the default `profiles.txt`
+- `--xmit` path to the admin-tool XMIT (default: newest `APPLICATIONS/dist/*.xmit`)
+- `--cmdlib` load library for the tools (default `SYS2.CMDLIB`)
+- `--no-tools` generate the RAKF core only, without `ADDUSER`/`ALTUSER`
 
-You can generate the latest release using `python3 generate_release.py` 
-which creates a jobstream of all the steps needed and prints it. You can
-save this output to a file using `python3 generate_release.py > install_rakf.jcl`.
-Then you can submit the job to MVS either with the socket
-reader: `cat install_rakf.jcl|ncat --send-only -w1 127.0.0.1 3505` or by
-uploading the JCL and submitting in TSO.
+The RAKF core (HLASM modules, macros, procs) ships as SMP source that MVS
+assembles and link-edits on-target. The `ADDUSER`/`ALTUSER` command processors,
+however, are C load modules built off-platform with the **cc370** toolchain —
+they cannot be assembled on MVS. They are therefore delivered *inline* as a TSO
+XMIT: `generate_release.py` emits the whole jobstream as **EBCDIC card images**
+and embeds the XMIT's raw bytes after a `DD DATA` card, which the install
+unpacks with `RECEIVE` + `IEBCOPY`.
+
+First build the tools (once, on a host with the cc370 toolchain installed):
+
+```
+cd APPLICATIONS && PATH=~/.local/bin:$PATH make package   # -> dist/*.xmit
+```
+
+Then generate the install file:
+
+```
+python3 generate_release.py -u users.txt -p profiles.txt -o install_rakf.jcl
+```
+
+Because the file now contains raw binary, submit it through the **EBCDIC
+pass-through reader** (device `001A`, port `3506`) — **not** the ASCII reader
+`3505`, which would corrupt the binary:
+
+```
+cat install_rakf.jcl | ncat --send-only -w1 127.0.0.1 3506
+```
+
+If you build the RAKF core only (`--no-tools`), the output is plain text again
+and may be submitted to the `3505` reader as before.
 
 To install RAKF only, without usermods, auxiliary tools, users or profiles you can use
 the file `TEMPLATES/makerakf.sh` which generates the JCL to assemble and link RAKF.
@@ -140,10 +169,15 @@ security requirements special attention to the protection of the
   for RAKF administration need UPDATE access to this dataset.
 - `SYS1.SECURE.PWUP`: started tasks need UPDATE access to this dataset.
 
-Both datasets contain clear text passwords and therefore users should not be
-allowed any access to them. An easy way to protect these datasets is to define
-a dataset profile `SYS1.SECURE.*` with universal access NONE and selectively
-allow the RAKF administrator user(s)/group(s) `UPDATE` access to this profile.
+Passwords are **no longer stored in these datasets**. As of the salted
+SHA-256 password hashing (see *Password Hashing and the Shadow File* below),
+each credential lives as a salted digest in a separate shadow file,
+`SYS1.SECURE.SHADOW`; the `USERS` password column is left blank. The control
+datasets still govern who may sign on and what they may do, so users must not
+be allowed access to them. An easy way to protect them is to define a dataset
+profile `SYS1.SECURE.*` with universal access NONE and selectively allow the
+RAKF administrator user(s)/group(s) `UPDATE` access to this profile. That
+profile also covers `SYS1.SECURE.SHADOW`, which should always be `UACC(NONE)`.
 If the standard setup is used started tasks have operations authority and thus
 don't need to be explicitly allowed.
 
@@ -225,6 +259,112 @@ all the groups. As a practical example, multiple groups are used for
 managers who oversee the work of several programming groups.  The
 multiple group arrangement gives these managers access to everything
 done by all the groups under them.
+
+> :information_source: **Passwords are no longer kept in the `USERS` table.**
+> The password column (columns 19–26) is left blank; the actual credential is a
+> salted SHA-256 digest held in the shadow file (see below). The example above
+> shows the historical clear-text layout for reference only.
+
+### Password Hashing and the Shadow File
+
+Earlier releases stored each password in clear text (obscured only by a
+reversible XOR "scramble"). Passwords are now protected with a **salted
+SHA-256** hash:
+
+```
+digest = SHA-256( salt || password )
+```
+
+- **salt** — 8 bytes taken from the TOD clock (`STCK`) when the password is
+  set, so two users with the same password get different digests and the hash
+  cannot be pre-computed.
+- **password** — folded to upper case (as RACF folds passwords) before hashing,
+  so enrollment and TSO/JOB-card sign-on agree.
+- **digest** — the raw 32-byte SHA-256 result.
+
+The salt and digest are stored in the shadow file **`SYS1.SECURE.SHADOW`**, a
+sequential `RECFM=FB,LRECL=48` dataset with one 48-byte record per user:
+
+| Bytes   | Field                    |
+|:-------:|:-------------------------|
+|  1 –  8 | USERID                   |
+|  9 – 16 | Salt (8 bytes, binary)   |
+| 17 – 48 | SHA-256 digest (32 bytes)|
+
+Keeping the digests in a *separate* dataset lets you lock it down harder than
+the rest of `SYS1.SECURE.CNTL` — it should be `UACC(NONE)` so that even reading
+it (an offline dictionary attack) is denied to everyone but the RAKF
+administrator.
+
+The SHA-256 implementation is pure S/370 HLASM (`RAKFHASH`, validated against
+the NIST FIPS 180-4 test vectors) wrapped by `RAKFPWH`, which builds
+`salt || password` and calls it. Both the sign-on path (`ICHSFR00`) and the
+enrollment tools call the *same* routine, so a stored digest and a login
+attempt are compared byte-for-byte. `RAKFUSER` loads the shadow file into the
+in-core user table via the `RAKFSHAD` DD at IPL, alongside the `USERS` table.
+
+**Initial users are seeded at install time.** You still write plaintext
+passwords in the `users.txt` file (column 19–26, as shown above), but
+`generate_release.py` does not copy them onto the system. When it builds the
+install stream it hashes each password host-side — SHA-256 over the same
+EBCDIC bytes RAKF uses, so the result is identical to `RAKFPWH` — blanks the
+`USERS` password column, and emits the shadow records into the stream, which
+the install loads into `SYS1.SECURE.SHADOW`. No clear-text password ever
+reaches the system, and no chicken-and-egg with the tools below: the initial
+credentials exist before `ADDUSER`/`ALTUSER` are ever run. (This means
+`users.txt` itself contains live credentials — keep it protected off-system.)
+
+### Managing Users with ADDUSER and ALTUSER
+
+Users are created and changed with two RACF-style command processors,
+`ADDUSER` and `ALTUSER`, installed in `SYS2.CMDLIB`. They write the `USERS`
+member of `SYS1.SECURE.CNTL` and the `SYS1.SECURE.SHADOW` shadow file, and they
+discover those dataset names at run time by reading the `RAKFUSER`/`RAKFPROF`
+procs in `SYS1.PROCLIB`.
+
+```
+ADDUSER userid PASSWORD(pw) DFLTGRP(group) [GROUP(g2 g3 ...)] [OPERATIONS] [SPECIAL]
+ALTUSER userid [PASSWORD(pw)] [DFLTGRP(group)] [OPERATIONS|NOOPERATIONS] [SPECIAL|NOSPECIAL]
+```
+
+- **ADDUSER** adds one `USERS` line per group (the `DFLTGRP` line is flagged as
+  the default), generates a salt, hashes `PASSWORD(pw)`, and writes the shadow
+  record. `PASSWORD` and `DFLTGRP` are required; it fails if the user exists.
+- **ALTUSER** changes an existing user: `PASSWORD` re-hashes with a fresh salt,
+  `DFLTGRP` moves the default-group flag, and the flags toggle operations/special.
+
+They run either as a **TSO command** (from a RAKF administrator's session)—
+
+```
+ADDUSER SMITH PASSWORD(START123) DFLTGRP(USER)
+```
+
+—or in **batch** under the terminal monitor, invoked with `CALL` so the load
+module is found in `SYS2.CMDLIB` (keep the command within column 72, using a
+TSO continuation `+` if needed):
+
+```
+//ADDUSER  EXEC PGM=IKJEFT01
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+  CALL 'SYS2.CMDLIB(ADDUSER)' +
+'SMITH PASSWORD(START123) DFLTGRP(USER)'
+```
+
+Because they update the RAKF-protected control datasets, run them under a
+userid connected to the **RAKFADM** group (they are ordinary problem-state
+programs — no APF authorization is required; the datasets' own protection is
+the security boundary).
+
+After adding or altering a user, **reload the in-core tables** so the change
+takes effect, either from the console with `S RAKFUSER` (and `S RAKFPROF` for
+profile changes) or by running the `RAKFUSER`/`RAKFPROF` utilities in batch.
+Until the reload, the new or changed credential exists only on disk.
+
+> :warning: **Deleting a user** (`DELUSER`) and connecting/removing groups
+> (`CONNECT`/`REMOVE`) are not yet implemented. For now, remove a user by
+> deleting their line(s) from the `USERS` member and their record from
+> `SYS1.SECURE.SHADOW`, then reload with `S RAKFUSER`.
 
 ### PROFILES table
 
@@ -773,7 +913,9 @@ also made:
 
 ## Appendix A - Generating your own release
 
-Run the script `generate_rakf.py` which will generate the JCL jobstream needed to install RAKF.
+Run the script `generate_release.py` (see *Installation* above for the full
+procedure, including building the `ADDUSER`/`ALTUSER` tools with `make package`
+and submitting the binary stream to the EBCDIC reader on port `3506`).
 
 ## Appendix B - Add users to UADS
 

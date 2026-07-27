@@ -1,0 +1,6 @@
+# mbt build output
+build/
+dist/
+.mbt/
+# local MVS deploy creds
+.env

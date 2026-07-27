@@ -52,6 +52,9 @@ AROUNDZP LR    R12,R15                                                  00320000
          USING ACEE,ACEEREG        ADDRESS ACEE                         00340000
          USING PSA,0               ADDRESS PSA                          00350000
          LR    R12,R15             FIRST BASE                           00360000
+         LA    R11,2048(,R12)      SECOND BASE (COVERS 4096-8191)
+         LA    R11,2048(,R11)      R11 = ICHSFR00 + 4096
+         USING ICHSFR00+4096,R11
          L     R9,24(R1)           ADDRESS EXIT WORK AREA               00370000
          USING WORKSAVE,R9         ... HELLO SAVE AREA                  00380000
          XC    WORKAREA(WORKAREL),WORKAREA CLEAR WORKAREA               00390000
@@ -365,13 +368,41 @@ RACIIDOK TM    3(R8),X'08'         PASSCHK=NO?                          03510000
          BO    RACIACEE            YES, GO MAKE ACEE                    03520000
          ICM   R3,B'1111',8(R8)    GO TO RACINIT PASSWORD               03530000
          BZ    RACIINPW            NO PASSWORD -> INVALID               03540000
-         MVC   WORKPASS,0(R3)      MOVE PASSWORD                        03550000
-         XC    WORKPASS+1(8),=C'SECURITY' ENCRYPT                       03560000
-         IC    R1,CBLKPWDL         LENGTH OF PSWD IN CORE               03570000
-         EX    R1,RACICKPW         check password                       03580000
-         BE    RACIPWOK            password is correct                  03590000
-*RACISTPW removed - GREATONE master password backdoor eliminated        03610000
-         B     RACIINPW            NO, INVALID PWD.                     03630000
+         MVC   WORKPASS,0(R3)      MOVE PASSWORD (LEN + UP TO 8 CHARS)
+*        hash SALT||candidate via RAKFPWH and compare to stored hash
+         GETMAIN RU,LV=HASHWKL     work area for hashing (key 0 here)
+         LR    R2,R1              R2 -> gotten area
+         USING HASHWKD,R2
+         ST    R13,HWR13          save caller save-area pointer
+         LA    R0,CBLKSALT        A(salt) - CBLK based on R4
+         ST    R0,HWPL+0
+         LA    R0,WORKPASS+1      A(candidate password chars)
+         ST    R0,HWPL+4
+         SR    R0,R0
+         IC    R0,WORKPASS        candidate password length
+         ST    R0,HWPWLEN
+         LA    R0,HWPWLEN
+         ST    R0,HWPL+8          A(pwlen)
+         LA    R0,HWOUT
+         ST    R0,HWPL+12         A(output hash)
+         LA    R0,HWWORK
+         ST    R0,HWPL+16         A(RAKFPWH work area)
+         LA    R1,HWPL            R1 -> parameter list
+         LA    R13,HWSAVE         save area for the call
+         L     R15,=V(RAKFPWH)
+         BALR  R14,R15            compute SHA-256(salt||password)
+         L     R13,HWR13          restore caller save-area pointer
+         CLC   CBLKHASH,HWOUT     stored hash vs computed hash
+         BNE   RACIPWNO           mismatch
+         LA    R3,1               match flag
+         B     RACIPWFR
+RACIPWNO LA    R3,0               mismatch flag
+RACIPWFR LR    R1,R2              area to free
+         DROP  R2
+         FREEMAIN RU,LV=HASHWKL,A=(R1)  release work area
+         LTR   R3,R3              matched?
+         BNZ   RACIPWOK           yes, password is correct
+         B     RACIINPW           no, invalid password
 RACIPWOK EQU   *                                                        03640000
 RACICHPW EQU   *                                                        03650000
 RACINCL2 EQU   *                                                        03660000
@@ -428,7 +459,7 @@ PWUPHXTB DC    C'0123456789ABCDEF' translate RAKFPWUP address to >  @02 03799402
 PWUPXTBA DC    A(PWUPHXTB-240)      > hex printable format          @02 03799502
 RACIRPWD MVC   CBLKPWDL(1),WORKPASS replace in core password            03800000
 RACICKPW CLC   CBLKPWDL(1),WORKPASS check password                      03810000
-*RACISTPW removed - no longer referenced                                 03820000
+*RACISTPW removed - no longer referenced
 RACIERR1 MVC   WORKWTO+4(60),WTOMSG1 CJYUSERS INVALID                   03830000
          WTO   MF=(E,WORKWTO)      WRITE IT                             03840000
          MVC   WORKWTO+4(60),WTOMSG2 STC ACCESS                         03850000
@@ -750,7 +781,7 @@ ENTYOPR2 TM    ACEEFLG1,ACEEOPER   MAKE OPER AUTH.                      06890000
          WTO   MF=(E,WORKWTO)      WRITE IT                             06990000
          MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    07000000
          MVC   WORKWTO+4(9),=C'RAKF0006 ' USERID/CLASS                  07010000
-         BAL   R11,ENTYENTY        ENTY COMMON                          07020000
+         BAL   R4,ENTYENTY         ENTY COMMON                          07020000
          B     AUTHGOOD            ALLOW ACCESS                         07030000
 *                                                                       07040000
 ENTYERR1 MVC   WORKWTO+4(60),WTOMSG3 PROFS IN ERROR                     07050000
@@ -758,7 +789,7 @@ ENTYERR1 MVC   WORKWTO+4(60),WTOMSG3 PROFS IN ERROR                     07050000
          WTO   MF=(E,WORKWTO)      WRITE IT                             07070000
          MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    07080000
          MVC   WORKWTO+4(9),=C'RAKF0009 ' USERID/CLASS                  07090000
-         BAL   R11,ENTYENTY        ENTY COMMON                          07100000
+         BAL   R4,ENTYENTY         ENTY COMMON                          07100000
          B     AUTHGOOD            ALLOW ACCESS                         07110000
 *                                                                       07120000
 ENTYWARN OI    WORKENTY,4          RC = 4                               07130000
@@ -768,7 +799,7 @@ ENTYWARN OI    WORKENTY,4          RC = 4                               07130000
          WTO   MF=(E,WORKWTO)      WRITE IT                             07170000
          MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    07180000
          MVC   WORKWTO+4(9),=C'RAKF000B ' USERID/CLASS                  07190000
-         BAL   R11,ENTYENTY        ENTY COMMON                          07200000
+         BAL   R4,ENTYENTY         ENTY COMMON                          07200000
          B     AUTHGOOD            ALLOW ACCESS                         07210000
 *                                                                       07220000
 ENTYFAIL OI    WORKENTY,8          RC = 8                               07230000
@@ -778,7 +809,7 @@ ENTYFAIL OI    WORKENTY,8          RC = 8                               07230000
          WTO   MF=(E,WORKWTO)      WRITE IT                             07270000
          MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    07280000
          MVC   WORKWTO+4(9),=C'RAKF000A ' USERID/CLASS                  07290000
-         BAL   R11,ENTYENTY        ENTY COMMON                          07300000
+         BAL   R4,ENTYENTY         ENTY COMMON                          07300000
          B     AUTHFAIL            FAIL ACCESS                          07310000
 *                                                                       07320000
 ENTYENTY MVC   WORKWTO+4+WTOMSGEU(L'WTOMSGEU),ACEEUSRI MOVE USERID      07330000
@@ -792,7 +823,7 @@ ENTYJOBN MVC   WORKWTO+4+WTOMSGEJ(L'WTOMSGEJ),0(R3) MOVE JOBNAME        07390000
          CLC   =C'DATASET',WORKCLAS CLASS = DATASET                     07410000
          BE    ENTYWTO1            GO DO WTO                            07420000
          LA    R1,5                LEN = 6                              07430000
-         CLC   =C'VOL',WORKCLAS+4  CLASS = DASDVOL/TAPEVOL              07440000
+         CLC   =C'VOL',WORKCLAS+4  CLASS DASDVOL OR TAPEVOL
          BE    ENTYWTO1            DO WTO ...                           07450000
          LA    R1,38               FACILITY = 39                        07460000
          CLC   =C'FACILITY',WORKCLAS CLASS=FACILITY                     07470000
@@ -804,7 +835,7 @@ ENTYWTO1 LA    R2,L'WTOMSGEE-1     MAX LENGTH                           07500000
          LR    R1,R2               SORRY, MOVE MAX                      07530000
 ENTYWTO2 EX    R1,ENTYERRX         MVC WORKWTO+4+WTOMSGEE(0),0(ENTYREG) 07540000
          WTO   MF=(E,WORKWTO)      WRITE IT                             07550000
-         BR    R11                 RETURN                               07560000
+         BR    R4                  RETURN                               07560000
 *                                                                       07570000
 ENTYERRX MVC   WORKWTO+4+WTOMSGEE(0),0(ENTYREG) MOVE ENTITY             07580000
 *                                                                       07590000
@@ -914,6 +945,16 @@ WORKAUTH DS    X                   RACHECK/DEF/FRAC AUTHORITY REQ.      08350000
          ORG                                                            08360000
          DS    XL(150-(*-WORKAREA)) MAKE SURE                           08370000
 WORKAREL EQU   *-WORKAREA           S.B 150                             08380000
+*                                                                       08390000
+*        GETMAIN'd scratch for the RAKFPWH password-hash call
+HASHWKD  DSECT
+HWPL     DS    5F                  parmlist (salt,pw,pwlen,out,work)
+HWPWLEN  DS    F                   candidate password length
+HWR13    DS    F                   saved caller save-area pointer
+HWOUT    DS    CL32                computed SHA-256 hash
+HWSAVE   DS    18F                 save area for the RAKFPWH call
+HWWORK   DS    CL640               RAKFPWH work area (>= RPWWORKL)
+HASHWKL  EQU   *-HASHWKD           total length to GETMAIN
 *                                                                       08390000
 AUTHDS   DSECT                     USED FOR RETURN FROM SUBS(R10)       08400000
 AUTHGOOD DS    F'0'                                                     08410000

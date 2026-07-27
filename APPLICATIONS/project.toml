@@ -1,0 +1,53 @@
+# ====================================================================
+#  RAKF administration commands - mbt v2 (cc370 host build).
+#
+#  Build:   make            # ADDUSER + ALTUSER load modules -> build/
+#           make adduser    # just one
+#           make deploy     # pack -> XMIT -> RECEIVE into the LINKLIB
+#
+#  Each command is its own load module.  The shared logic (rakfadm.c)
+#  and the assembler primitives (getstck, RAKFPWH, RAKFHASH) live in
+#  the [internal] archive; the linker autocalls exactly what each
+#  command references, so ADDUSER and ALTUSER stay self-contained.
+# ====================================================================
+
+[project]
+name    = "rakfadm"
+version = "0.1.0"
+type    = "application"
+
+[build]
+# rakfadm.h sits beside the .c sources; add its dir to the include path.
+cflags = ["-I."]
+
+# ---- shared code, compiled once, autocalled by every module --------
+[internal]
+sources = [
+    "rakfadm.c",
+    "asm/getstck.asm",
+    "asm/rakfpwh.asm",     # SHA256(salt||pw) wrapper  (ported from ../SRCLIB)
+    "asm/rakfhash.asm",    # SHA-256 core              (ported from ../SRCLIB)
+]
+
+# ---- one load module per command (root main() only) ----------------
+[[module]]
+name    = "ADDUSER"
+sources = ["adduser.c"]
+
+[[module]]
+name    = "ALTUSER"
+sources = ["altuser.c"]
+
+# ---- C runtime (crt0 startup + libc370) ----------------------------
+[dependencies]
+"mvslovers/crent370" = ">=1.0.0"
+
+# ---- where 'make deploy' installs the load modules -----------------
+#  mbt deploy DELETEs+recreates the target LINKLIB, so it must be a
+#  DEDICATED dataset -- never a shared library.  Production install into
+#  SYS2.CMDLIB is a separate additive IEBCOPY step from here.
+[deploy]
+target = "IBMUSER.RAKFADM.LINKLIB"
+
+[artifacts]
+loads = true

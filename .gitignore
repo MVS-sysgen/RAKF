@@ -7,3 +7,5 @@ MVSCE/
 oldlib/
 __pycache__/
 .claude/
+# CI build artifact
+install_rakf.jcl

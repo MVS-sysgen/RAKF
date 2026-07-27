@@ -1,3 +1,4 @@
 //RAKFUSER EXEC PGM=RAKFUSER                                            00010000
 //RAKFUSER DD DSN=SYS1.SECURE.CNTL(USERS),DISP=SHR                      00020000
 //RAKFPWUP DD DSN=SYS1.SECURE.PWUP,DISP=SHR                         @02 00030002
+//RAKFSHAD DD DSN=SYS1.SECURE.SHADOW,DISP=SHR                       @08 00030003

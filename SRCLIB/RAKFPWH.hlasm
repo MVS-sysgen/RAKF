@@ -1,0 +1,113 @@
+         TITLE 'RAKFPWH - Salted password hash (SHA-256 of SALT||PW)'
+RAKFPWH  CSECT
+         PRINT NOGEN
+*
+**********************************************************************
+*                                                                    *
+* NAME: RAKFPWH                                                      *
+*                                                                    *
+* TYPE: Assembler Source - reentrant callable subroutine            *
+*                                                                    *
+* DESC: Compute the RAKF salted password hash.  This is the SINGLE   *
+*       definition of the hashing convention:                        *
+*                                                                    *
+*           digest = SHA-256( SALT(8 bytes) || PASSWORD(pwlen) )     *
+*                                                                    *
+*       Login verification (ICHSFR00) and password enrollment (the   *
+*       cc370 ADDUSER/ALTUSER tools) MUST both call this routine so  *
+*       they agree byte-for-byte.  Verify = call RAKFPWH, then CLC   *
+*       the 32-byte result against the stored hash.  Set = generate  *
+*       an 8-byte salt (STCK), call RAKFPWH, store salt+result.      *
+*                                                                    *
+*       Password bytes are hashed exactly as supplied (EBCDIC on     *
+*       MVS) - set and verify run on the same system, so the code    *
+*       page is consistent.                                          *
+*                                                                    *
+*       Pure computation - issues NO SVCs, fully reentrant, so it    *
+*       is callable from ICHSFR00's key-0 login path and from        *
+*       problem-state tooling alike.  Calls RAKFHASH (link both).    *
+*                                                                    *
+* LINKAGE: Standard OS.  R1 -> parameter list of 5 addresses:        *
+*                                                                    *
+*   PLIST+0   A(SALT)     8-byte salt                               *
+*   PLIST+4   A(PASSWORD) password bytes                            *
+*   PLIST+8   A(PWLEN)    fullword password length (1..8)           *
+*   PLIST+12  A(OUTPUT)   32-byte area for the raw digest           *
+*   PLIST+16  A(WORK)     work area, >= RPWWORKL bytes              *
+*                                                                    *
+*   R13 -> caller's 18-word save area.                              *
+*                                                                    *
+* RETURN: R15 = 0 (RAKFHASH cannot fail for these <=16-byte inputs)  *
+*                                                                    *
+**********************************************************************
+         SPACE 1
+         SAVE  (14,12)            save caller's regs in HIS area
+         LR    R12,R15            program base
+         USING RAKFPWH,R12
+         LR    R9,R1              keep parameter-list pointer
+         L     R11,16(,R9)        R11 -> caller work area
+         USING RPWWORKD,R11
+*
+* --- chain our own save area (we call out to RAKFHASH) ----------- *
+*
+         LA    R2,RPWSAVE
+         ST    R13,4(,R2)         back chain -> caller save area
+         ST    R2,8(,R13)         forward chain
+         LR    R13,R2             R13 -> our save area
+         SPACE 1
+*
+* --- build SALT(8) || PASSWORD(pwlen) in PWBUF ------------------- *
+*
+         L     R3,0(,R9)          A(salt)
+         MVC   PWBUF(8),0(R3)     salt into first 8 bytes
+         L     R4,8(,R9)          A(pwlen)
+         L     R4,0(,R4)          pwlen value
+         L     R5,4(,R9)          A(password)
+         LR    R6,R4              pwlen
+         BCTR  R6,0               pwlen-1 for EX
+         EX    R6,PWMVC           MVC PWBUF+8(pwlen),0(R5)
+         LA    R6,8               hash length = 8 + pwlen
+         AR    R6,R4
+         ST    R6,PWHLEN
+         SPACE 1
+*
+* --- call RAKFHASH(A(PWBUF),A(PWHLEN),A(OUTPUT),A(PWHWK)) --------- *
+*
+         LA    R0,PWBUF
+         ST    R0,RPWPL+0
+         LA    R0,PWHLEN
+         ST    R0,RPWPL+4
+         L     R0,12(,R9)         caller's A(OUTPUT)
+         ST    R0,RPWPL+8
+         LA    R0,PWHWK
+         ST    R0,RPWPL+12
+         LA    R1,RPWPL
+         L     R15,=V(RAKFHASH)
+         BALR  R14,R15
+         SPACE 1
+*
+* --- return ------------------------------------------------------ *
+*
+         L     R13,4(,R13)        restore caller save area
+         RETURN (14,12),RC=0
+         SPACE 2
+*
+* --- Executed MVC (length filled in by EX) ----------------------- *
+*
+PWMVC    MVC   PWBUF+8(0),0(R5)
+         SPACE 1
+         LTORG
+         SPACE 2
+**********************************************************************
+* Caller-provided work area (mapped, not allocated here)           *
+**********************************************************************
+RPWWORKD DSECT
+RPWSAVE  DS    18F                save area for calling RAKFHASH
+RPWPL    DS    4F                 parameter list to RAKFHASH
+PWBUF    DS    CL16               SALT(8) || PASSWORD(<=8)
+PWHLEN   DS    F                  hash input length (8+pwlen)
+PWHWK    DS    CL512              RAKFHASH work area (>= RHWORKL)
+RPWWORKL EQU   *-RPWWORKD         required work-area size
+         SPACE 1
+         YREGS
+         END   RAKFPWH

@@ -136,6 +136,19 @@ SORT07   DS    0H                      ALL RECORDS DONE             @07 00386807
          SL    R9,=F'80'               POINT 1 RECORD BEFORE        @07 00387507
          LM    R4,R8,SAVESORT          RESTORE REGISTERS            @07 00387607
 *                                                                       00400000
+*        read the shadow (salt+hash) table into storage
+         OPEN   (SHADOW,(INPUT))   open shadow dataset
+         GETMAIN RU,LV=48000       room for 1000 shadow entries
+         LR     R2,R1              table address
+         ST     R1,ADRSHAD         save it
+         XR     R3,R3              shadow record counter
+SHADRLP  GET    SHADOW,(R2)        read a shadow record (48 bytes)
+         LA     R2,48(,R2)         next slot
+         LA     R3,1(,R3)          count it
+         B      SHADRLP            read next
+SHADEOD  ST     R3,SHADCNT         save count
+         CLOSE  (SHADOW)           close shadow dataset
+*                                                                       00400000
 READLOOP LA    R9,80(,R9)              NEXT RECORD IN TABLE         @07 00410000
          ICM   R1,15,0(R9)             END OF DATA?                 @07 00413001
          BZ    ENDDATA                 Y: ENTIRE TABLE PROCESSED    @07 00417001
@@ -145,8 +158,6 @@ READLOOP LA    R9,80(,R9)              NEXT RECORD IN TABLE         @07 00410000
 *        BNH    ABEND2               not in sort seq, tell about it @01 00435001
          CLI    USERID,C' '         UID?                                00440000
          BE     ABEND2               NO ---                             00450000
-         CLI    PASSWORD,C' '       PSWD?                               00460000
-         BE     ABEND2               NO ---                             00470000
          CLI    GROUP,C' '          GROUP.                              00480000
          BE     ABEND2               NO ---                             00490000
          CLI    OPERFLAG,C'Y'       FLAG ??                             00500000
@@ -177,19 +188,24 @@ MOVEUID  STC    R1,CBLKUSRL        SAVE LENGTH                          00680000
 MOVEGRP  STC    R1,CBLKGRPL        SAVE LENGTH                          00750000
          MVC    CBLKGRPN,GROUP     MOVE GROUP                           00760000
 *                                                                       00770000
-         LA     R1,8               MAX                                  00780000
-         TRT    PASSWORD,TRTBLANK  FIND BLANK                           00790000
-         BZ     MOVEPSW            GO MOVE PASSWORD                     00800000
-         S      R1,=A(PASSWORD)    SUBTRACT BEGINNING                   00810000
-MOVEPSW  STC    R1,CBLKPWDL        SAVE LENGTH                          00820000
-         MVC    CBLKPWDE,PASSWORD  MOVE USERID                          00830000
-         BCTR   R1,0               LENGTH OF PSWD - 1 FOR EX.           00840000
-         EX     R1,SCRAMBLE        SCRABLE PSWD                         00850000
-         MVC    CBLKFLG1,OPERFLAG  MOVE OPER FLAG TO ENTRY.             00860000
+*        look up salt+hash for this userid in the shadow table
+         L      R2,ADRSHAD         address of shadow table
+         L      R3,SHADCNT         number of shadow entries
+         LTR    R3,R3              any entries?
+         BZ     MOVENOSH           no -> zero hash (login denied)
+MOVESHLP CLC    0(8,R2),USERID     userid match?
+         BE     MOVESHFN           yes, found
+         LA     R2,48(,R2)         next shadow entry
+         BCT    R3,MOVESHLP        check next
+         B      MOVENOSH           not found -> zero hash
+MOVESHFN MVC    CBLKSALT,8(R2)     copy salt (8 bytes)
+         MVC    CBLKHASH,16(R2)    copy hash (32 bytes)
+         B      MOVEOPER
+MOVENOSH XC     CBLKSALT,CBLKSALT  no salt
+         XC     CBLKHASH,CBLKHASH  no hash -> nothing matches
+MOVEOPER MVC    CBLKFLG1,OPERFLAG  MOVE OPER FLAG TO ENTRY.             00860000
 *                                                                       00870000
          B      ADDGROUP           ADD CONNECTS                         00880000
-*                                                                       00890000
-SCRAMBLE XC     CBLKPWDE(0),=C'SECURITY'  SCRAMBLE PSWD                 00900000
 *                                                                       00910000
 NEWGROUP CLC    GROUP,OLDGROUP      IS INPUT IN SORT SEQUENCE?          00920000
 *        BNH    ABEND2                 N - TELL ABOUT IT                00930000
@@ -235,6 +251,8 @@ ANYMORE  LTR    R5,R4              MORE ENTRIES?                        01290000
          BO     ABEND200               Y-ABEND                          01330000
          L     R2,ADRTBL               ADDRESS OF TEMP. CORE TABLE  @07 01361007
          FREEMAIN RU,LV=80000,A=(2)    RELEASE WHILE STILL KEY=0    @07 01361207
+         L     R2,ADRSHAD              ADDRESS OF SHADOW TABLE
+         FREEMAIN RU,LV=48000,A=(2)    RELEASE SHADOW TABLE
 BYEBYE   MODESET MODE=PROB,KEY=NZERO   return to problem state          01340000
          CLOSE (CJYUDATA)              close input dataset              01350000
          DEQ   (SECURITY,USERS,,SYSTEM) release ENQ                 @01 01355001
@@ -273,6 +291,7 @@ TRTBLANK DC     XL256'00'          TABLE FOR TRT                        01600000
 *                                                                       01640000
          PRINT  NOGEN                                                   01650000
 CJYUDATA DCB    DDNAME=RAKFUSER,MACRF=GM,EODAD=ENDLOOP,DSORG=PS     @07 01660000
+SHADOW   DCB    DDNAME=RAKFSHAD,MACRF=GM,EODAD=SHADEOD,DSORG=PS
 *                                                                       01670000
 RAKFPSAV DC     V(RAKFPSAV)        password change utility          @02 01673002
 RAKFADM  DC     CL39'RAKFADM'      facility name to authorize       @03 01675003
@@ -302,6 +321,8 @@ OLDGROUP DS     CL8                                                     01870000
 SAVESORT DS    5F                      SAVE REGISTERS SORT          @07 01682007
 SWAPLAST DS    F                       LAST RECORD SWAPPED          @07 01682207
 ADRTBL   DS    F                       ADDRESS OF TEMP TABLE        @07 01682307
+ADRSHAD  DS    F                       ADDRESS OF SHADOW TABLE
+SHADCNT  DS    F                       NUMBER OF SHADOW ENTRIES
 *                                                                       01890100
 R0       EQU    00                                                      01900000
 R1       EQU    01                                                      01910000

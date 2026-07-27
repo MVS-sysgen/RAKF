@@ -72,6 +72,9 @@ TERMINAL*                                                   READ
 //RAKF    DD DISP=(,CATLG),DSN=SYS1.SECURE.CNTL,VOL=SER=MVS000,
 //           UNIT=SYSDA,DCB=(RECFM=FB,LRECL=80,BLKSIZE=19040),
 //           SPACE=(TRK,(10,3,3))
+//SHADOW  DD DISP=(,CATLG),DSN=SYS1.SECURE.SHADOW,VOL=SER=MVS000,
+//           UNIT=SYSDA,DCB=(RECFM=FB,LRECL=48,BLKSIZE=19008),
+//           SPACE=(TRK,(5,3))
 //********************************************************************
 //SORTREXX EXEC PGM=IEBGENER
 //SYSPRINT DD SYSOUT=*
