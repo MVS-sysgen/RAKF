@@ -1,0 +1,9 @@
+# Working notes / scratch — not part of the shipped source
+ANALYSIS_REPORT.md
+REMAINING_WORK.md
+HASHING_DESIGN.md
+Rob Updates/
+MVSCE/
+oldlib/
+__pycache__/
+.claude/

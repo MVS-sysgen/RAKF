@@ -1,0 +1,110 @@
+name: Build and Release
+
+# Builds the RAKF install stream (install_rakf.jcl) — SMP source for the HLASM
+# core plus the cc370-built ADDUSER/ALTUSER tools embedded inline — and
+# publishes it:
+#   * every push to main  -> rolling 'latest' pre-release
+#   * every v* tag         -> versioned release (and stamps the version into
+#                             SRCLIB/ICHSEC00.hlasm to match the tag)
+# Release notes list the commits included in the build.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write        # create releases and move the 'latest' tag
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive     # mbt / cc370 / libc370
+          fetch-depth: 0            # full history for release notes
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential flex bison
+
+      # cc370 is a GCC fork and slow to build, so cache the installed toolchain
+      # keyed on the pinned cc370/libc370 submodule commits.
+      - name: Toolchain cache key
+        id: tk
+        run: echo "key=$(git rev-parse HEAD:cc370)-$(git rev-parse HEAD:libc370)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache cc370 toolchain
+        id: toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.local
+          key: cc370-${{ runner.os }}-${{ steps.tk.outputs.key }}
+
+      - name: Build cc370 toolchain + libc370 sysroot
+        if: steps.toolchain.outputs.cache-hit != 'true'
+        run: |
+          make -C cc370 install-tools install-compiler          # -> ~/.local
+          ( cd libc370 && PATH="$HOME/.local/bin:$PATH" python3 sdk/mklibc.py all )
+
+      # On a v* tag, stamp the version into ICHSEC00's banner (v1.2.6 -> V1R2M6).
+      # ICHSEC00.hlasm is fixed-column HLASM: the WTO literal must stay within
+      # col 71 and the sequence number sits in cols 73-80, so re-justify the
+      # line to 80 cols after substituting rather than letting it shift right.
+      - name: Stamp version from tag
+        id: ver
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          IFS=. read -r MAJ MIN MOD <<< "${GITHUB_REF_NAME#v}"
+          RV="V${MAJ}R${MIN}M${MOD}"
+          RV="$RV" python3 - SRCLIB/ICHSEC00.hlasm <<'PY'
+          import os, re, sys
+          rv = os.environ["RV"]
+          path = sys.argv[1]
+          lines = open(path, encoding="latin-1").read().splitlines()
+          pat = re.compile(r"V\d+R\d+M\d+")
+          hit = False
+          for i, ln in enumerate(lines):
+              if "RAKF V" in ln and "MVS-sysgen" in ln:
+                  main, seq = ln[:72], ln[72:]          # cols 1-72 | 73-80
+                  main = pat.sub(rv, main, count=1)
+                  lines[i] = main.rstrip().ljust(72)[:72] + seq   # keep 80-col layout
+                  hit = True
+          if not hit:
+              sys.exit("ERROR: version banner line not found in " + path)
+          open(path, "w", encoding="latin-1").write("\n".join(lines) + "\n")
+          print("Stamped", path, "->", rv)
+          PY
+          echo "rakf_ver=${RV}" >> "$GITHUB_OUTPUT"
+          grep -n "RAKF $RV " SRCLIB/ICHSEC00.hlasm
+
+      - name: Build RAKF install stream
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          make -C APPLICATIONS package                          # -> dist/*.xmit
+          python3 generate_release.py -u users.txt -p profiles.txt -o install_rakf.jcl
+          test -s install_rakf.jcl
+          echo "install_rakf.jcl: $(stat -c%s install_rakf.jcl) bytes"
+
+      - name: Publish rolling 'latest' (push to main)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest install_rakf.jcl \
+            --target "$GITHUB_SHA" \
+            --title "Latest build ($(git rev-parse --short HEAD))" \
+            --prerelease \
+            --generate-notes
+
+      - name: Publish versioned release (v* tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" install_rakf.jcl \
+            --title "RAKF ${{ steps.ver.outputs.rakf_ver }} (${GITHUB_REF_NAME})" \
+            --generate-notes
