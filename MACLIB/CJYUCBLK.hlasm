@@ -9,8 +9,11 @@ CBLKGRPL DS    X                  GROUP LENGTH                          00080002
 CBLKGRPN DS    CL8                GROUP NAME                            00090002
 CBLKPSWD DS    0CL9               PASSWORD                              00100002
 CBLKPWDL DS    X                  PASSWORD LENGTH                       00110002
-CBLKPWDE DS    CL8                PASSWORD ENCRYPTED                    00120002
+CBLKPWDE DS    CL8                PASSWORD ENCRYPTED (legacy/unused)    00120002
 CBLKFLG1 DS    C                  OPER AUTHORITY                        00130002
+CBLKSPEC DS    C                  SPECIAL AUTHORITY (Y/N)
+CBLKSALT DS    CL8                PASSWORD SALT
+CBLKHASH DS    CL32               SHA-256(SALT CONCAT PASSWORD)
          DS    0F                 END THE BLOCK                         00140002
 CBLKL    EQU   *-CBLK                                                   00150002
 *                                                                       00160000
