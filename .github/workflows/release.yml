@@ -83,10 +83,15 @@ jobs:
       - name: Build RAKF install stream
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          make -C APPLICATIONS package                          # -> dist/*.xmit
+          make -C APPLICATIONS package                          # -> dist/*-load.xmit
+          # Publish the admin-tool XMIT under a stable, version-independent name
+          # so consumers (e.g. sysgen) can fetch it and re-run generate_release.py
+          # with their own user list via --xmit, without building the toolchain.
+          cp "$(ls -t APPLICATIONS/dist/*.xmit | head -1)" rakf-tools.xmit
           python3 generate_release.py -u users.txt -p profiles.txt -o install_rakf.jcl
           test -s install_rakf.jcl
           echo "install_rakf.jcl: $(stat -c%s install_rakf.jcl) bytes"
+          echo "rakf-tools.xmit:  $(stat -c%s rakf-tools.xmit) bytes"
 
       - name: Publish rolling 'latest' (push to main)
         if: github.ref == 'refs/heads/main'
@@ -94,7 +99,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest --cleanup-tag --yes || true
-          gh release create latest install_rakf.jcl \
+          gh release create latest install_rakf.jcl rakf-tools.xmit \
             --target "$GITHUB_SHA" \
             --title "Latest build ($(git rev-parse --short HEAD))" \
             --prerelease \
@@ -105,6 +110,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" install_rakf.jcl \
+          gh release create "$GITHUB_REF_NAME" install_rakf.jcl rakf-tools.xmit \
             --title "RAKF ${{ steps.ver.outputs.rakf_ver }} (${GITHUB_REF_NAME})" \
             --generate-notes
