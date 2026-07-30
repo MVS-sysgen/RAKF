@@ -34,6 +34,10 @@ arg_parser.add_argument('--codepage', default="cp037",
                         help="EBCDIC codepage for card images (cp037 or cp1047)")
 arg_parser.add_argument('--no-tools', action="store_true",
                         help="Emit the RAKF core only, without the admin tools")
+arg_parser.add_argument('--recv370', action="store_true",
+                        help="Unpack the admin-tool XMIT with RECV370 (SYSC.LINKLIB) "
+                             "instead of TSO RECEIVE. Needed when RAKF is installed "
+                             "during a sysgen, before the TSO XMIT facility exists.")
 args = arg_parser.parse_args()
 
 running_folder = os.path.dirname(os.path.abspath(__file__))
@@ -252,12 +256,42 @@ TOOLS_HEADER = """//RAKFTOOL JOB (SYSGEN),'INSTALL RAKF TOOLS',
 //            DCB=(RECFM=FB,LRECL=80,BLKSIZE=3120)
 //SYSUT1   DD DATA,DLM='{dlm}'"""
 
-TOOLS_FOOTER = """//* --- RECEIVE the XMIT into a transient load library -------------
+# The XMIT has to be unpacked into a load library before IEBCOPY can put the
+# members into the command library. There are two ways to do that and which one
+# works depends on when in a system's life RAKF is being installed:
+#
+#   TSO RECEIVE  the normal path on a finished system, but RECEIVE/TRANSMIT is
+#                NOT part of base MVS 3.8J -- on MVS/CE it arrives with NJE38,
+#                which needs MVP, which needs RAKF. Installing RAKF during a
+#                sysgen therefore hits 'IKJ56500I COMMAND RECEIVE NOT FOUND'.
+#
+#   RECV370      a standalone unXMIT program in SYSC.LINKLIB, present from the
+#                base sysgen onward (sysgen's own BREXX step uses it), so it
+#                works before TSO RECEIVE exists. Selected with --recv370.
+#
+# RECEIVE self-allocates its output; RECV370 does not, so the RECV370 form has
+# to allocate RAKF.TOOLS.LINKLIB itself. It is modelled on the command library
+# with DCB={cmdlib} so the IEBCOPY that follows is a same-DCB copy.
+TOOLS_RECV_TSO = """//* --- RECEIVE the XMIT into a transient load library -------------
 //RECV    EXEC PGM=IKJEFT01,DYNAMNBR=50
 //SYSTSPRT DD SYSOUT=*
 //SYSTSIN  DD *
-  RECEIVE INDSN('RAKF.TOOLS.XMIT') DATASET('RAKF.TOOLS.LINKLIB')
-//* --- copy the tool members into the command library ------------
+  RECEIVE INDSN('RAKF.TOOLS.XMIT') DATASET('RAKF.TOOLS.LINKLIB')"""
+
+TOOLS_RECV_370 = """//* --- unXMIT into a transient load library with RECV370 ----------
+//RECV    EXEC PGM=RECV370,REGION=4096K
+//STEPLIB  DD DISP=SHR,DSN=SYSC.LINKLIB
+//RECVLOG  DD SYSOUT=*
+//XMITIN   DD DSN=RAKF.TOOLS.XMIT,DISP=SHR
+//SYSPRINT DD SYSOUT=*
+//SYSUT1   DD DSN=&&RECVWRK,UNIT=SYSDA,VOL=SER={vol},
+//            SPACE=(CYL,(10,10)),DISP=(NEW,DELETE,DELETE)
+//SYSUT2   DD DSN=RAKF.TOOLS.LINKLIB,DISP=(,CATLG,DELETE),
+//            UNIT=SYSDA,VOL=SER={vol},SPACE=(CYL,(5,5,20),RLSE),
+//            DCB={cmdlib}
+//SYSIN    DD DUMMY"""
+
+TOOLS_INSTALL = """//* --- copy the tool members into the command library ------------
 //INSTALL EXEC PGM=IEBCOPY
 //SYSPRINT DD SYSOUT=*
 //IN       DD DSN=RAKF.TOOLS.LINKLIB,DISP=SHR
@@ -288,7 +322,10 @@ def emit_tools():
     emit_text(TOOLS_HEADER.format(cmdlib=args.cmdlib, vol=args.volume, dlm=dlm))
     OUT.extend(xmit)          # raw binary, already 80-byte card images
     emit(dlm)                 # delimiter card closes the DD DATA
-    emit_text(TOOLS_FOOTER.format(cmdlib=args.cmdlib))
+    recv = TOOLS_RECV_370 if args.recv370 else TOOLS_RECV_TSO
+    sys.stderr.write("[gen] unXMIT step: {}\n".format("RECV370" if args.recv370 else "TSO RECEIVE"))
+    emit_text(recv.format(cmdlib=args.cmdlib, vol=args.volume))
+    emit_text(TOOLS_INSTALL.format(cmdlib=args.cmdlib))
 
 
 ##################################################
