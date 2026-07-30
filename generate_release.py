@@ -326,6 +326,13 @@ with open(running_folder + "/TEMPLATES/02_smp4.template", 'r') as f:
 install = [
     'USERMODS/RAK0001.jcl',
     'USERMODS/ZJW0003.jcl',
+    # ZJW0004 MACUPDs SGIEE0MS to add the //RAKFSHAD DD to MSTJCL00, which is
+    # how RAKFUSER reaches SYS1.SECURE.SHADOW at IPL. It declares
+    # PRE(ZJW0003), so it must stay after ZJW0003 or SMP/E rejects the APPLY.
+    # Without it the OPEN fails with 'IEC130I RAKFSHAD DD STATEMENT MISSING',
+    # no hashes load, and -- since build_credentials() blanks the USERS
+    # password column -- every credential on the system becomes unverifiable.
+    'USERMODS/ZJW0004.jcl',
     'TOOLS/RAKFCUST.jcl',
     'AUX/VTOC/vtoc.jcl',
     'AUX/CDSCB.jcl',
