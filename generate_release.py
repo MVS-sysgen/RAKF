@@ -113,8 +113,19 @@ def build_credentials(users_text):
     blanked, shadow, seen = [], bytearray(), set()
     for line in users_text.split('\n'):
         s = line.strip()
-        if not s or s.startswith('*'):        # blank line or comment: keep as-is
-            blanked.append(line.rstrip())
+        # Blank and comment lines are DROPPED, not preserved. What this
+        # builds is not a text file -- it is spliced into the USERS member
+        # and read positionally by RAKFUSER, which rejects any record whose
+        # userid field is blank:
+        #     RAKFUIDS2  INPUT DATA INVALID OR OUT OF SEQ.
+        #     RAKFUIDSX  ** PROGRAM TERMINATED **
+        # and then terminates, leaving the system with no users at all. A
+        # comment line has no group or password field either, so it is just
+        # as invalid as a blank one. Note split('\n') yields a trailing empty
+        # element for any file ending in a newline, so keeping blanks breaks
+        # every normally-terminated users file (this repo's own users.txt has
+        # no trailing newline, which is why it never showed up here).
+        if not s or s.startswith('*'):
             continue
         p = line.ljust(80)
         userid = p[0:8].rstrip()
