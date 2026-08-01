@@ -28,6 +28,8 @@ arg_parser.add_argument('-o', '--output', default=None,
                         help="Output file (binary EBCDIC card images). Default: stdout.")
 arg_parser.add_argument('--cmdlib', default="SYS2.CMDLIB",
                         help="Target load library for ADDUSER/ALTUSER")
+arg_parser.add_argument('--helplib', default="SYS2.HELP",
+                        help="Target help library for the ADDUSER/ALTUSER HELP members")
 arg_parser.add_argument('--volume', default="PUB000",
                         help="DASD volume for the transient staging datasets")
 arg_parser.add_argument('--codepage', default="cp037",
@@ -321,6 +323,42 @@ TOOLS_INSTALL = """//* --- copy the tool members into the command library ------
   SET MAXCC=0"""
 
 
+HELP_HEADER = """//* --- TSO HELP members for the admin commands -------------------
+//HELPLOAD EXEC PGM=PDSLOAD
+//STEPLIB  DD DSN=SYSC.LINKLIB,DISP=SHR
+//SYSPRINT DD SYSOUT=*
+//SYSUT2   DD DSN={helplib},DISP=SHR
+//SYSUT1   DD *"""
+
+
+def emit_help():
+    """Load HELP/* into the help library so 'HELP ADDUSER' works.
+
+    One member per file in HELP/, named after the command. PDSLOAD is used
+    rather than IEBUPDTE because it copies the text verbatim -- IEBUPDTE
+    would want sequence numbers in columns 73-80, and TSO HELP would then
+    display them."""
+    help_dir = os.path.join(running_folder, "HELP")
+    if not os.path.isdir(help_dir):
+        return
+    members = sorted(f for f in os.listdir(help_dir)
+                     if os.path.isfile(os.path.join(help_dir, f)))
+    if not members:
+        return
+    sys.stderr.write("[gen] help members: {}\n".format(", ".join(members)))
+    emit_text(HELP_HEADER.format(helplib=args.helplib))
+    for m in members:
+        emit("./ ADD NAME={}".format(m))
+        with open(os.path.join(help_dir, m)) as f:
+            for line in f.read().split('\n'):
+                line = line.rstrip()
+                if len(line) > 80:
+                    sys.exit("generate_release.py: HELP/{} has a line over 80 "
+                             "columns:\n  {}".format(m, line))
+                emit(line)
+    emit("/*")
+
+
 def emit_tools():
     xmit_path = find_xmit()
     if not xmit_path or not os.path.isfile(xmit_path):
@@ -340,6 +378,7 @@ def emit_tools():
     sys.stderr.write("[gen] unXMIT step: {}\n".format("RECV370" if args.recv370 else "TSO RECEIVE"))
     emit_text(recv.format(cmdlib=args.cmdlib, vol=args.volume))
     emit_text(TOOLS_INSTALL.format(cmdlib=args.cmdlib))
+    emit_help()
 
 
 ##################################################
