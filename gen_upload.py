@@ -75,7 +75,7 @@ ALWAYS_FULL_UPLOAD = frozenset({"MACLIB"})
 BASE_DIR = Path(__file__).parent
 
 # ---------------------------------------------------------------------------
-# Module definitions  (derived from JCLIN/TRKF126.jcl)
+# Module definitions  (derived from JCLIN/TRKF200.jcl)
 # ---------------------------------------------------------------------------
 
 @dataclass

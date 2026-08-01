@@ -388,7 +388,7 @@ with open(running_folder + "/TEMPLATES/01_header.template", 'r') as f:
         emit(l.rstrip())
         check_step(l, "01_header.template")
 
-with open(running_folder + "/JCLIN/TRKF126.jcl") as f:
+with open(running_folder + "/JCLIN/TRKF200.jcl") as f:
     emit_text(f.read().rstrip())
 
 smp_dict = {

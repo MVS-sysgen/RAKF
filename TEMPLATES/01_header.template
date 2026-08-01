@@ -93,6 +93,6 @@
 //* ------------------------------------------------------------------*
 //RECEIVER EXEC SMPREC
 //SMPPTFIN DD DATA,DLM='??'
-++FUNCTION(TRKF126).
+++FUNCTION(TRKF200).
 ++VER(Z038) SUP(RRKF006).
 ++JCLIN.

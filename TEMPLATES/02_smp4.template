@@ -1,9 +1,9 @@
 ??
 /*
 //SMPCNTL  DD  *
- /* REJECT SELECT(TRKF126) . */
+ /* REJECT SELECT(TRKF200) . */
  RESETRC.
- RECEIVE SELECT(TRKF126) .
+ RECEIVE SELECT(TRKF200) .
 /*
 //*
 //* ------------------------------------------------------------------*
@@ -31,7 +31,7 @@
 //SAMPLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.SAMPLIB
 //SRCLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.SRCLIB
 //SMPCNTL  DD  *
- APPLY S(TRKF126) DIS(WRITE) .
+ APPLY S(TRKF200) DIS(WRITE) .
 /*
 //* ------------------------------------------------------------------*
 //* SMP accept of RAKF 2.0.0                                          *
@@ -55,5 +55,5 @@
 //ASRCLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.ASRCLIB
 //SRCLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.SRCLIB
 //SMPCNTL  DD  *
- ACCEPT S(TRKF126) DIS(WRITE) .
+ ACCEPT S(TRKF200) DIS(WRITE) .
 /*
