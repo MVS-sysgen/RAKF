@@ -4,6 +4,11 @@ A Security System for MVS 3.8j
 
 ## User’s Guide
 
+> [!IMPORTANT]
+> New for version 2.0.0 users are hashed and stores in a shadow file. 
+> as a result adding new users requires using the TSO command ADDUSER
+> and changing requires ALTUSER. Read the HELP/ files for more defails 
+
 August 2026
 
 ```
