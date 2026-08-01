@@ -30,13 +30,24 @@ sources = [
 ]
 
 # ---- one load module per command (root main() only) ----------------
+#
+# norent: ld370's template marks every module RENT+REUS, but these are C
+# programs with mutable statics -- libc370 assigns stdout during startup,
+# and rakfadm.c caches the resolved dataset names. A module marked
+# reentrant can be loaded into read-only storage, and TSO does exactly
+# that for a command processor: entering ADDUSER at READY took an S0C4
+# with interrupt code 4 (protection exception) on the first static store,
+# while CALL and batch -- which load it differently -- worked. Serially
+# reusable (REUS) is kept and is honest: cmd_parse resets the state.
 [[module]]
 name    = "ADDUSER"
 sources = ["adduser.c"]
+norent  = true
 
 [[module]]
 name    = "ALTUSER"
 sources = ["altuser.c"]
+norent  = true
 
 # ---- C runtime (crt0 startup + libc370) ----------------------------
 [dependencies]

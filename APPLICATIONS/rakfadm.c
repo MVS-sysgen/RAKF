@@ -330,6 +330,9 @@ int cmd_parse(const char *line0, const char *verb, CMD_T *c, char *err)
     memset(c, 0, sizeof(*c));
     c->oper = c->spec = -1;
     err[0] = '\0';
+    /* Reset, not just initialise: the module is serially reusable, so a
+       previous invocation's -TRACE must not leak into this one. */
+    g_trace = 0;
 
     strncpy(line, line0, sizeof(line) - 1);
     line[sizeof(line) - 1] = '\0';
