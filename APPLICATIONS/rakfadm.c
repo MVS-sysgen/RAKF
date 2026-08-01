@@ -150,7 +150,14 @@ static FILE *open_ds(const char *ddname, const char *dsn, const char *mode)
     sprintf(path, "DD:%s", ddname);         /* libc370 wants DD:ddname, no // */
     fp = fopen(path, mode);
     if (fp != NULL) return fp;
-    sprintf(path, "//'%s'", dsn);           /* MVS C fully-qualified DSN */
+    /* libc370 wants a quoted DSN with NO leading slashes -- the IBM C
+       "//'dsn'" form is not recognised. fopen() checks for "DD:", then "*",
+       then a leading quote; anything else is treated as an unquoted name and
+       gets the TSO prefix prepended, so "//'SYS1.SECURE.CNTL(USERS)'" became
+       "IBMUSER.//'SYS1.SECURE.CNTL" and the allocation failed. With the
+       correct form fopen dynamically allocates it (SVC 99, DISP=SHR via
+       __fpshr), so no //USERS or //SHADOW DD is needed in TSO or in batch. */
+    sprintf(path, "'%s'", dsn);
     return fopen(path, mode);
 }
 
