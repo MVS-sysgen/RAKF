@@ -21,9 +21,6 @@ int main(int argc, char **argv)
     char     line[256], err[128];
     int      i, changed = 0, touched_users = 0;
 
-    /* Unbuffered: see the note in adduser.c */
-    setbuf(stdout, NULL);
-
     if (read_command(argc, argv, line, sizeof(line)) != 0) {
         printf("ALTUSER: no command supplied.\n");
         return 12;

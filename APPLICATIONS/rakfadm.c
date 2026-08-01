@@ -128,12 +128,12 @@ int g_trace = 0;
 
 void rakf_trace(const char *what)
 {
-    /* DIAGNOSTIC BUILD: unconditional. The -TRACE run printed nothing at
-       all, which is ambiguous -- it could mean the operand never parsed
-       and g_trace stayed 0, or that nothing got far enough to print.
-       Printing regardless removes that ambiguity. Restore the g_trace
-       gate once the S0C4 is located. */
+    if (!g_trace) return;
     printf("RAKF TRACE: %s\n", what);
+    /* Flush rather than running stdout unbuffered: setbuf(stdout, NULL)
+       stops output reaching the terminal entirely when the command is
+       entered at READY, while the buffered path works. */
+    fflush(stdout);
 }
 
 void resolve_datasets(void)

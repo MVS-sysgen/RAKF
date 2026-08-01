@@ -33,10 +33,6 @@ int main(int argc, char **argv)
     char     line[256], err[128];
     int      oper, spec, k;
 
-    /* Unbuffered: a command processor's messages should appear as they
-       happen, and an abend must not swallow them. Buffered output made an
-       S0C4 look like it had failed earlier than it did. */
-    setbuf(stdout, NULL);
     rakf_trace("adduser: entry");
 
     if (read_command(argc, argv, line, sizeof(line)) != 0) {
