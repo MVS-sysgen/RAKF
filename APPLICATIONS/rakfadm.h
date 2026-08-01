@@ -74,6 +74,8 @@ void        resolve_datasets(void);  /* parse procs -> USERS/SHADOW/PROFILES */
 const char *users_dsn(void);         /* resolved bare DSNs (for display)     */
 const char *shadow_dsn(void);
 const char *profiles_dsn(void);
+extern int  g_trace;                 /* -TRACE: checkpoint each open */
+void        rakf_trace(const char *what);
 
 /* ---- dataset I/O (datasets resolved by resolve_datasets) --------- */
 int  users_load (USERS_T  *u);

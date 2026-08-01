@@ -121,15 +121,29 @@ static int dd_dsn(const char *proc, const char *ddname, const char *dsnsfx,
 
 /* Resolve USERS / SHADOW / PROFILES once, from the proc members.
  * Falls back to the compiled defaults for anything not found. */
+/* Set by the -TRACE operand: prints a checkpoint before each step that
+ * touches a dataset, so an abend can be located from the console. Off by
+ * default; nothing is printed in normal use. */
+int g_trace = 0;
+
+void rakf_trace(const char *what)
+{
+    if (g_trace) printf("RAKF TRACE: %s\n", what);
+}
+
 void resolve_datasets(void)
 {
     if (g_resolved) return;
+    rakf_trace("resolve: reading " PROC_USERS " for USERS");
     if (dd_dsn(PROC_USERS, DD_USERS, NULL, g_users_dsn, sizeof(g_users_dsn)) != 0)
         strcpy(g_users_dsn, DFLT_USERS);
+    rakf_trace("resolve: reading " PROC_USERS " for SHADOW");
     if (dd_dsn(PROC_USERS, DD_SHADOW, SFX_SHADOW, g_shadow_dsn, sizeof(g_shadow_dsn)) != 0)
         strcpy(g_shadow_dsn, DFLT_SHADOW);
+    rakf_trace("resolve: reading " PROC_PROF " for PROFILES");
     if (dd_dsn(PROC_PROF, DD_PROF, NULL, g_prof_dsn, sizeof(g_prof_dsn)) != 0)
         strcpy(g_prof_dsn, DFLT_PROF);
+    rakf_trace("resolve: done");
     g_resolved = 1;
 }
 
@@ -172,6 +186,7 @@ int users_load(USERS_T *u)
     FILE *fp;
     u->n = 0;
     resolve_datasets();
+    rakf_trace("open USERS for read");
     fp = open_ds("USERS", g_users_dsn, "rb");
     if (fp == NULL) return -1;
     while (u->n < MAXUREC && fread(u->rec[u->n], 1, UREC, fp) == UREC)
@@ -185,6 +200,7 @@ int users_save(USERS_T *u)
     FILE *fp;
     int i;
     resolve_datasets();
+    rakf_trace("open USERS for write");
     fp = open_ds("USERS", g_users_dsn, "wb");
     if (fp == NULL) return -1;              /* S913 here = not authorized */
     for (i = 0; i < u->n; i++)
@@ -198,6 +214,7 @@ int shadow_load(SHADOW_T *s)
     FILE *fp;
     s->n = 0;
     resolve_datasets();
+    rakf_trace("open SHADOW for read");
     fp = open_ds("SHADOW", g_shadow_dsn, "rb");
     if (fp == NULL) return -1;
     while (s->n < MAXSREC && fread(s->rec[s->n], 1, SREC, fp) == SREC)
@@ -211,6 +228,7 @@ int shadow_save(SHADOW_T *s)
     FILE *fp;
     int i;
     resolve_datasets();
+    rakf_trace("open SHADOW for write");
     fp = open_ds("SHADOW", g_shadow_dsn, "wb");
     if (fp == NULL) return -1;
     for (i = 0; i < s->n; i++)
@@ -347,6 +365,8 @@ int cmd_parse(const char *line0, const char *verb, CMD_T *c, char *err)
         else if (strcmp(key, "NOOPERATIONS") == 0) c->oper = 0;
         else if (strcmp(key, "SPECIAL")      == 0) c->spec = 1;
         else if (strcmp(key, "NOSPECIAL")    == 0) c->spec = 0;
+        else if (strcmp(key, "-TRACE") == 0 || strcmp(key, "TRACE") == 0)
+            g_trace = 1;                /* checkpoint each dataset open */
         else { sprintf(err, "unsupported operand '%s'", key); return -1; }
     }
     return 0;
