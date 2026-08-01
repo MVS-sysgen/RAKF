@@ -50,8 +50,14 @@ int fld_eq(const char *rec, int off, int len, const char *val)
  *  run time, so they always target whatever the running system uses.  *
  *  Change the proc members, DDNAMEs, or fallbacks here.              *
  * ================================================================== */
-#define PROC_USERS  "//'SYS1.PROCLIB(RAKFUSER)'"  /* has the USERS + SHADOW DDs */
-#define PROC_PROF   "//'SYS1.PROCLIB(RAKFPROF)'"  /* has the PROFILES DD        */
+/* Quoted DSN, no leading slashes -- see open_ds() below. The IBM C
+ * "//'dsn'" form makes libc370's fopen() take its unquoted-name branch,
+ * which prepends the TSO prefix; invoked as a TSO command processor that
+ * dereferences the CPPL for the prefix and takes an S0C4. Under CALL the
+ * prefix lookup is skipped, fopen just fails, and dd_dsn() quietly falls
+ * back to the compiled defaults -- which is why CALL appeared to work. */
+#define PROC_USERS  "'SYS1.PROCLIB(RAKFUSER)'"    /* has the USERS + SHADOW DDs */
+#define PROC_PROF   "'SYS1.PROCLIB(RAKFPROF)'"    /* has the PROFILES DD        */
 #define DD_USERS    "RAKFUSER"      /* DDNAME whose DSN is the USERS table    */
 #define DD_SHADOW   "RAKFSHAD"      /* DDNAME whose DSN is the shadow file    */
 #define DD_PROF     "RAKFPROF"      /* DDNAME whose DSN is the PROFILES table */
