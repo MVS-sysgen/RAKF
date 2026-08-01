@@ -21,15 +21,19 @@ int main(int argc, char **argv)
     char     line[256], err[128];
     int      i, changed = 0, touched_users = 0;
 
+    rakf_trace("altuser: entry");
+
     if (read_command(argc, argv, line, sizeof(line)) != 0) {
         printf("ALTUSER: no command supplied.\n");
         return 12;
     }
+    rakf_trace("altuser: read_command done");
     if (cmd_parse(line, "ALTUSER", &c, err) != 0) {
         printf("ALTUSER: %s\n", err);
         return 8;
     }
 
+    rakf_trace("altuser: parsed, resolving datasets");
     printf("ALTUSER: USERS=%s  SHADOW=%s\n", users_dsn(), shadow_dsn());
     if (users_load(&users) != 0)   { printf("ALTUSER: cannot open USERS.\n");  return 12; }
     if (shadow_load(&shadow) != 0) { printf("ALTUSER: cannot open SHADOW.\n"); return 12; }
