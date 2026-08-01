@@ -37,11 +37,13 @@ int main(int argc, char **argv)
        happen, and an abend must not swallow them. Buffered output made an
        S0C4 look like it had failed earlier than it did. */
     setbuf(stdout, NULL);
+    rakf_trace("adduser: entry");
 
     if (read_command(argc, argv, line, sizeof(line)) != 0) {
         printf("ADDUSER: no command supplied.\n");
         return 12;
     }
+    rakf_trace("adduser: read_command done");
     if (cmd_parse(line, "ADDUSER", &c, err) != 0) {
         printf("ADDUSER: %s\n", err);
         return 8;
@@ -51,6 +53,7 @@ int main(int argc, char **argv)
         return 8;
     }
 
+    rakf_trace("adduser: parsed, resolving datasets");
     printf("ADDUSER: USERS=%s  SHADOW=%s\n", users_dsn(), shadow_dsn());
     if (users_load(&users) != 0)  { printf("ADDUSER: cannot open USERS.\n");  return 12; }
     if (shadow_load(&shadow) != 0){ printf("ADDUSER: cannot open SHADOW.\n"); return 12; }

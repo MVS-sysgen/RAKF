@@ -128,7 +128,12 @@ int g_trace = 0;
 
 void rakf_trace(const char *what)
 {
-    if (g_trace) printf("RAKF TRACE: %s\n", what);
+    /* DIAGNOSTIC BUILD: unconditional. The -TRACE run printed nothing at
+       all, which is ambiguous -- it could mean the operand never parsed
+       and g_trace stayed 0, or that nothing got far enough to print.
+       Printing regardless removes that ambiguity. Restore the g_trace
+       gate once the S0C4 is located. */
+    printf("RAKF TRACE: %s\n", what);
 }
 
 void resolve_datasets(void)

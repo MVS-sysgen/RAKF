@@ -313,7 +313,7 @@ TOOLS_INSTALL = """//* --- copy the tool members into the command library ------
 //IN       DD DSN=RAKF.TOOLS.LINKLIB,DISP=SHR
 //OUT      DD DSN={cmdlib},DISP=SHR
 //SYSIN    DD *
-  COPY OUTDD=OUT,INDD=IN
+  COPY OUTDD=OUT,INDD=((IN,R))
 //* --- clean up the staging datasets -----------------------------
 //CLEANUP EXEC PGM=IDCAMS
 //SYSPRINT DD SYSOUT=*
