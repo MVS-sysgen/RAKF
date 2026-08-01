@@ -139,12 +139,18 @@ def build_credentials(users_text):
     return '\n'.join(blanked), bytes(shadow)
 
 
-SHADOW_LOAD = """//RAKFSHAD JOB (SYSGEN),'LOAD SHADOW',
-//             CLASS=A,
-//             MSGCLASS=A,
-//             MSGLEVEL=(1,1),
-//             USER=IBMUSER,PASSWORD=SYS1
-//*******************************************************************
+# These continue the RAKFINST job rather than starting one of their own.
+# They MUST: SYS1.SECURE.SHADOW is allocated by RAKFCUST's ALLOC step, which
+# is part of RAKFINST, and this references it DISP=SHR. As a separate job it
+# raced -- JES2 is genned with two initiators on class A (I1 START,CLASS=A
+# and I2 START,CLASS=BA), so it started on INIT 2 while RAKFINST was still
+# running on INIT 1 and failed before the dataset existed:
+#     IEF453I RAKFSHAD - JOB FAILED - JCL ERROR
+#     IEFACTRT SHADLOAD/IEBGENER/.../NOXEC/RAKFSHAD
+# leaving the shadow file empty, and every password on the system unusable.
+# Steps within one job are serialized, so ordering is guaranteed -- and it
+# brings these under the caller's existing check_maxcc('RAKFINST').
+SHADOW_LOAD = """//*******************************************************************
 //* Populate SYS1.SECURE.SHADOW with the salted SHA-256 password
 //* hashes (computed at release-generation time).  The 48-byte
 //* records are shipped padded to 80-byte cards through the EBCDIC
@@ -241,12 +247,9 @@ def pick_dlm(xmit_bytes):
     raise SystemExit("generate_release.py: could not find a collision-free DD DATA delimiter")
 
 
-TOOLS_HEADER = """//RAKFTOOL JOB (SYSGEN),'INSTALL RAKF TOOLS',
-//             CLASS=A,
-//             MSGCLASS=A,
-//             MSGLEVEL=(1,1),
-//             USER=IBMUSER,PASSWORD=SYS1
-//*******************************************************************
+# Also a continuation of RAKFINST, for the same reason as SHADOW_LOAD above:
+# separate jobs run on separate initiators and race the install they depend on.
+TOOLS_HEADER = """//*******************************************************************
 //* Install the cc370-built RAKF admin tools (ADDUSER, ALTUSER).
 //* They are C load modules (cannot be assembled on MVS), shipped as
 //* an inline TSO XMIT read by the EBCDIC card reader, then installed
