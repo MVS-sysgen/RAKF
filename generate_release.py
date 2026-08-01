@@ -400,15 +400,23 @@ for jcl in install:
     path = running_folder + "/" + jcl
     if 'RAKFCUST' in jcl:
         emit_rakfcust(path, [blanked_users, _profiles])
+        # The shadow load and the tools install belong HERE -- after
+        # RAKFCUST's ALLOC step has created SYS1.SECURE.SHADOW, and before
+        # VSAMSRAC's RACIND and VTOCSRAC's RACINDVT steps set the RACF
+        # indicator bit on the datasets.
+        #
+        # Once a dataset is RACF-indicated, OPEN issues SVC 130 (RACHECK).
+        # RAKF supplies that SVC but does not activate until the next IPL,
+        # so within this job the SVC has no handler and the step dies:
+        #     IEF472I RAKFINST SHADLOAD - COMPLETION CODE - SYSTEM=E82
+        # Running them before the indicators are set avoids the RACHECK
+        # entirely. (They were originally trailing jobs, which also raced
+        # RACIND -- separate jobs on separate initiators, same root cause.)
+        emit_shadow_load(shadow_bytes)
+        if not args.no_tools:
+            emit_tools()
     else:
         read_file(path)
-
-# ---- populate the shadow file with the salted SHA-256 hashes -------
-emit_shadow_load(shadow_bytes)
-
-# ---- admin tools (inline binary XMIT) ------------------------------
-if not args.no_tools:
-    emit_tools()
 
 emit("//* Steps in this job stream")
 for i in steps:
