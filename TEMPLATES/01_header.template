@@ -6,12 +6,12 @@
 //             MSGLEVEL=(1,1)
 /*JOBPARM LINES=100
 //* *******************************************************************
-//* Installs RAKF 1.2.6
+//* Installs RAKF 2.0.0
 //*
 //* This JCL was generated from makesmp.sh
 //*
 //* ------------------------------------------------------------------*
-//* Prepare system for RAKF 1.2.6 installation                        *
+//* Prepare system for RAKF 2.0.0 installation                        *
 //*                                                                   *
 //* Expected return codes: Step UCLIN:  00                            *
 //*                        Step LIBS:   00                            *
@@ -39,35 +39,35 @@
 //* Allocate target und and distribution libraries                    *
 //* ------------------------------------------------------------------*
 //LIBS    EXEC PGM=IEFBR14
-//ASAMPLIB DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V1R2M6.ASAMPLIB,
+//ASAMPLIB DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V2R0M0.ASAMPLIB,
 //             VOL=SER=PUB001,
 //             UNIT=SYSDA,DCB=(RECFM=FB,LRECL=80,BLKSIZE=19040),
 //             SPACE=(TRK,(120,40,10))
-//SAMPLIB  DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V1R2M6.SAMPLIB,
+//SAMPLIB  DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V2R0M0.SAMPLIB,
 //             VOL=SER=PUB001,
 //             UNIT=SYSDA,DCB=(RECFM=FB,LRECL=80,BLKSIZE=19040),
 //             SPACE=(TRK,(120,40,10))
-//AMACLIB  DD   DISP=(,CATLG),DSN=SYSGEN.RAKF.V1R2M6.AMACLIB,
+//AMACLIB  DD   DISP=(,CATLG),DSN=SYSGEN.RAKF.V2R0M0.AMACLIB,
 //             VOL=SER=PUB001,
 //             UNIT=SYSDA,DCB=(RECFM=FB,LRECL=80,BLKSIZE=5600),
 //             SPACE=(TRK,(2,1,1))
-//MACLIB   DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V1R2M6.MACLIB,
+//MACLIB   DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V2R0M0.MACLIB,
 //             VOL=SER=PUB001,
 //             UNIT=SYSDA,DCB=(RECFM=FB,LRECL=80,BLKSIZE=5600),
 //             SPACE=(TRK,(2,1,1))
-//ASRCLIB  DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V1R2M6.ASRCLIB,
+//ASRCLIB  DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V2R0M0.ASRCLIB,
 //             VOL=SER=PUB001,
 //             UNIT=SYSDA,DCB=(RECFM=FB,LRECL=80,BLKSIZE=5600),
 //             SPACE=(TRK,(30,10,4))
-//SRCLIB   DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V1R2M6.SRCLIB,
+//SRCLIB   DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V2R0M0.SRCLIB,
 //             VOL=SER=PUB001,
 //             UNIT=SYSDA,DCB=(RECFM=FB,LRECL=80,BLKSIZE=5600),
 //             SPACE=(TRK,(30,10,4))
-//APROCLIB DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V1R2M6.APROCLIB,
+//APROCLIB DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V2R0M0.APROCLIB,
 //             VOL=SER=PUB001,
 //             UNIT=SYSDA,DCB=(RECFM=FB,LRECL=80,BLKSIZE=19040),
 //             SPACE=(TRK,(2,1,1))
-//APARMLIB DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V1R2M6.APARMLIB,
+//APARMLIB DD  DISP=(,CATLG),DSN=SYSGEN.RAKF.V2R0M0.APARMLIB,
 //             VOL=SER=PUB001,
 //             UNIT=SYSDA,DCB=(RECFM=F,LRECL=80,BLKSIZE=80),
 //             SPACE=(TRK,(1,1,1))
@@ -88,7 +88,7 @@
    SCRATCH VOL=3350=MVSRES,DSNAME=SYS1.LINKLIB,MEMBER=ICHSEC00
 /*
 //* ------------------------------------------------------------------*
-//* SMP receive of RAKF 1.2.6                                         *
+//* SMP receive of RAKF 2.0.0                                         *
 //* Expected return code: 00                                          *
 //* ------------------------------------------------------------------*
 //RECEIVER EXEC SMPREC

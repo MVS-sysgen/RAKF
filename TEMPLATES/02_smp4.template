@@ -7,7 +7,7 @@
 /*
 //*
 //* ------------------------------------------------------------------*
-//* SMP apply of RAKF 1.2.6                                           *
+//* SMP apply of RAKF 2.0.0                                           *
 //* Expected APPLY step return code: 04 or lower                      *
 //*                                   |                               *
 //*                                    --> resulting from RC=8 in SMP *
@@ -26,15 +26,15 @@
 //         DD
 //         DD
 //         DD
-//         DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.MACLIB
-//MACLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.MACLIB
-//SAMPLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.SAMPLIB
-//SRCLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.SRCLIB
+//         DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.MACLIB
+//MACLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.MACLIB
+//SAMPLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.SAMPLIB
+//SRCLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.SRCLIB
 //SMPCNTL  DD  *
  APPLY S(TRKF126) DIS(WRITE) .
 /*
 //* ------------------------------------------------------------------*
-//* SMP accept of RAKF 1.2.6                                          *
+//* SMP accept of RAKF 2.0.0                                          *
 //* Expected return code: 00                                          *
 //* ------------------------------------------------------------------*
 //ACCEPTR EXEC SMPAPP
@@ -45,15 +45,15 @@
 //         DD
 //         DD
 //         DD
-//         DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.AMACLIB
-//AMACLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.AMACLIB
-//APARMLIB DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.APARMLIB
-//APROCLIB DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.APROCLIB
-//ASAMPLIB DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.ASAMPLIB
-//MACLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.MACLIB
-//SAMPLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.SAMPLIB
-//ASRCLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.ASRCLIB
-//SRCLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V1R2M6.SRCLIB
+//         DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.AMACLIB
+//AMACLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.AMACLIB
+//APARMLIB DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.APARMLIB
+//APROCLIB DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.APROCLIB
+//ASAMPLIB DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.ASAMPLIB
+//MACLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.MACLIB
+//SAMPLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.SAMPLIB
+//ASRCLIB  DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.ASRCLIB
+//SRCLIB   DD  DISP=SHR,DSN=SYSGEN.RAKF.V2R0M0.SRCLIB
 //SMPCNTL  DD  *
  ACCEPT S(TRKF126) DIS(WRITE) .
 /*

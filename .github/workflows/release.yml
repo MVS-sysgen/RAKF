@@ -49,7 +49,7 @@ jobs:
           make -C cc370 install-tools install-compiler          # -> ~/.local
           ( cd libc370 && PATH="$HOME/.local/bin:$PATH" python3 sdk/mklibc.py all )
 
-      # On a v* tag, stamp the version into ICHSEC00's banner (v1.2.6 -> V1R2M6).
+      # On a v* tag, stamp the version into ICHSEC00's banner (v2.0.0 -> V2R0M0).
       # ICHSEC00.hlasm is fixed-column HLASM: the WTO literal must stay within
       # col 71 and the sequence number sits in cols 73-80, so re-justify the
       # line to 80 cols after substituting rather than letting it shift right.

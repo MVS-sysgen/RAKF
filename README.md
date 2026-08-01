@@ -1,10 +1,10 @@
-# RAKF Version 1 Release 2 Modification 6
+# RAKF Version 2 Release 0 Modification 0
 
 A Security System for MVS 3.8j
 
 ## User’s Guide
 
-October 2021
+August 2026
 
 ```
 **********************************************************************
@@ -22,7 +22,7 @@ October 2021
 *                                                                    *
 **********************************************************************
 *                                                                    *
-* This document applies to RAKF Version 1 Release 2 Modification 6   *
+* This document applies to RAKF Version 2 Release 0 Modification 0   *
 * which includes PTFs RRKF001, RRKF002, RRKF003, RRKF004, RRKF005    *
 * and RRKF006 already installed                                      *
 *                                                                    *
@@ -910,6 +910,34 @@ also made:
 - Removed xmi/ptf JCL and other SAMPLIB items
 - Moved SAMPLIB folder to TOOLS
 - Updated `RACIND.hlasm` to check if RAKF is installed and if not to skip RACHECK, this is helpful for installing before RAKF is enabled.
+
+### RAKF 2.0.0 (August 2026)
+
+Passwords are no longer stored in the clear. This is a breaking change to the
+`USERS` table: the password column is now blank and the credential lives in
+`SYS1.SECURE.SHADOW`, so anything that read a password out of `USERS` must be
+changed.
+
+- Salted **SHA-256** password hashing. `RAKFHASH` is pure S/370 HLASM,
+  validated against the NIST FIPS 180-4 vectors; `RAKFPWH` wraps it as
+  `SHA256(salt || password)`. The sign-on path (`ICHSFR00`) and the
+  administration tools call the same routine, so a stored digest and a login
+  attempt are compared byte for byte.
+- New shadow file `SYS1.SECURE.SHADOW`, one 48-byte record per user holding
+  the userid, an 8-byte salt and the digest. Protected by the existing
+  `SYS1.SECURE.*` profile at `UACC(NONE)`.
+- `RAKFUSER` loads the shadow into the in-core table at IPL through the new
+  `RAKFSHAD` DD, added to `MSTJCL00` by usermod `ZJW0004`.
+- New `ADDUSER` and `ALTUSER` command processors, installed into
+  `SYS2.CMDLIB`, with TSO HELP members in `SYS2.HELP`. They locate the
+  control datasets by reading the `RAKFUSER` procedure and allocate them
+  dynamically, so no DD statements are required.
+- Initial credentials are hashed at release-generation time.
+  `generate_release.py` blanks the password column and emits the shadow
+  records into the install stream, so no clear-text password reaches the
+  system and there is no chicken-and-egg with the tools above.
+- `--recv370` unpacks the admin tools with `RECV370` instead of TSO RECEIVE,
+  for installing RAKF during a sysgen before the TSO XMIT facility exists.
 
 ## Appendix A - Generating your own release
 
