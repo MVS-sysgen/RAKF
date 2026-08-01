@@ -6,4 +6,4 @@
 	url = https://github.com/mvslovers/cc370.git
 [submodule "libc370"]
 	path = libc370
-	url = https://github.com/mvslovers/libc370.git
+	url = https://github.com/mainframed/libc370.git
