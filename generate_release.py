@@ -50,12 +50,24 @@ arg_parser.add_argument('--shadow-volume', default=None,
 arg_parser.add_argument('--run-rakfuser', action='store_true',
                         help="After shadow recovery, EXEC the installed RAKFUSER procedure "
                              "to reload the in-core user table (otherwise IPL/reload later)")
+RAKF_FUNCTION = 'TRKF200'
+DEFAULT_UPGRADE_FROM = 'TRKF126'
+
 arg_parser.add_argument('--upgrade', action='store_true',
-                        help="Generate an in-place RAKF upgrade job instead of a fresh install")
-arg_parser.add_argument('--upgrade-from', default='TRKF126',
-                        help="Previous RAKF function FMID whose elements TRKF200 replaces "
-                             "(default: TRKF126)")
+                        help="Generate an in-place RAKF upgrade job instead of a fresh install. "
+                             "Implied by --upgrade-from.")
+arg_parser.add_argument('--upgrade-from', default=None, metavar='FMID',
+                        help="Previous RAKF function FMID whose elements {} replaces. "
+                             "Implies --upgrade (default: {} when --upgrade is given)."
+                             .format(RAKF_FUNCTION, DEFAULT_UPGRADE_FROM))
 args = arg_parser.parse_args()
+if args.upgrade_from:
+    args.upgrade = True
+    args.upgrade_from = args.upgrade_from.upper()
+elif args.upgrade:
+    args.upgrade_from = DEFAULT_UPGRADE_FROM
+else:
+    args.upgrade_from = DEFAULT_UPGRADE_FROM
 
 running_folder = os.path.dirname(os.path.abspath(__file__))
 
@@ -67,8 +79,22 @@ CP = args.codepage
 
 
 def emit(line=''):
-    """Append one line as an 80-column EBCDIC card image."""
-    OUT.extend("{:80}".format(line).encode(CP))
+    """Append one line as an 80-column EBCDIC card image.
+
+    The reader consumes a fixed 80-byte record.  A single over-length line
+    shifts every subsequent card by that extra byte, so JCL that used to
+    start in column 1 (for example RECEIVER's //SMPCNTL) is no longer
+    recognized.  Fail here rather than silently misalign the stream.
+    """
+    line = line.rstrip()
+    if len(line) > 80:
+        sys.exit('generate_release.py: card image exceeds 80 columns ({}):\n  {}'
+                 .format(len(line), line))
+    card = "{:80}".format(line).encode(CP)
+    if len(card) != 80:
+        sys.exit('generate_release.py: EBCDIC card is {} bytes, not 80:\n  {}'
+                 .format(len(card), line))
+    OUT.extend(card)
 
 
 def emit_text(text):
@@ -472,9 +498,12 @@ def emit_header(filename):
     During an upgrade ICHSFR00 must remain in LPALIB because SMP can use the
     existing LMOD as link-edit input while changing functional ownership.
 
-    01_header.template also contains the FUNCTION's ++VER MCS, so upgrade mode
-    adds VERSION(TRKF126) there.  JCLIN/TRKF200.jcl contains only the JCLIN
-    body and therefore must not be searched for ++VER.
+    01_header.template also contains the FUNCTION's ++VER MCS, so an upgrade
+    from a different FMID rewrites DELETE(...) to --upgrade-from and adds
+    VERSION(...) there.  Reworking TRKF200 in place (--upgrade-from TRKF200)
+    leaves ++VER alone: DELETE/VERSION of the function being installed is
+    invalid.  JCLIN/TRKF200.jcl contains only the JCLIN body and therefore
+    must not be searched for ++VER.
     """
     with open(filename) as f:
         lines = f.readlines()
@@ -523,17 +552,42 @@ def emit_header(filename):
             emit(' RESETRC.')
 
         if args.upgrade and 'SCRATCH ' in l and 'MEMBER=ICHSFR00' in l:
-            emit('//* UPGRADE: keep ICHSFR00; SMP may use the old LMOD as input')
+            # Do not emit a //* comment here: SYSIN DD * treats // in
+            # columns 1-2 as the end of in-stream data, and JES then
+            # generates a replacement SYSIN.
             continue
 
         if args.upgrade and stripped.startswith('++VER('):
             found_ver = True
-            if 'VERSION(' not in stripped.upper():
+            up = args.upgrade_from.upper()
+            # Same-FMID rework is not a function replacement.
+            if up != RAKF_FUNCTION and 'VERSION(' not in stripped.upper():
+                # Keep VERSION on a continuation card.  Appending it to the
+                # ++VER line itself (VERSION(TRKF126) is 17 characters) makes
+                # the current header 81 bytes; encode() then emits a 81-byte
+                # "card" and every later 80-column record — including
+                # RECEIVER's DLM and //SMPCNTL — starts in column 2.
                 r = l.rstrip()
-                if r.endswith('.'):
-                    l = r[:-1] + ' VERSION({}).'.format(args.upgrade_from.upper())
+                period = r.endswith('.')
+                if period:
+                    r = r[:-1].rstrip()
+                # Fresh-install ++VER deletes TRKF120.  An upgrade must
+                # DELETE/VERSION the function that is actually on the CDS.
+                dpos = r.upper().find('DELETE(')
+                if dpos >= 0:
+                    dend = r.find(')', dpos)
+                    if dend < 0:
+                        sys.exit('generate_release.py: unterminated DELETE( '
+                                 'on ++VER in TEMPLATES/01_header.template')
+                    r = r[:dpos] + 'DELETE({})'.format(up) + r[dend + 1:]
                 else:
-                    l = r + ' VERSION({})'.format(args.upgrade_from.upper())
+                    r = r + ' DELETE({})'.format(up)
+                if not r.endswith(','):
+                    r += ','
+                emit(r)
+                l = ' VERSION({})'.format(up)
+                if period:
+                    l += '.'
 
         emit(l.rstrip())
         check_step(l, filename)
@@ -868,10 +922,26 @@ folders = ["MACLIB", "SRCLIB", "PROCLIB", "PARMLIB", "SAMPLIB"]
 for folder in folders:
     fileList = os.listdir("{}/{}".format(running_folder, folder))
     for filename in fileList:
-        emit(smp_dict[folder].format(filename.split(".")[0]))
+        member = filename.split(".")[0]
+        if not (1 <= len(member) <= 8):
+            sys.exit('generate_release.py: {} member {} is not 1-8 characters '
+                     '(from {})'.format(folder, member, filename))
+        emit(smp_dict[folder].format(member))
         jfile = os.path.join('{}/{}/{}'.format(running_folder, folder, filename))
         with open(jfile, 'r') as f:
-            emit_text(f.read().rstrip())
+            body = f.read().rstrip()
+        for line in body.split('\n'):
+            line = line.rstrip()
+            # Columns 1-2 of PTFIN starting with ++ begin a new MCS.
+            # RAKF2MVS's ++LMODIN/++ENDLMODIN would abort RECEIVE
+            # (HMA2032 / HMA3980) if left in column 1.
+            if line.startswith('++'):
+                line = ' ' + line
+                if len(line) > 80:
+                    sys.exit('generate_release.py: {}/{} ++ data exceeds 80 '
+                             'columns after MCS-safe indent'.format(
+                                 folder, filename))
+            emit(line)
 
 emit_smp_tail(running_folder + "/TEMPLATES/02_smp4.template")
 
