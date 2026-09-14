@@ -352,181 +352,207 @@ CALLTS   DS    0H                                                       00033600
          L     R14,R14TS               Restore register 14              00035200
          BR    R14                                                      00035300
          DROP  R1,R2                   Unbase DAPL and CPPL             00035400
-         TITLE 'Write message on screen, r0=length, r1=address msg'     00035500
-TPUT     DS    0H                                                       00035600
-         ST    R14,R14TPUT             Save register 14                 00035700
-         TPUT  (1),(0),R                                                00035800
-         L     R14,R14TPUT             Restore register 14              00035900
-         BR    R14                     Return                           00036000
-         TITLE 'Free SYS1.SECURE.CNTL'                                  00036100
-FREE     DS    0H                                                       00036200
-         ST    R14,R14FREE             Save register 14                 00036300
-         LA    R3,DAIR18               Point to unallocation parm block 00036400
-         XC    DAIR18,DAIR18           Clear unallocation parm block    00036500
-         USING DAPB18,R3               IKJDAP18                         00036600
-         MVI   DA18CD+1,X'18'          Entry code 0018 (unallocate)     00036700
-         MVI   DA18MNM,C' '            Provide no ...                   00036800
-         MVC   DA18MNM+1(7),DA18MNM               member name           00036900
-         MVC   DA18DDN,=CL8'RAKFPROF'  DDNAME to unallocate             00037000
-         LR    R1,R3                   Parameter CALLTS                 00037100
-         BAL   R14,CALLTS              IKJDAIR routine                  00037200
-         L     R14,R14FREE             Restore register 14              00037300
-         BR    R14                     Return                           00037400
-         DROP  R3                      Unbase DAPB18                    00037500
-         TITLE 'Close RAKFPROF'                                         00037600
-CLOSE    ST    R14,R14CLOSE            Save register 14                 00037700
-         MVI   CLOSED,X'80'            First and only DCB               00037800
-         CLOSE RAKFPROF,MF=(E,CLOSED)                                   00037900
-         L     R14,R14CLOSE            Restore register 14              00038000
-         BR    R14                     Return                           00038100
-         TITLE 'DCB abend exit'                                         00038200
-DCBABEND DS    0H                                                       00038300
-         TM    3(R1),B'00001110'       Processing allowed?              00038400
-         BZR   R14                     No: continue with abend          00038500
-         TM    3(R1),4                 Ignore bit on?                   00038600
-         MVI   3(R1),0                 Prepare for NO                   00038700
-         BZR   R14                                                      00038800
-         MVC   DCBCOMP,0(R1)           Move completion code             00038900
-         NC    DCBCOMP,=X'FFF0'        Clear last nibble                00039000
-         CLC   DCBCOMP,=X'9130'        Do we have an RACF/ACF2 abend?   00039100
-         BNER  R14                     No: continue with abend          00039200
-         MVI   3(R1),4                 Yes: ignore abend                00039300
-         OI    SW,$913                 Indicate 913 abend               00039400
-         BR    R14                     Return to Access Method          00039500
-PCLSTART DS    0H                                                       00039600
-ADDPCL   IKJPARM DSECT=ADDPRS          PDE's                            00039700
-PROFPDE  IKJPOSIT DSTHING,PROMPT='RAKF Profile name',                  *00039800
-               HELP=('Enter a valid profile e.g. SYS1.*')               00039900
-UACCKW   IKJKEYWD                                                       00040000
-         IKJNAME 'UACC',SUBFLD=UACCSF                                   00040100
-CLASSKW  IKJKEYWD                                                       00040200
-         IKJNAME 'CLASS',SUBFLD=CLASSF                                  00040300
-UACCSF   IKJSUBF                                                        00040400
-UACC     IKJKEYWD                                                       00040500
-         IKJNAME 'NONE'                                                 00040600
-         IKJNAME 'READ'                                                 00040700
-         IKJNAME 'UPDATE'                                               00040800
-         IKJNAME 'ALTER'                                                00040900
-CLASSF   IKJSUBF                                                        00041000
-CLASSPDE IKJIDENT 'Class',                                             *00041100
-               FIRST=ALPHA,OTHER=ALPHANUM,MAXLNTH=8,                   *00041200
-               PROMPT='resource class of max. 8 characters'             00041300
-         IKJENDP                                                        00041400
-PCL#L    EQU   *-PCLSTART                                               00041500
-         TITLE 'CONSTANTS'                                              00041600
-MDLPROF  DCB   DSORG=PS,LRECL=80,DDNAME=RAKFPROF,EODAD=PROFEOF,        *00041700
-               MACRF=(GM,PM)                                            00041800
-MDLPLEN  EQU   *-MDLPROF                                                00041900
-*                                                                       00042000
-PROFDSNL DC    AL2(L'PROFDSN)                                           00042100
-PROFDSN  DC    C'SYS1.SECURE.CNTL'     RAKF control data set            00042200
-*                                                                       00042300
-MSG1     DC    C'SYS1.SECURE.CNTL(PROFILES) could not be allocated'     00042400
-MSG3X    DC    C'ADDSD  : xxxxxxxx access denied'  +9                   00042500
-MSG4X    DC    C'ADDSD  : Profile already defined'                      00042600
-MSG5X    DC    C'ADDSD  : Parse error'                                  00042700
-MSG6     DC    C'RDEFINE: CLASS is a required keyword'                  00042800
-MSG7X    DC    C'ADDSD  : Profiles table full, too many profiles'       00042900
-MSG9X    DS    0CL79                                                    00043000
-         DC    CL9'ADDSD  : '                                           00043100
-         DC    CL8' '                                                   00043200
-         DC    CL18' profile defined: '                                 00043300
-         DC    CL44' '                                                  00043400
-MSGAX    DC    C'ADDSD  : Run RAKFPROF to activate the changes'         00043500
-         LTORG ,                                                        00043600
-         DROP                                                           00043700
-*                                                                       00043800
-PROFRET  DSECT                         PDE of Profile name              00043900
-PROFPTR  DS    F                       Pointer to Profile               00044000
-PROFL    DS    H                       Length of Profile                00044100
-PROFFLG  DS    C                                                        00044200
-$PPRES   EQU   128                     Profile is present               00044300
-         DS    C                       Reserved                         00044400
-*                                                                       00044500
-CLASRET  DSECT                         PDE of CLASS                     00044600
-CLASPTR  DS    F                       Pointer to CLASS                 00044700
-CLASL    DS    H                       Length of CLASS                  00044800
-CLASFLG  DS    C                                                        00044900
-$CPRES   EQU   128                     CLASS is present                 00045000
-         DS    C                       Reserved                         00045100
-*                                                                       00045200
-WORKAREA DSECT                         Working storage                  00045300
-         DS    18F                     Our save area                    00045400
-MYCPPL   DS    F                                                        00045500
-DAIRDAPL DS    5F                      DAIR parameter list              00045600
-ECB      DS    F                       For IKJDAIR                      00045700
-R14CLOSE DS    F                       Register 14 CLOSE                00045800
-R14FREE  DS    F                       Register 14 FREE                 00045900
-R14TPUT  DS    F                       Register 14 TPUT                 00046000
-R14TS    DS    F                       Register 14 CALLTS               00046100
-EXLST    DS    F                       DCB abend exit                   00046200
-SWAPLAST DS    F                       Workfield of sort routine        00046300
-OPEND    DS    F                       OPEN MF=L                        00046400
-CLOSED   DS    F                       CLOSE MF=L                       00046500
-ADRPROF  DS    F                       Address of 1500 profile entries  00046600
-ANSWER   DS    F                       Parse answer area                00046700
-SAVESORT DS    5F                      Save/restore r4-r8 sort routine  00046800
-CMDNAME  DS    CL8                   Name of command (ADDSD or RDEFINE) 00046900
-CLASS    DS    CL8                     Resource class                   00047000
-PROFILE  DS    CL44                    To receive Profile               00047100
-RAKFPROF DS    CL(MDLPLEN)             RAKFPROF dcb                     00047200
-*                                                                       00047300
-DCBCOMP  DS    H                       Completion code in DCBABEND      00047400
+         TITLE 'Write message on screen'                                00035500
+*---------------------------------------------------------------------* 00035600
+*        Write the message on the terminal with a PUTLINE.            * 00035700
+*        Register 0 = the length of the message.                      * 00035800
+*        Register 1 = adress of the message.                          * 00035900
+*---------------------------------------------------------------------* 00036000
+TPUT     DS    0H                                                       00036100
+         ST    R14,R14TPUT             Save register 14                 00036200
+         L     R3,MYCPPL               Pickup CPPL of this command      00036300
+         USING CPPL,R3                 Base IKJCPPL                     00036400
+         MVI   PUTLINE+4,C' '          Clear output line                00036500
+         MVC   PUTLINE+5(79),PUTLINE+4         ,,                       00036600
+         LR    R2,R0                   Length of message                00036700
+         BCTR  R2,0                    Minus 1 for EX                   00036800
+         EX    R2,MVEMSG               Move the message                 00036900
+         LA    R2,5(,R2)               Length in including length field 00037000
+         XC    PUTLINE+2(2),PUTLINE+2  Byte 2 and 3, reserved           00037100
+         STCM  R2,B'0011',PUTLINE      Save length in byte 0 and 1      00037200
+         L     R2,CPPLUPT              User Profile Table               00037300
+         L     R3,CPPLECT              Environment Control Table        00037400
+         XC    ECB,ECB                 Force PUTLINE to wait            00037500
+         LA    R0,PUTLINE              Data line address                00037600
+         PUTLINE PARM=PUTBLOK,,MF=(E,PUTIOPL),                         *00037700
+               OUTPUT=((0),TERM,SINGLE,DATA),ECB=ECB,UPT=(2),ECT=(3),  *00037800
+               TERMPUT=(EDIT,WAIT,NOHOLD,NOBREAK)                       00037900
+         L     R14,R14TPUT             Restore register 14              00038000
+         BR    R14                                                      00038100
+MVEMSG   MVC   PUTLINE+4(0),0(R1)      << executed >>                   00038200
+         DROP  R3                      Unbase CPPL                      00038300
+         TITLE 'Free SYS1.SECURE.CNTL'                                  00038400
+FREE     DS    0H                                                       00038500
+         ST    R14,R14FREE             Save register 14                 00038600
+         LA    R3,DAIR18               Point to unallocation parm block 00038700
+         XC    DAIR18,DAIR18           Clear unallocation parm block    00038800
+         USING DAPB18,R3               IKJDAP18                         00038900
+         MVI   DA18CD+1,X'18'          Entry code 0018 (unallocate)     00039000
+         MVI   DA18MNM,C' '            Provide no ...                   00039100
+         MVC   DA18MNM+1(7),DA18MNM               member name           00039200
+         MVC   DA18DDN,=CL8'RAKFPROF'  DDNAME to unallocate             00039300
+         LR    R1,R3                   Parameter CALLTS                 00039400
+         BAL   R14,CALLTS              IKJDAIR routine                  00039500
+         L     R14,R14FREE             Restore register 14              00039600
+         BR    R14                     Return                           00039700
+         DROP  R3                      Unbase DAPB18                    00039800
+         TITLE 'Close RAKFPROF'                                         00039900
+CLOSE    ST    R14,R14CLOSE            Save register 14                 00040000
+         MVI   CLOSED,X'80'            First and only DCB               00040100
+         CLOSE RAKFPROF,MF=(E,CLOSED)                                   00040200
+         L     R14,R14CLOSE            Restore register 14              00040300
+         BR    R14                     Return                           00040400
+         TITLE 'DCB abend exit'                                         00040500
+DCBABEND DS    0H                                                       00040600
+         TM    3(R1),B'00001110'       Processing allowed?              00040700
+         BZR   R14                     No: continue with abend          00040800
+         TM    3(R1),4                 Ignore bit on?                   00040900
+         MVI   3(R1),0                 Prepare for NO                   00041000
+         BZR   R14                                                      00041100
+         MVC   DCBCOMP,0(R1)           Move completion code             00041200
+         NC    DCBCOMP,=X'FFF0'        Clear last nibble                00041300
+         CLC   DCBCOMP,=X'9130'        Do we have an RACF/ACF2 abend?   00041400
+         BNER  R14                     No: continue with abend          00041500
+         MVI   3(R1),4                 Yes: ignore abend                00041600
+         OI    SW,$913                 Indicate 913 abend               00041700
+         BR    R14                     Return to Access Method          00041800
+PCLSTART DS    0H                                                       00041900
+ADDPCL   IKJPARM DSECT=ADDPRS          PDE's                            00042000
+PROFPDE  IKJPOSIT DSTHING,PROMPT='RAKF Profile name',                  *00042100
+               HELP=('Enter a valid profile e.g. SYS1.*')               00042200
+UACCKW   IKJKEYWD                                                       00042300
+         IKJNAME 'UACC',SUBFLD=UACCSF                                   00042400
+CLASSKW  IKJKEYWD                                                       00042500
+         IKJNAME 'CLASS',SUBFLD=CLASSF                                  00042600
+UACCSF   IKJSUBF                                                        00042700
+UACC     IKJKEYWD                                                       00042800
+         IKJNAME 'NONE'                                                 00042900
+         IKJNAME 'READ'                                                 00043000
+         IKJNAME 'UPDATE'                                               00043100
+         IKJNAME 'ALTER'                                                00043200
+CLASSF   IKJSUBF                                                        00043300
+CLASSPDE IKJIDENT 'Class',                                             *00043400
+               FIRST=ALPHA,OTHER=ALPHANUM,MAXLNTH=8,                   *00043500
+               PROMPT='resource class of max. 8 characters'             00043600
+         IKJENDP                                                        00043700
+PCL#L    EQU   *-PCLSTART                                               00043800
+         TITLE 'CONSTANTS'                                              00043900
+MDLPROF  DCB   DSORG=PS,LRECL=80,DDNAME=RAKFPROF,EODAD=PROFEOF,        *00044000
+               MACRF=(GM,PM)                                            00044100
+MDLPLEN  EQU   *-MDLPROF                                                00044200
+*                                                                       00044300
+PROFDSNL DC    AL2(L'PROFDSN)                                           00044400
+PROFDSN  DC    C'SYS1.SECURE.CNTL'     RAKF control data set            00044500
+*                                                                       00044600
+MSG1     DC    C'SYS1.SECURE.CNTL(PROFILES) could not be allocated'     00044700
+MSG3X    DC    C'ADDSD  : xxxxxxxx access denied'  +9                   00044800
+MSG4X    DC    C'ADDSD  : Profile already defined'                      00044900
+MSG5X    DC    C'ADDSD  : Parse error'                                  00045000
+MSG6     DC    C'RDEFINE: CLASS is a required keyword'                  00045100
+MSG7X    DC    C'ADDSD  : Profiles table full, too many profiles'       00045200
+MSG9X    DS    0CL79                                                    00045300
+         DC    CL9'ADDSD  : '                                           00045400
+         DC    CL8' '                                                   00045500
+         DC    CL18' profile defined: '                                 00045600
+         DC    CL44' '                                                  00045700
+MSGAX    DC    C'ADDSD  : Run RAKFPROF to activate the changes'         00045800
+         LTORG ,                                                        00045900
+         DROP                                                           00046000
+*                                                                       00046100
+PROFRET  DSECT                         PDE of Profile name              00046200
+PROFPTR  DS    F                       Pointer to Profile               00046300
+PROFL    DS    H                       Length of Profile                00046400
+PROFFLG  DS    C                                                        00046500
+$PPRES   EQU   128                     Profile is present               00046600
+         DS    C                       Reserved                         00046700
+*                                                                       00046800
+CLASRET  DSECT                         PDE of CLASS                     00046900
+CLASPTR  DS    F                       Pointer to CLASS                 00047000
+CLASL    DS    H                       Length of CLASS                  00047100
+CLASFLG  DS    C                                                        00047200
+$CPRES   EQU   128                     CLASS is present                 00047300
+         DS    C                       Reserved                         00047400
 *                                                                       00047500
-         DS    C                       -1                               00047600
-PROFREC  DS    0CL80                   Profile record                   00047700
-PROFCLS  DS    CL8                     Contains Class                   00047800
-PROFPRF  DS    CL44                    Profile name                     00047900
-PROFGRP  DS    CL8                     Group name                       00048000
-PROFACC  DS    CL8                 Access level NONE/READ/UPDATE/ALTER  00048100
-         DS    CL12                    Filler                           00048200
-*                                                                       00048300
-PPL#LA   DS    F                       \___ Length + address PPL ____/  00048400
-PPL#PTR  DS    F                       /                             \  00048500
-*                                                                       00048600
-DAIR08   DS    CL84                    Allocation parm block            00048700
-DAIR18   DS    CL40                    Unallocation parm block          00048800
-*                                                                       00048900
-MSG3     DS    CL(L'MSG3X)                                              00049000
-MSG4     DS    CL(L'MSG4X)                                              00049100
-MSG5     DS    CL(L'MSG5X)                                              00049200
-MSG7     DS    CL(L'MSG7X)                                              00049300
-MSGA     DS    CL(L'MSGAX)                                              00049400
-MSG9     DS    0CL(L'MSG9X)                                             00049500
-         DS    CL9                                                      00049600
-MSG9CLS  DS    CL8                                                      00049700
-         DS    CL18                                                     00049800
-MSG9PROF DS    CL44                                                     00049900
-SW       DS    X                       Flags                            00050000
-$913     EQU   128                     913 abend occurred               00050100
-*                                                                       00050200
-WORKL    EQU   *-WORKAREA              Length of working storage        00050300
-*                                                                       00050400
-         CVT   DSECT=YES,LIST=NO                                        00050500
-         IKJCPPL                                                        00050600
-         IKJUPT                                                         00050700
-         IKJPPL                        Parse parameter list             00050800
-PPL#L    EQU   *-PPL                                                    00050900
-         IKJDAPL                                                        00051000
-         IKJDAP08                      IKJDAIR allocation parm block    00051100
-         IKJDAP18                      IKJDAIR unallocation parm block  00051200
-         PRINT NOGEN                                                    00051300
-         DCBD  DSORG=PS,DEVD=DA                                         00051400
+WORKAREA DSECT                         Working storage                  00047600
+         DS    18F                     Our save area                    00047700
+MYCPPL   DS    F                                                        00047800
+DAIRDAPL DS    5F                      DAIR parameter list              00047900
+ECB      DS    F                       For IKJDAIR                      00048000
+R14CLOSE DS    F                       Register 14 CLOSE                00048100
+R14FREE  DS    F                       Register 14 FREE                 00048200
+R14TPUT  DS    F                       Register 14 TPUT                 00048300
+R14TS    DS    F                       Register 14 CALLTS               00048400
+EXLST    DS    F                       DCB abend exit                   00048500
+SWAPLAST DS    F                       Workfield of sort routine        00048600
+OPEND    DS    F                       OPEN MF=L                        00048700
+CLOSED   DS    F                       CLOSE MF=L                       00048800
+ADRPROF  DS    F                       Address of 1500 profile entries  00048900
+ANSWER   DS    F                       Parse answer area                00049000
+SAVESORT DS    5F                      Save/restore r4-r8 sort routine  00049100
+PUTIOPL  DS    4F                      IKJIOPL                          00049200
+PUTBLOK  PUTLINE MF=L                                                   00049300
+PUTLINE  DS    CL84                    Output area PUTLINE              00049400
+CMDNAME  DS    CL8                   Name of command (ADDSD or RDEFINE) 00049500
+CLASS    DS    CL8                     Resource class                   00049600
+PROFILE  DS    CL44                    To receive Profile               00049700
+RAKFPROF DS    CL(MDLPLEN)             RAKFPROF dcb                     00049800
+*                                                                       00049900
+DCBCOMP  DS    H                       Completion code in DCBABEND      00050000
+*                                                                       00050100
+         DS    C                       -1                               00050200
+PROFREC  DS    0CL80                   Profile record                   00050300
+PROFCLS  DS    CL8                     Contains Class                   00050400
+PROFPRF  DS    CL44                    Profile name                     00050500
+PROFGRP  DS    CL8                     Group name                       00050600
+PROFACC  DS    CL8                 Access level NONE/READ/UPDATE/ALTER  00050700
+         DS    CL12                    Filler                           00050800
+*                                                                       00050900
+PPL#LA   DS    F                       \___ Length + address PPL ____/  00051000
+PPL#PTR  DS    F                       /                             \  00051100
+*                                                                       00051200
+DAIR08   DS    CL84                    Allocation parm block            00051300
+DAIR18   DS    CL40                    Unallocation parm block          00051400
 *                                                                       00051500
-R0       EQU   0                                                        00051600
-R1       EQU   1                                                        00051700
-R2       EQU   2                                                        00051800
-R3       EQU   3                                                        00051900
-R4       EQU   4                                                        00052000
-R5       EQU   5                      Counter number of PROFILE records 00052100
-R6       EQU   6                      Address of PROFILE entry in table 00052200
-R7       EQU   7                                                        00052300
-R8       EQU   8                       Address of IKJPARS PDL           00052400
-R9       EQU   9                                                        00052500
-R10      EQU   10                                                       00052600
-R11      EQU   11                                                       00052700
-R12      EQU   12                      Base register                    00052800
-R13      EQU   13                      Address of working storage       00052900
-R14      EQU   14                                                       00053000
-R15      EQU   15                                                       00053100
-         END                                                            00053200
+MSG3     DS    CL(L'MSG3X)                                              00051600
+MSG4     DS    CL(L'MSG4X)                                              00051700
+MSG5     DS    CL(L'MSG5X)                                              00051800
+MSG7     DS    CL(L'MSG7X)                                              00051900
+MSGA     DS    CL(L'MSGAX)                                              00052000
+MSG9     DS    0CL(L'MSG9X)                                             00052100
+         DS    CL9                                                      00052200
+MSG9CLS  DS    CL8                                                      00052300
+         DS    CL18                                                     00052400
+MSG9PROF DS    CL44                                                     00052500
+SW       DS    X                       Flags                            00052600
+$913     EQU   128                     913 abend occurred               00052700
+*                                                                       00052800
+WORKL    EQU   *-WORKAREA              Length of working storage        00052900
+*                                                                       00053000
+         CVT   DSECT=YES,LIST=NO                                        00053100
+         IKJCPPL                                                        00053200
+         IKJUPT                                                         00053300
+         IKJPPL                        Parse parameter list             00053400
+PPL#L    EQU   *-PPL                                                    00053500
+         IKJDAPL                                                        00053600
+         IKJDAP08                      IKJDAIR allocation parm block    00053700
+         IKJDAP18                      IKJDAIR unallocation parm block  00053800
+         PRINT NOGEN                                                    00053900
+         DCBD  DSORG=PS,DEVD=DA                                         00054000
+*                                                                       00054100
+R0       EQU   0                                                        00054200
+R1       EQU   1                                                        00054300
+R2       EQU   2                                                        00054400
+R3       EQU   3                                                        00054500
+R4       EQU   4                                                        00054600
+R5       EQU   5                      Counter number of PROFILE records 00054700
+R6       EQU   6                      Address of PROFILE entry in table 00054800
+R7       EQU   7                                                        00054900
+R8       EQU   8                       Address of IKJPARS PDL           00055000
+R9       EQU   9                                                        00055100
+R10      EQU   10                                                       00055200
+R11      EQU   11                                                       00055300
+R12      EQU   12                      Base register                    00055400
+R13      EQU   13                      Address of working storage       00055500
+R14      EQU   14                                                       00055600
+R15      EQU   15                                                       00055700
+         END                                                            00055800
