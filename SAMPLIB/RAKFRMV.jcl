@@ -45,6 +45,7 @@
   DEL LMOD(ADDUSER)  .                                                  00004500
   DEL LMOD(ALTUSER)  .                                                  00004600
   DEL LMOD(DELUSER)  .                                                  00004701
+  DEL LMOD(ADDSD)    .                                                  00004702
   DEL  MOD(CJYRCVT)  .                                                  00004800
   DEL  MOD(ICHRIN00) .                                                  00004900
   DEL  MOD(ICHSEC00) .                                                  00005000
@@ -62,6 +63,7 @@
   DEL  MOD(ADDUSER)  .                                                  00006200
   DEL  MOD(ALTUSER)  .                                                  00006300
   DEL  MOD(DELUSER)  .                                                  00006401
+  DEL  MOD(ADDSD)    .                                                  00006402
   DEL  SRC(CJYRCVT)  .                                                  00006500
   DEL  SRC(ICHRIN00) .                                                  00006600
   DEL  SRC(ICHSEC00) .                                                  00006700
@@ -72,6 +74,7 @@
   DEL  SRC(ADDUSER)  .                                                  00007200
   DEL  SRC(ALTUSER)  .                                                  00007300
   DEL  SRC(DELUSER)  .                                                  00007401
+  DEL  SRC(ADDSD)    .                                                  00007412
   DEL  SRC(RACIND)   .                                                  00007500
   DEL  SRC(RAKFPROF) .                                                  00007600
   DEL  SRC(RAKFPSAV) .                                                  00007700
@@ -121,9 +124,10 @@
   DEL  SRC(IGC0013A) .                                                  00012100
   DEL  SRC(IGC0013C) .                                                  00012200
   DEL  SRC(IGC00130) .                                                  00012300
-  DEL  MOD(ADDUSER)  .                                                  00012400
-  DEL  MOD(ALTUSER)  .                                                  00012500
-  DEL  MOD(DELUSER)  .                                                  00012601
+  DEL  SRC(ADDUSER)  .                                                  00012310
+  DEL  SRC(ALTUSER)  .                                                  00012320
+  DEL  SRC(DELUSER)  .                                                  00012330
+  DEL  SRC(ADDSD)    .                                                  00012340
   DEL  SRC(RACIND)   .                                                  00012700
   DEL  SRC(RAKFPROF) .                                                  00012800
   DEL  SRC(RAKFPSAV) .                                                  00012900
