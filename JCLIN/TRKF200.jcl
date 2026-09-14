@@ -26,6 +26,18 @@
 //*                                                                             
 //* JCLIN for RAKF 2.0 PTF RRKF002                                              
 //*                                                                             
+//ASMUSER  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
+//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
+//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RAKFUSER)                               
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RAKFUSER)                              
+//ASMPSAV  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
+//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
+//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RAKFPSAV)                               
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RAKFPSAV)                              
 //* --- salted SHA-256 password hashing, called from ICHSFR00 -------           
 //ASMHASH  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
@@ -39,26 +51,14 @@
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
 //SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RAKFPWH)                                
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RAKFPWH)                               
-//ASMUSER  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
-//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
-//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
-//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
-//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RAKFUSER)                               
-//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RAKFUSER)                              
-//ASMPSAV  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
-//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
-//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
-//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
-//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RAKFPSAV)                               
-//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RAKFPSAV)                              
 //RAKFUSER EXEC  PGM=IEWL,PARM='MAP,LIST,LET,NCAL,AC=1'                         
 //SYSLMOD  DD  DISP=SHR,DSN=SYS1.LINKLIB                                        
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ                                        
 //SYSLIN   DD  *                                                                
  INCLUDE SYSPUNCH(RAKFUSER)                                                     
  INCLUDE SYSPUNCH(RAKFPSAV)                                                     
- INCLUDE SYSPUNCH(RAKFPWH)
- INCLUDE SYSPUNCH(RAKFHASH)
+ INCLUDE SYSPUNCH(RAKFHASH)                                                     
+ INCLUDE SYSPUNCH(RAKFPWH)                                                      
  ENTRY   CJYRUIDS                                                               
  NAME    RAKFUSER(R)                                                            
 /*                                                                              
@@ -145,7 +145,12 @@
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
 //SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(ALTUSER)                                
-//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(ALTUSER)                               
+//ASMDSD   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
+//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
+//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(ADDSD)                                  
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(ADDSD)                                 
 //ASMDEL   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
@@ -169,6 +174,15 @@
  INCLUDE SYSPUNCH(DELUSER)                                                      
  ENTRY   DELUSER                                                                
  NAME    DELUSER(R)                                                             
+/*                                                                              
+//ADDDSD   EXEC  PGM=IEWL,PARM='MAP,LIST,NCAL,LET,RENT,REUS'                    
+//SYSLMOD  DD  DISP=SHR,DSN=SYS1.CMDLIB                                         
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ                                        
+//SYSLIN   DD  *                                                                
+ INCLUDE SYSPUNCH(ADDSD)                                                        
+ ALIAS AD                                                                       
+ ALIAS RDEFINE                                                                  
+ NAME ADDSD(R)                                                                  
 /*                                                                              
 //ICHRIN00 EXEC  PGM=IEWL,PARM='MAP,LIST,NCAL,LET,RENT,REFR,REUS,AC=1'          
 //SYSLMOD  DD  DISP=SHR,DSN=SYS1.LPALIB                                         
