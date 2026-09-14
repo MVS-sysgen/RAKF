@@ -45,11 +45,10 @@
   ADD LMOD(ICHSEC00) STD SYSLIB(LINKLIB)                               
                      LASTUPD(JCLIN) LASTUPDTYPE(ADD) .                 
   ADD LMOD(IGC0013{) RENT SYSLIB(LPALIB)                               
-++LMODIN                                                               
+++LMODIN.                                                              
  ALIAS IGC0013A,IGC0013B,IGC0013C                                      
  ENTRY ICHRIN00                                                        
-++ENDLMODIN                                                            
-                     LASTUPD(JCLIN) LASTUPDTYPE(ADD) .                 
+++ENDLMODIN.                                                           
   ADD  MOD(IEFBR14)  LMOD(ICHSEC00) .                                  
   ADD  MOD(ICHRIN00) LMOD(IGC0013{)                                    
                      DISTLIB(AOSBN) FMID(EBB1102) RMID(UZ90283)        
