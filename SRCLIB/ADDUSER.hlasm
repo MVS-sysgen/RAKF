@@ -2,6 +2,7 @@ ADDUSER  TITLE 'Add RAKF users with encrypted passwords'                00000100
 *---------------------------------------------------------------------* 00000200
 *                                                                     * 00000300
 *        Module:       ADDUSER                                        * 00000400
+*        Alias:        AU                                             * 00000410
 *                                                                     * 00000500
 *        Author:       Rob Prins                                      * 00000600
 *                                                                     * 00000700
