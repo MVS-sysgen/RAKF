@@ -145,19 +145,32 @@
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
 //SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(ALTUSER)                                
-//ASMDSD   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
-//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
-//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
-//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
-//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(ADDSD)                                  
-//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(ADDSD)                                 
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(ALTUSER)                               
 //ASMDEL   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
 //SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(DELUSER)                                
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(DELUSER)                               
-//ADDUSER  EXEC  PGM=IEWL,PARM='MAP,LIST,NCAL,LET,RENT,REUS'                    
+//ASMDSD   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
+//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
+//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(ADDSD)                                  
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(ADDSD)                                 
+//ASMPERM  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
+//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
+//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(PERMIT)                                 
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(PERMIT)                                
+//ASMRDEL  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
+//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
+//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RDELETE)                                
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RDELETE)                               
+//TSOCMDS  EXEC  PGM=IEWL,PARM='MAP,LIST,NCAL,LET,RENT,REUS'                    
 //SYSLMOD  DD  DISP=SHR,DSN=SYS1.CMDLIB                                         
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ                                        
 //SYSLIN   DD  *                                                                
@@ -165,24 +178,27 @@
  INCLUDE SYSPUNCH(RAKFHASH)                                                     
  INCLUDE SYSPUNCH(RAKFPWH)                                                      
  ENTRY   ADDUSER                                                                
+ ALIAS   AU                                                                     
  NAME    ADDUSER(R)                                                             
  INCLUDE SYSPUNCH(ALTUSER)                                                      
  INCLUDE SYSPUNCH(RAKFHASH)                                                     
  INCLUDE SYSPUNCH(RAKFPWH)                                                      
+ ALIAS   ALU                                                                    
  ENTRY   ALTUSER                                                                
  NAME    ALTUSER(R)                                                             
  INCLUDE SYSPUNCH(DELUSER)                                                      
  ENTRY   DELUSER                                                                
  NAME    DELUSER(R)                                                             
-/*                                                                              
-//ADDDSD   EXEC  PGM=IEWL,PARM='MAP,LIST,NCAL,LET,RENT,REUS'                    
-//SYSLMOD  DD  DISP=SHR,DSN=SYS1.CMDLIB                                         
-//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ                                        
-//SYSLIN   DD  *                                                                
  INCLUDE SYSPUNCH(ADDSD)                                                        
  ALIAS AD                                                                       
  ALIAS RDEFINE                                                                  
  NAME ADDSD(R)                                                                  
+ INCLUDE SYSPUNCH(PERMIT)                                                       
+ ALIAS PE                                                                       
+ NAME PERMIT(R)                                                                 
+ INCLUDE SYSPUNCH(RDELETE)                                                      
+ ENTRY RDELETE                                                                  
+ NAME RDELETE(R)                                                                
 /*                                                                              
 //ICHRIN00 EXEC  PGM=IEWL,PARM='MAP,LIST,NCAL,LET,RENT,REFR,REUS,AC=1'          
 //SYSLMOD  DD  DISP=SHR,DSN=SYS1.LPALIB                                         
