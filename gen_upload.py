@@ -96,25 +96,19 @@ class Module:
 #                name        sources                            asm step names                entry        target           link parm
 MODULES = [
     Module("ICHSEC00", ["ICHSEC00", "CJYRCVT"],           ["ASMSEC",  "ASMRCVT"],  "ICHSEC00", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
-    Module("RAKFUSER", ["RAKFUSER", "RAKFPSAV"],           ["ASMUSER", "ASMPSAV"],  "CJYRUIDS", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
+    Module("ICHSFR00", ["ICHSFR00", "RAKFHASH", "RAKFPWH"], ["ASMSFR", "ASMHASH", "ASMPWH"], "ICHSFR00", "SYS1.LPALIB", "MAP,LIST,NCAL,RENT,REFR,REUS,AC=1"),
+    Module("ICHRIN00", ["ICHRIN00", "IGC00130", "IGC0013A", "IGC0013C"], ["ASMRIN",  "ASM130",   "ASM13A",   "ASM13C"], "ICHRIN00", "SYS1.LPALIB",  "MAP,LIST,NCAL,LET,RENT,REFR,REUS,AC=1",
+            aliases=["IGC0013{", "IGC0013A", "IGC0013B", "IGC0013C"]),
+    Module("RAKFUSER", ["RAKFUSER", "RAKFPSAV", "RAKFHASH", "RAKFPWH"], ["ASMUSER", "ASMPSAV"],  "CJYRUIDS", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
     Module("RAKFPROF", ["RAKFPROF"],                       ["ASMPROF"],             "CJYRPROF", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
     Module("RAKFPWUP", ["RAKFPWUP"],                       ["ASMPWUP"],             "RAKFPWUP", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
-    Module(
-    "ICHSFR00",
-    ["ICHSFR00", "RAKFHASH", "RAKFPWH"],
-    ["ASMSFR", "ASMHASH", "ASMPWH"],
-    "ICHSFR00",
-    "SYS1.LPALIB",
-    "MAP,LIST,NCAL,RENT,REFR,REUS,AC=1",
-    ),
-    Module("ICHRIN00", ["ICHRIN00", "IGC00130", "IGC0013A", "IGC0013C"],
-                       ["ASMRIN",  "ASM130",   "ASM13A",   "ASM13C"],
-                       "ICHRIN00", "SYS1.LPALIB",  "MAP,LIST,NCAL,LET,RENT,REFR,REUS,AC=1",
-                       aliases=["IGC0013{", "IGC0013A", "IGC0013B", "IGC0013C"]),
     Module("RACIND",   ["RACIND"],                         ["ASMIND"],              "RACIND",   "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
     Module("ADDUSER",  ["ADDUSER", "RAKFPWH", "RAKFHASH"], ["ASMADD", "ASMPWHA", "ASMHASHA"], "ADDUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS"),
-    Module("ALTUSER",  ["ALTUSER", "RAKFPWH", "RAKFHASH"], ["ASMALT", "ASMPWHB", "ASMHASHB"], "ALTUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS"),
+    Module("ALTUSER",  ["ALTUSER", "RAKFPWH", "RAKFHASH"], ["ASMALT", "ASMPWHB", "ASMHASHB"], "ALTUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS",
+           aliases=["ALU"]),
     Module("DELUSER",  ["DELUSER"],                        ["ASMDEL"],              "DELUSER",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
+    Module("ADDSD",    ["ADDSD"],                          ["ASMAD"],  "ADDSD",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
+            aliases=["AD", "RDEFINE"])
 ]
 
 # ---------------------------------------------------------------------------

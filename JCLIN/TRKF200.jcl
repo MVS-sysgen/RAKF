@@ -170,6 +170,7 @@
  INCLUDE SYSPUNCH(RAKFHASH)                                                     
  INCLUDE SYSPUNCH(RAKFPWH)                                                      
  ENTRY   ALTUSER                                                                
+ ALIAS   ALU                                                                    
  NAME    ALTUSER(R)                                                             
  INCLUDE SYSPUNCH(DELUSER)                                                      
  ENTRY   DELUSER                                                                
