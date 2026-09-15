@@ -811,13 +811,61 @@ HELP_HEADER = """//* --- TSO HELP members for the admin commands ---------------
 //SYSUT1   DD *"""
 
 
+def cmdlib_aliases_from_jclin(jclin_path):
+    """Map NAME -> ALIAS list for load modules linked into *.CMDLIB.
+
+    JCLIN names and operands are uppercase.  ALIAS cards apply to the
+    following NAME in the same SYSLIN stream.  LPALIB/LINKLIB aliases
+    (e.g. ICHRIN00) are ignored.
+    """
+    aliases = {}
+    current_cmdlib = False
+    in_syslin = False
+    pending = []
+
+    with open(jclin_path) as f:
+        for raw in f:
+            line = raw.rstrip()
+            if line.startswith('//SYSLMOD') and 'DSN=' in line:
+                dsn = line.split('DSN=', 1)[1].split(',', 1)[0].strip()
+                current_cmdlib = dsn.endswith('.CMDLIB')
+                in_syslin = False
+                pending = []
+                continue
+            if line.startswith('//SYSLIN') and '*' in line:
+                in_syslin = True
+                pending = []
+                continue
+            if not in_syslin:
+                continue
+            stripped = line.strip()
+            if stripped == '/*' or (line.startswith('//') and not line.startswith('//*')):
+                in_syslin = False
+                pending = []
+                continue
+            if stripped.startswith('ALIAS'):
+                rest = stripped[5:].strip()
+                pending.extend(a.strip() for a in rest.split(',') if a.strip())
+            elif stripped.startswith('NAME'):
+                name = stripped[4:].strip().split('(', 1)[0].strip()
+                if current_cmdlib and pending:
+                    aliases[name] = pending
+                pending = []
+    return aliases
+
+
 def emit_help():
     """Load HELP/* into the help library so 'HELP ADDUSER' works.
 
     One member per file in HELP/, named after the command. PDSLOAD is used
     rather than IEBUPDTE because it copies the text verbatim -- IEBUPDTE
     would want sequence numbers in columns 73-80, and TSO HELP would then
-    display them."""
+    display them.
+
+    If JCLIN links that command into *.CMDLIB with ALIAS statements,
+    matching `./ ALIAS NAME=` cards are appended so TSO HELP finds the
+    short names too (e.g. ALU for ALTUSER).
+    """
     help_dir = os.path.join(running_folder, "HELP")
     if not os.path.isdir(help_dir):
         return
@@ -825,7 +873,13 @@ def emit_help():
                      if os.path.isfile(os.path.join(help_dir, f)))
     if not members:
         return
-    sys.stderr.write("[gen] help members: {}\n".format(", ".join(members)))
+    jclin = os.path.join(running_folder, "JCLIN", "TRKF200.jcl")
+    cmdlib_aliases = cmdlib_aliases_from_jclin(jclin) if os.path.isfile(jclin) else {}
+    listed = []
+    for m in members:
+        aliases = cmdlib_aliases.get(m, [])
+        listed.append("/".join([m] + aliases) if aliases else m)
+    sys.stderr.write("[gen] help members: {}\n".format(", ".join(listed)))
     (emit_guarded_text if args.upgrade else emit_text)(
         HELP_HEADER.format(helplib=args.helplib))
     for m in members:
@@ -837,6 +891,8 @@ def emit_help():
                     sys.exit("generate_release.py: HELP/{} has a line over 80 "
                              "columns:\n  {}".format(m, line))
                 emit(line)
+        for alias in cmdlib_aliases.get(m, []):
+            emit("./ ALIAS NAME={}".format(alias))
     emit("/*")
 
 
