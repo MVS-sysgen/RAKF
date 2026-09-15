@@ -387,7 +387,7 @@ TPUT     DS    0H                                                       00038500
          L     R3,MYCPPL               Pickup CPPL of this command      00038700
          USING CPPL,R3                 Base IKJCPPL                     00038800
          MVI   PUTLINE+4,C' '          Clear output line                00038900
-         MVC   PUTLINE+5(79),PUTLINE+4         ,,                       00039000
+         MVC   PUTLINE+5(91),PUTLINE+4         ,,                       00039000
          LR    R2,R0                   Length of message                00039100
          BCTR  R2,0                    Minus 1 for EX                   00039200
          EX    R2,MVEMSG               Move the message                 00039300
