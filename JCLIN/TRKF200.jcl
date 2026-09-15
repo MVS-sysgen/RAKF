@@ -185,7 +185,6 @@
  INCLUDE SYSPUNCH(RAKFPWH)                                                      
  ALIAS   ALU                                                                    
  ENTRY   ALTUSER                                                                
- ALIAS   ALU                                                                    
  NAME    ALTUSER(R)                                                             
  INCLUDE SYSPUNCH(DELUSER)                                                      
  ENTRY   DELUSER                                                                

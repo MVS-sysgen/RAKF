@@ -103,14 +103,16 @@ MODULES = [
     Module("RAKFPROF", ["RAKFPROF"],                       ["ASMPROF"],             "CJYRPROF", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
     Module("RAKFPWUP", ["RAKFPWUP"],                       ["ASMPWUP"],             "RAKFPWUP", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
     Module("RACIND",   ["RACIND"],                         ["ASMIND"],              "RACIND",   "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
-    Module("ADDUSER",  ["ADDUSER", "RAKFPWH", "RAKFHASH"], ["ASMADD", "ASMPWHA", "ASMHASHA"], "ADDUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS"),
+    Module("ADDUSER",  ["ADDUSER", "RAKFPWH", "RAKFHASH"], ["ASMADD", "ASMPWHA", "ASMHASHA"], "ADDUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS",
+           aliases=["ALU"]),
     Module("ALTUSER",  ["ALTUSER", "RAKFPWH", "RAKFHASH"], ["ASMALT", "ASMPWHB", "ASMHASHB"], "ALTUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS",
            aliases=["ALU"]),
-    Module("DELUSER",  ["DELUSER"],                        ["ASMDEL"],              "DELUSER",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
-    Module("ADDSD",    ["ADDSD"],                          ["ASMAD"],  "ADDSD",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
+    Module("DELUSER",  ["DELUSER"],                        ["ASMDELU"], "DELUSER", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
+    Module("ADDSD",    ["ADDSD"],                          ["ASMADSD"], "ADDSD",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
             aliases=["AD", "RDEFINE"]),
-    Module("PERMIT",   ["PERMIT"],                         ["ASMPER"], "PERMIT", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
-            aliases=["PE"])
+    Module("PERMIT",   ["PERMIT"],                         ["ASMPERM"], "PERMIT", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
+            aliases=["PE"]),
+    Module("RDELETE",   ["RDELETE"],                       ["ASMRDEL"], "RDELETE", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS")
 ]
 
 # ---------------------------------------------------------------------------
