@@ -2,6 +2,7 @@ ALTUSER  TITLE 'Change RAKF users with encrypted passwords'             00000100
 *---------------------------------------------------------------------* 00000200
 *                                                                     * 00000300
 *        Module:       ALTUSER                                        * 00000400
+*        Alias:        ALU                                            * 00000410
 *                                                                     * 00000500
 *        Author:       Rob Prins                                      * 00000600
 *                                                                     * 00000700
