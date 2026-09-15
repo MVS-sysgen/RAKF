@@ -481,7 +481,7 @@ MSG4     DC    C'PERMIT: Resource alteady granted'                      00048000
 MSG5     DC    C'PERMIT: Parse error'                                   00048100
 MSG6     DC    C'PERMIT: Operand ID(group) is required'                 00048200
 MSG7     DC    C'PERMIT: Profiles table full, too many profiles'        00048300
-MSG9X    DS    0CL83                                                    00048400
+MSG9X    DS    0CL88                                                    00048400
          DC    CL8'PERMIT: '                                            00048500
          DC    CL8' access '                                            00048600
          DC    CL8' '                  Access level                     00048700
@@ -534,7 +534,7 @@ ANSWER   DS    F                       Parse answer area                00053300
 SAVESORT DS    5F                      Save/restore r4-r8 sort routine  00053400
 PUTBLOK  PUTLINE PARM=*,MF=L           PUTLINE PTPB                     00053500
 RAKFPROF DS    CL(MDLPLEN)             RAKFPROF dcb                     00053600
-PUTLINE  DS    CL84                    Line to write on terminal        00053700
+PUTLINE  DS    CL96                    Line to write on terminal        00053700
 *                                                                       00053800
 PROFCMP  DS    0CL68                                                    00053900
 CLASS    DS    CL8                     Resource class                   00054000
