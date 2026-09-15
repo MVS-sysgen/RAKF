@@ -804,20 +804,48 @@ def pick_dlm(xmit_bytes):
 # separate jobs run on separate initiators and race the install they depend on.
 
 HELP_HEADER = """//* --- TSO HELP members for the admin commands -------------------
-//HELPLOAD EXEC PGM=PDSLOAD
-//STEPLIB  DD DSN=SYSC.LINKLIB,DISP=SHR
+//HELPLOAD EXEC PGM=IEBUPDTE,PARM=NEW
 //SYSPRINT DD SYSOUT=*
 //SYSUT2   DD DSN={helplib},DISP=SHR
-//SYSUT1   DD *"""
+//SYSIN    DD *"""
+
+
+def aliases_from_help_member(path):
+    """Return alias names from leading `./ ALIAS NAME=` cards in a HELP file."""
+    aliases = []
+    with open(path) as f:
+        for raw in f:
+            s = raw.strip()
+            if not s:
+                continue
+            if s.startswith('./ ALIAS NAME='):
+                name = s.split('=', 1)[1].strip().split()[0]
+                if name:
+                    aliases.append(name)
+                continue
+            break
+    return aliases
+
+
+def help_member_has_add(path):
+    """True if the HELP file already starts with `./ ADD NAME=`."""
+    with open(path) as f:
+        for raw in f:
+            s = raw.strip()
+            if not s:
+                continue
+            return s.startswith('./ ADD NAME=')
+    return False
 
 
 def emit_help():
     """Load HELP/* into the help library so 'HELP ADDUSER' works.
 
-    One member per file in HELP/, named after the command. PDSLOAD is used
-    rather than IEBUPDTE because it copies the text verbatim -- IEBUPDTE
-    would want sequence numbers in columns 73-80, and TSO HELP would then
-    display them."""
+    One member per file in HELP/, named after the command. IEBUPDTE is
+    used (PARM=NEW) so leading `./ ALIAS NAME=` cards in those files are
+    honored; PDSLOAD mishandles ALIAS.  The same cards are reported on
+    the `[gen] help members:` line (e.g. ALTUSER/ALU).
+    """
     help_dir = os.path.join(running_folder, "HELP")
     if not os.path.isdir(help_dir):
         return
@@ -825,12 +853,18 @@ def emit_help():
                      if os.path.isfile(os.path.join(help_dir, f)))
     if not members:
         return
-    sys.stderr.write("[gen] help members: {}\n".format(", ".join(members)))
+    listed = []
+    for m in members:
+        aliases = aliases_from_help_member(os.path.join(help_dir, m))
+        listed.append("/".join([m] + aliases) if aliases else m)
+    sys.stderr.write("[gen] help members: {}\n".format(", ".join(listed)))
     (emit_guarded_text if args.upgrade else emit_text)(
         HELP_HEADER.format(helplib=args.helplib))
     for m in members:
-        emit("./ ADD NAME={}".format(m))
-        with open(os.path.join(help_dir, m)) as f:
+        path = os.path.join(help_dir, m)
+        if not help_member_has_add(path):
+            emit("./ ADD NAME={}".format(m))
+        with open(path) as f:
             for line in f.read().split('\n'):
                 line = line.rstrip()
                 if len(line) > 80:

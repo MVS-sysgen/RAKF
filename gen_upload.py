@@ -15,9 +15,10 @@ Dataset names are derived as: HLQ.DIRNAME  (e.g. RAKF.MACLIB)
 
 Upload behaviour:
   Full reload (no --only):
-    IDCAMS deletes every target PDS, IEFBR14 re-allocates them, PDSLOAD loads all.
+    IDCAMS deletes every target PDS, IEFBR14 re-allocates them, then members
+    are loaded (PDSLOAD for source libraries; IEBUPDTE for HELP).
   Partial reload (--only MEMBER):
-    The library containing MEMBER is loaded with PDSLOAD DISP=SHR (member replace).
+    The library containing MEMBER is loaded DISP=SHR (member replace).
     If --assemble is also given, MACLIB is fully deleted/reallocated/reloaded
     (assembly needs current macros).
     NOTE: target PDSes must already exist. Run without --only for initial setup.
@@ -96,25 +97,23 @@ class Module:
 #                name        sources                            asm step names                entry        target           link parm
 MODULES = [
     Module("ICHSEC00", ["ICHSEC00", "CJYRCVT"],           ["ASMSEC",  "ASMRCVT"],  "ICHSEC00", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
-    Module("RAKFUSER", ["RAKFUSER", "RAKFPSAV"],           ["ASMUSER", "ASMPSAV"],  "CJYRUIDS", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
+    Module("ICHSFR00", ["ICHSFR00", "RAKFHASH", "RAKFPWH"], ["ASMSFR", "ASMHASH", "ASMPWH"], "ICHSFR00", "SYS1.LPALIB", "MAP,LIST,NCAL,RENT,REFR,REUS,AC=1"),
+    Module("ICHRIN00", ["ICHRIN00", "IGC00130", "IGC0013A", "IGC0013C"], ["ASMRIN",  "ASM130",   "ASM13A",   "ASM13C"], "ICHRIN00", "SYS1.LPALIB",  "MAP,LIST,NCAL,LET,RENT,REFR,REUS,AC=1",
+            aliases=["IGC0013{", "IGC0013A", "IGC0013B", "IGC0013C"]),
+    Module("RAKFUSER", ["RAKFUSER", "RAKFPSAV", "RAKFHASH", "RAKFPWH"], ["ASMUSER", "ASMPSAV"],  "CJYRUIDS", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
     Module("RAKFPROF", ["RAKFPROF"],                       ["ASMPROF"],             "CJYRPROF", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
     Module("RAKFPWUP", ["RAKFPWUP"],                       ["ASMPWUP"],             "RAKFPWUP", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
-    Module(
-    "ICHSFR00",
-    ["ICHSFR00", "RAKFHASH", "RAKFPWH"],
-    ["ASMSFR", "ASMHASH", "ASMPWH"],
-    "ICHSFR00",
-    "SYS1.LPALIB",
-    "MAP,LIST,NCAL,RENT,REFR,REUS,AC=1",
-    ),
-    Module("ICHRIN00", ["ICHRIN00", "IGC00130", "IGC0013A", "IGC0013C"],
-                       ["ASMRIN",  "ASM130",   "ASM13A",   "ASM13C"],
-                       "ICHRIN00", "SYS1.LPALIB",  "MAP,LIST,NCAL,LET,RENT,REFR,REUS,AC=1",
-                       aliases=["IGC0013{", "IGC0013A", "IGC0013B", "IGC0013C"]),
     Module("RACIND",   ["RACIND"],                         ["ASMIND"],              "RACIND",   "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
-    Module("ADDUSER",  ["ADDUSER", "RAKFPWH", "RAKFHASH"], ["ASMADD", "ASMPWHA", "ASMHASHA"], "ADDUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS"),
-    Module("ALTUSER",  ["ALTUSER", "RAKFPWH", "RAKFHASH"], ["ASMALT", "ASMPWHB", "ASMHASHB"], "ALTUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS"),
-    Module("DELUSER",  ["DELUSER"],                        ["ASMDEL"],              "DELUSER",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
+    Module("ADDUSER",  ["ADDUSER", "RAKFPWH", "RAKFHASH"], ["ASMADD", "ASMPWHA", "ASMHASHA"], "ADDUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS",
+           aliases=["ALU"]),
+    Module("ALTUSER",  ["ALTUSER", "RAKFPWH", "RAKFHASH"], ["ASMALT", "ASMPWHB", "ASMHASHB"], "ALTUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS",
+           aliases=["ALU"]),
+    Module("DELUSER",  ["DELUSER"],                        ["ASMDELU"], "DELUSER", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
+    Module("ADDSD",    ["ADDSD"],                          ["ASMADSD"], "ADDSD",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
+            aliases=["AD", "RDEFINE"]),
+    Module("PERMIT",   ["PERMIT"],                         ["ASMPERM"], "PERMIT", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
+            aliases=["PE"]),
+    Module("RDELETE",   ["RDELETE"],                       ["ASMRDEL"], "RDELETE", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
 ]
 
 # ---------------------------------------------------------------------------
@@ -382,6 +381,71 @@ def pdsload_step(
     return out
 
 
+def aliases_from_help_member(path: Path) -> list:
+    """Return alias names from leading `./ ALIAS NAME=` cards in a HELP file."""
+    aliases = []
+    for raw in path.read_text(errors="replace").splitlines():
+        s = raw.strip()
+        if not s:
+            continue
+        if s.startswith("./ ALIAS NAME="):
+            name = s.split("=", 1)[1].strip().split()[0]
+            if name:
+                aliases.append(name)
+            continue
+        break
+    return aliases
+
+
+def help_member_has_add(path: Path) -> bool:
+    """True if the HELP file already starts with `./ ADD NAME=`."""
+    for raw in path.read_text(errors="replace").splitlines():
+        s = raw.strip()
+        if not s:
+            continue
+        return s.startswith("./ ADD NAME=")
+    return False
+
+
+def iebupdte_help_step(dsn: str, files: list) -> list:
+    """IEBUPDTE step: load HELP members so `./ ALIAS NAME=` cards are honored.
+
+    PDSLOAD mishandles ALIAS.  Same layout as generate_release.py: PARM=NEW,
+    SYSIN DD *, `./ ADD NAME=` then the file body (including any alias cards).
+    """
+    listed = []
+    for path in files:
+        name = member_name(path)
+        aliases = aliases_from_help_member(path)
+        listed.append("/".join([name] + aliases) if aliases else name)
+    print(f"INFO: help members: {', '.join(listed)}", file=sys.stderr)
+
+    out = [
+        "//*",
+        f"//* Load {dsn}",
+        "//*",
+        "//HELPLOAD EXEC PGM=IEBUPDTE,PARM=NEW",
+        "//SYSPRINT DD  SYSOUT=*",
+        f"//SYSUT2   DD  DSN={dsn},DISP=SHR",
+        "//SYSIN    DD  *",
+    ]
+    for path in files:
+        name = member_name(path)
+        raw_lines = path.read_text(errors="replace").splitlines()
+        for i, line in enumerate(raw_lines, 1):
+            if line.rstrip("\r\n").rstrip() == "/*":
+                print(
+                    f"WARNING: '/*' found in {path} at line {i} — "
+                    "IEBUPDTE SYSIN will be truncated!",
+                    file=sys.stderr,
+                )
+        if not help_member_has_add(path):
+            out.append(f"./ ADD NAME={name}")
+        out.extend(pad_line(ln) for ln in raw_lines)
+    out.append("/*")
+    return out
+
+
 # ---------------------------------------------------------------------------
 # JCL step generators — assembly and link
 # ---------------------------------------------------------------------------
@@ -588,8 +652,11 @@ def generate(
         lines.extend(idcams_cleanup([dsn for _, dsn in full_reload]))
         lines.extend(iefbr14_alloc(full_reload))
 
-    for i, (_, dsn, files, _) in enumerate(plan, 1):
-        lines.extend(pdsload_step(f"LOAD{i:04d}", dsn, files, userid))
+    for i, (local_dir, dsn, files, _) in enumerate(plan, 1):
+        if local_dir.upper() == "HELP":
+            lines.extend(iebupdte_help_step(dsn, files))
+        else:
+            lines.extend(pdsload_step(f"LOAD{i:04d}", dsn, files, userid))
 
     if assemble:
         modules = select_modules(changes_only, member_filter)
