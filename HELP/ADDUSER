@@ -1,3 +1,4 @@
+./ ALIAS NAME=AU                                                                
 )F FUNCTION -                                                                   
   The ADDUSER command defines a new RAKF user.  It writes one line per          
   group into the USERS member of SYS1.SECURE.CNTL and a record into             
