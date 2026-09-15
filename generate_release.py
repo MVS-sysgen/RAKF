@@ -804,8 +804,7 @@ def pick_dlm(xmit_bytes):
 # separate jobs run on separate initiators and race the install they depend on.
 
 HELP_HEADER = """//* --- TSO HELP members for the admin commands -------------------
-//HELPLOAD EXEC PGM=PDSLOAD
-//STEPLIB  DD DSN=SYSC.LINKLIB,DISP=SHR
+//HELPLOAD EXEC PGM=IEBUPDTE
 //SYSPRINT DD SYSOUT=*
 //SYSUT2   DD DSN={helplib},DISP=SHR
 //SYSUT1   DD *"""
