@@ -419,7 +419,7 @@ DCBABEND DS    0H                                                       00040600
 PCLSTART DS    0H                                                       00041900
 ADDPCL   IKJPARM DSECT=ADDPRS          PDE's                            00042000
 PROFPDE  IKJPOSIT DSTHING,PROMPT='RAKF Profile name',                  *00042100
-               HELP=('Enter a valid profile e.g. SYS1.*')               00042200
+               HELP=('a valid profile e.g. SYS1.*')                     00042200
 UACCKW   IKJKEYWD                                                       00042300
          IKJNAME 'UACC',SUBFLD=UACCSF                                   00042400
 CLASSKW  IKJKEYWD                                                       00042500

@@ -443,7 +443,7 @@ DCBABEND DS    0H                                                       00043000
 PCLSTART DS    0H                                                       00044300
 ADDPCL   IKJPARM DSECT=ADDPRS          PDE's                            00044400
 PROFPDE  IKJPOSIT DSTHING,PROMPT='RAKF Profile name',                  *00044500
-               HELP=('Enter a valid profile e.g. SYS1.*')               00044600
+               HELP=('a valid profile e.g. SYS1.*')                     00044600
 IDKW     IKJKEYWD                                                       00044700
          IKJNAME 'ID',SUBFLD=IDSF                                       00044800
 ACCKW    IKJKEYWD                                                       00044900
@@ -477,7 +477,7 @@ PROFDSN  DC    C'SYS1.SECURE.CNTL'     RAKF control data set            00047500
 MSG1     DC    C'SYS1.SECURE.CNTL(PROFILES) could not be allocated'     00047700
 MSG2     DC    C'PERMIT: No universal access record found'              00047800
 MSG3X    DC    C'PERMIT: xxxxxxxx access denied'  +8                    00047900
-MSG4     DC    C'PERMIT: Resource alteady granted'                      00048000
+MSG4     DC    C'PERMIT: Resource already granted'                      00048000
 MSG5     DC    C'PERMIT: Parse error'                                   00048100
 MSG6     DC    C'PERMIT: Operand ID(group) is required'                 00048200
 MSG7     DC    C'PERMIT: Profiles table full, too many profiles'        00048300

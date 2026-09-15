@@ -389,7 +389,7 @@ DCBABEND DS    0H                                                       00037600
 PCLSTART DS    0H                                                       00038900
 ADDPCL   IKJPARM DSECT=ADDPRS          PDE's                            00039000
 UIDPDE   IKJPOSIT JOBNAME,PROMPT='RAKF UserID',                        *00039100
-               HELP=('Enter a valid UserID')                            00039200
+               HELP=('a valid UserID')                                  00039200
          IKJENDP                                                        00039300
 PCL#L    EQU   *-PCLSTART                                               00039400
          TITLE 'CONSTANTS'                                              00039500
