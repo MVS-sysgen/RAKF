@@ -108,7 +108,9 @@ MODULES = [
            aliases=["ALU"]),
     Module("DELUSER",  ["DELUSER"],                        ["ASMDEL"],              "DELUSER",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
     Module("ADDSD",    ["ADDSD"],                          ["ASMAD"],  "ADDSD",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
-            aliases=["AD", "RDEFINE"])
+            aliases=["AD", "RDEFINE"]),
+    Module("PERMIT",   ["PERMIT"],                         ["ASMPER"], "PERMIT", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
+            aliases=["PE"])
 ]
 
 # ---------------------------------------------------------------------------
