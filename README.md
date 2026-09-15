@@ -589,7 +589,7 @@ that's what a user gets if no DASDVOL profile is defined.
  
 - **ADDSD** – Adds profile entries of the DATASET class. It defines the record without a group,
   also called the ‘Universal Access’ record. An alias of **ADDSD** is **AD**.
-- **ADDSD** sorts the records in alphabetical order and remove the comments records.
+  **ADDSD** sorts the records in alphabetical order and remove the comments records.
 - **RDEFINE** – Adds profile entries of the other classes. These are the generalized resources.
   It defines a ‘Universal Access record’. **RDEFINE** sorts the records in alphabetical order and remove
   the comment records.
