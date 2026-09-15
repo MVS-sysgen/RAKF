@@ -588,6 +588,23 @@ there is no DASDVOL profile defined: ALTER access to a DASDVOL allows
 scratching of any file on it regardless of the file's protection and exactly
 that's what a user gets if no DASDVOL profile is defined.
 
+#### TSO commands that processes the PROFILES member in SYS1.SECURE.CNTL
+ 
+- ADDSD – Adds profile entries of the DATASET class. It defines the record without a group, 
+also called the ‘Universal Access’ record. An alias of ADDSD is AD.
+- ADDSD sorts the records in alphabetical order and remove the comments records.
+- RDEFINE – Adds profile entries of the other classes. These are the generalized resources. 
+It defines a ‘Universal Access record’. RDEFINE sorts the records in alphabetical order and remove the comment records.
+- PERMIT – Grants access to a resource of a certain class.
+Access levels are NONE, READ, UPDATE and ALTER. 
+PERMIT sorts the records in alphabetical order and remove the comments records. An alias of PERMIT is PE.
+- RDELETE - Deletes one or more generalized resource records. If a GROUP is specified with ID(group name), 
+markdfthe records of that group are deleted.
+If ID(ALL) is specified, all records of that class are deleted, including the ‘Universal Access’ record.
+
+More information of these commands can be found by issuing HELP commandname.
+
+
 ## Batch Jobs and Started Task Considerations
 
 Batch jobs and STCs are assigned the following by `ICHSFR00`:
