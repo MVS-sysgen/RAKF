@@ -458,7 +458,7 @@ DCBABEND DS    0H                                                       00044400
 PCLSTART DS    0H                                                       00045700
 ADDPCL   IKJPARM DSECT=ADDPRS          PDE's                            00045800
 UIDPDE   IKJPOSIT JOBNAME,PROMPT='RAKF UserID',                        *00045900
-               HELP=('Enter a valid UserID')                            00046000
+               HELP=('a valid UserID')                                  00046000
 PASSWKW  IKJKEYWD                                                       00046100
          IKJNAME 'PASSWORD',SUBFLD=PASSWSF,ALIAS='PWD'                  00046200
 DFTGRPKW IKJKEYWD                                                       00046300
@@ -473,7 +473,7 @@ PASSWSF  IKJSUBF                                                        00047100
 PASSWPDE IKJIDENT 'Password',                                          *00047200
                FIRST=ALPHANUM,OTHER=ALPHANUM,MAXLNTH=8,                *00047300
                PROMPT='Enter a valid password',VALIDCK=PWCHK,          *00047400
-               HELP='Specify a password with at least 4 characters'     00047500
+               HELP='a password with at least 4 characters'             00047500
 DGRPSF   IKJSUBF                                                        00047600
 DGRPPDE  IKJIDENT 'Default group',                                     *00047700
                FIRST=ALPHA,OTHER=ALPHANUM,MAXLNTH=8,                   *00047800
