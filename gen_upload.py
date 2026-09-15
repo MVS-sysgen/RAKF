@@ -346,6 +346,14 @@ def iefbr14_alloc(lib_specs: list) -> list:
     return out
 
 
+def cmdlib_help_aliases(member: str) -> list:
+    """Aliases for a HELP member whose matching module is linked into SYS1.CMDLIB."""
+    for mod in MODULES:
+        if mod.name == member and mod.target == "SYS1.CMDLIB" and mod.aliases:
+            return mod.aliases
+    return []
+
+
 def pdsload_step(
     step_name: str,
     dsn: str,
@@ -371,6 +379,9 @@ def pdsload_step(
         stats = spf_stats(path, len(raw_lines), userid)
         out.append(f"./ ADD NAME={name:<8} {stats}")
         out.extend(pad_line(ln) for ln in raw_lines)
+        if path.parent.name.upper() == "HELP":
+            for alias in cmdlib_help_aliases(name):
+                out.append(f"./ ALIAS NAME={alias}")
 
     out.append(DLM)
     return out
