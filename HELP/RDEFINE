@@ -1,0 +1,41 @@
+./ ADD NAME=RDEFINE                                                             
+)F FUNCTION -                                                                   
+  The RDEFINE command defines a resource in a certain class.                    
+  It writes one line in the PROFILES member of SYS1.SECURE.CNTL.                
+                                                                                
+  RDEFINE updates the control data sets on disk only.  Reload the in            
+  core tables afterwards with 'S RAKFPROF' from the console, or by              
+  running the RAKFPROF procedure in batch, or the profile is not in             
+  effect.                                                                       
+                                                                                
+  You must be connected to the RAKFADM group. RDEFINE is an ordinary            
+  problem state program - it is the protection on the control data sets         
+  that enforces this, not APF authorization.                                    
+                                                                                
+)X SYNTAX -                                                                     
+  RDEFINE 'resource' CLASS(clasname) UACC(NONE/READ/UPDATE/ALTER)               
+                                                                                
+  REQUIRED - 'resource'                                                         
+           - CLASS(classname)                                                   
+                                                                                
+  DEFAULT  - UACC(NONE)                                                         
+                                                                                
+  EXAMPLE  - RDEFINE $TSTVS.* CLASS(FACILITY) UACC(READ)                        
+                                                                                
+  The operands can be shortened to the shortest unique abbreviation.            
+  So, RDEFINE $TSTVS.* C(FACILITY) U(READ) is also valid.                       
+                                                                                
+  RETURN CODES:                                                                 
+                                                                                
+     0 - The resource is created.                                               
+     8 - An error occurs. A suitable message will be given to                   
+         the user.                                                              
+)O OPERANDS -                                                                   
+))'resource' - the generalized resource in the specified class. The             
+  length can be up to 44 bytes. Generic resources can be created.               
+))CLASS - Specify the name of the generalized resource class. The               
+  class name is alphabetic value with a length up to 8 characters.              
+))UACC - Specify the universal access of the resource.                          
+  possible values are: NONE (no access), READ, UPDATE and                       
+  ALTER (delete and create).                                                    
+                                                                                
