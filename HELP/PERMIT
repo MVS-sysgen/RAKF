@@ -1,0 +1,50 @@
+./ ALIAS NAME=PE                                                                
+)F FUNCTION -                                                                   
+  The PERMIT command grants acces to a resource in a certain class.             
+  It writes one line in the PROFILES member of SYS1.SECURE.CNTL.                
+                                                                                
+  PERMIT updates the control data sets on disk only.  Reload the in             
+  core tables afterwards with 'S RAKFPROF' from the console, or by              
+  running the RAKFPROF procedure in batch, or the profile is not in             
+  effect.                                                                       
+                                                                                
+  You must be connected to the RAKFADM group. PERMIT is an ordinary             
+  problem state program - it is the protection on the control data sets         
+  that enforces this, not APF authorization.                                    
+                                                                                
+)X SYNTAX -                                                                     
+  PERMIT 'resource' CLASS(clasname) ACCESS(NONE/READ/UPDATE/ALTER) +            
+         ID(group)                                                              
+                                                                                
+  ALIAS: PE                                                                     
+                                                                                
+  REQUIRED - 'resource'                                                         
+             ID(group)                                                          
+                                                                                
+  DEFAULT  - ACCESS(NONE)                                                       
+             CLASS(DATASET)                                                     
+                                                                                
+  EXAMPLE  - PERMIT $TSTVS.* CLASS(FACILITY) ID(ADMIN) ACCESS(READ)             
+                                                                                
+  OR         PERMIT SYS1.LINKLIB ID(ADMIN) ACCESS(READ)                         
+                                                                                
+  The operands can be shortened to the shortest unique abbreviation.            
+  So, PE $TSTVS.* C(FACILITY) I(ADMIN) A(READ)                                  
+  is also valid.                                                                
+                                                                                
+  RETURN CODES:                                                                 
+                                                                                
+     0 - The resource is created.                                               
+     8 - An error occurs. A suitable message will be given to                   
+         the user.                                                              
+)O OPERANDS -                                                                   
+))'resource' - the generalized resource in the specified class. The             
+  length can be up to 44 bytes. Generic resources can be created.               
+))CLASS - Specify the name of the generalized resource class. The               
+  class name is alphabetic value with a length up to 8 characters.              
+  Default = CLASS(DATASET).                                                     
+))ID    - Specify the name of the group that grants access. The                 
+  group name is alphabetic value with a length up to 8 characters.              
+))ACCESS - Specify the to be granted access of the resource.                    
+  possible values are: NONE (no access), READ, UPDATE and                       
+  ALTER (delete and create). Default = NONE.                                    
