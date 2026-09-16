@@ -157,7 +157,7 @@ ENDPARS  DS    0H                                                       00015100
          MVI   DA08CD+1,X'08'          Entry code 08 (allocation)       00015700
          MVC   DA08DDN,=CL8'RAKFPROF'  DDNAME to allocate               00015800
          MVC   DA08PDSN,=A(PROFDSNL)   Temporary data set name          00015900
-         MVI   DA08DSP1,DA08SHR        DISP=SHR                         00016000
+         MVI   DA08DSP1,DA08OLD        DISP=OLD                         00016001
          MVC   DA08MNM,=CL8'PROFILES'  Fixed member name                00016100
          MVI   DA08UNIT,C' '           Clear unit name                  00016200
          MVC   DA08UNIT+1(L'DA08UNIT-1),DA08UNIT                        00016300
