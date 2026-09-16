@@ -314,8 +314,10 @@ procs in SYS1.PROCLIB.
 
     ADDUSER userid PASSWORD(pw) DFLTGRP(group) [GROUP(g2 g3 ...)] [OPERATIONS]
            [SPECIAL]
+    An alias of ADDUSER is AU
     ALTUSER userid [PASSWORD(pw)] [DFLTGRP(group)] [OPERATIONS|NOOPERATIONS]
          [SPECIAL|NOSPECIAL]
+    An alias of ALTUSER is ALU.
 
     PASSWORD may be code as PWD, GROUP as GRP and DFLTGRP as DGRP.
 
@@ -566,7 +568,7 @@ there is no DASDVOL profile defined: ALTER access to a DASDVOL allows
 scratching of any file on it regardless of the file's protection and exactly
 that's what a user gets if no DASDVOL profile is defined.
 
-TSO commands that processes the PROFILES member in SYS1.SECURE.CNTL
+Managing Profiles with ADDSD, RDEFINE, PERMIT and RDELETE.
  
 - ADDSD - Adds profile entries of the DATASET class. It defines the record 
 without a group, also called the 'Universal Access' record.
@@ -586,6 +588,22 @@ If ID(ALL) is specified, all records of that class are deleted,
 including the 'Universal Access' record.
 
 More information of these commands can be found by issuing HELP command name.
+
+    ADDSD profile UACC(NONE|READ|UPDATE|ALTER)
+    Required: 'profile'. Default: UACC(NONE)
+    An alias of ADDSD is AD.
+
+    RDEFINE profile CLASS(class) UACC(NONE|READ|UPDATE|ALTER)
+    Required: 'profile', CLASS. Default: UACC(NONE)
+
+    PERMIT profile CLASS(class) ID(group) ACCESS(NONE|READ|UPDATE|ALTER)
+    Required: 'profile', CLASS, ID. Default: UACC(NONE)
+    An alias of PERMIT is PE
+
+    RDELETE profile CLASS(class) ID(group)
+    Required: 'profile', CLASS, ID.
+    If ID(ALL) is specified, all records of 'profile' are deleted
+    including the Universal Access record.
 
 Batch Jobs and Started Task Considerations
 ------------------------------------------
