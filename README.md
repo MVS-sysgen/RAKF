@@ -328,6 +328,7 @@ ADDUSER userid PASSWORD(pw) DFLTGRP(group) [GROUP(g2 g3 ...)] [OPERATIONS] [SPEC
 An alias of ADDUSER is AU.
 ALTUSER userid [PASSWORD(pw)] [DFLTGRP(group)] [OPERATIONS|NOOPERATIONS] [SPECIAL|NOSPECIAL]
 An alias of ALTUSER is ALU.
+DELUSER userid
 
 PASSWORD may be code as PWD, GROUP as GRP and DFLTGRP as DGRP.
 ```
