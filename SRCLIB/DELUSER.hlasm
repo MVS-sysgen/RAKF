@@ -405,7 +405,7 @@ USRDSN   DC    C'SYS1.SECURE.CNTL'     RAKF control data set            00040400
 SHDDSNL  DC    AL2(L'SHDDSN)                                            00040500
 SHDDSN   DC    C'SYS1.SECURE.SHADOW'   RAKF data set with encrypted psw 00040600
 *                                                                       00040700
-MSG1     DC    C'SYS1.SECURE.USER could not be allocated'               00040800
+MSG1     DC    C'SYS1.SECURE.CNTL(USERS) could not be allocated'        00040802
 MSG2     DC    C'SYS1.SECURE.SHADOW could not be allocated'             00040900
 MSG3X    DC    C'DELUSER: xxxxxxxx access denied'  +9                   00041000
 MSG4     DC    C'DELUSER: Nothing deleted'                              00041100
