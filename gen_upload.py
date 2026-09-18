@@ -61,7 +61,7 @@ JOB_CLASS    = "A"
 MSGLEVEL     = "(1,1)"
 
 DEFAULT_HLQ      = "RAKF"          # high-level qualifier for all target datasets
-STEPLIB_DSN      = "SYSC.LINKLIB"  # PDS containing the PDSLOAD load module
+DEFAULT_STEPLIB  = "SYSC.LINKLIB"  # PDS containing the PDSLOAD load module
 DLM              = "@@"            # DD DATA inline delimiter (must not appear in source)
 UPDTE_ESC        = "><"            # PDSLOAD UPDTE() stand-in for './' in member data
 LRECL            = 80
@@ -376,6 +376,7 @@ def pdsload_step(
     dsn: str,
     files: list,
     userid: str,
+    steplib: str = DEFAULT_STEPLIB,
 ) -> list:
     """PDSLOAD step: load one or more members into a PDS."""
     out = [
@@ -383,7 +384,7 @@ def pdsload_step(
         f"//* Load {dsn}",
         "//*",
         f"//{step_name:<8} EXEC PGM=PDSLOAD,PARM='SPF,UPDTE({UPDTE_ESC})'",
-        f"//STEPLIB  DD  DSN={STEPLIB_DSN},DISP=SHR",
+        f"//STEPLIB  DD  DSN={steplib},DISP=SHR",
         "//SYSPRINT DD  SYSOUT=*",
         f"//SYSUT2   DD  DSN={dsn},DISP=SHR",
         f"//SYSUT1   DD  DATA,DLM={DLM}",
@@ -637,6 +638,7 @@ def generate(
     hlq: str = DEFAULT_HLQ,
     changes_only: bool = False,
     assemble: bool = False,
+    steplib: str = DEFAULT_STEPLIB,
 ) -> str:
     # Discover library directories
     all_libs = discover_libraries(hlq)
@@ -679,7 +681,7 @@ def generate(
         if local_dir.upper() == "HELP":
             lines.extend(iebupdte_help_step(dsn, files))
         else:
-            lines.extend(pdsload_step(f"LOAD{i:04d}", dsn, files, userid))
+            lines.extend(pdsload_step(f"LOAD{i:04d}", dsn, files, userid, steplib))
 
     if assemble:
         modules = select_modules(changes_only, member_filter)
@@ -752,6 +754,10 @@ def main() -> None:
         help=f"High-level qualifier for target datasets (default: {DEFAULT_HLQ})",
     )
     parser.add_argument(
+        "--steplib", metavar="DSN", default=DEFAULT_STEPLIB, type=str.upper,
+        help=f"STEPLIB for PDSLOAD (default: {DEFAULT_STEPLIB})",
+    )
+    parser.add_argument(
         "-o", "--output", metavar="FILE",
         help="Write JCL to FILE instead of stdout",
     )
@@ -780,6 +786,7 @@ def main() -> None:
         args.hlq,
         args.changes,
         assemble,
+        args.steplib,
     )
 
     if args.submit:
