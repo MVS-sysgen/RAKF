@@ -63,6 +63,7 @@ MSGLEVEL     = "(1,1)"
 DEFAULT_HLQ      = "RAKF"          # high-level qualifier for all target datasets
 STEPLIB_DSN      = "SYSC.LINKLIB"  # PDS containing the PDSLOAD load module
 DLM              = "@@"            # DD DATA inline delimiter (must not appear in source)
+UPDTE_ESC        = "><"            # PDSLOAD UPDTE() stand-in for './' in member data
 LRECL            = 80
 
 DEFAULT_USERID   = "IBMUSER"
@@ -351,6 +352,25 @@ def iefbr14_alloc(lib_specs: list) -> list:
     return out
 
 
+def pdsload_data_line(line: str, path: Path, lineno: int) -> str:
+    """Escape `./` in member data so PDSLOAD does not treat it as control.
+
+    PARM UPDTE(><) converts '><' in columns 1-2 back to './' when the record
+    is written, so INITTBLS-style IEBUPDTE SYSIN stays inside the member and
+    SPF statistics on the ./ ADD card are still stored.
+    """
+    raw = line.rstrip("\r\n")
+    if raw.startswith(UPDTE_ESC):
+        print(
+            f"WARNING: {path} line {lineno} starts with '{UPDTE_ESC}' — "
+            "PDSLOAD UPDTE will store it as './'",
+            file=sys.stderr,
+        )
+    if raw.startswith("./"):
+        raw = UPDTE_ESC + raw[2:]
+    return pad_line(raw)
+
+
 def pdsload_step(
     step_name: str,
     dsn: str,
@@ -362,7 +382,7 @@ def pdsload_step(
         "//*",
         f"//* Load {dsn}",
         "//*",
-        f"//{step_name:<8} EXEC PGM=PDSLOAD,PARM='SPF'",
+        f"//{step_name:<8} EXEC PGM=PDSLOAD,PARM='SPF,UPDTE({UPDTE_ESC})'",
         f"//STEPLIB  DD  DSN={STEPLIB_DSN},DISP=SHR",
         "//SYSPRINT DD  SYSOUT=*",
         f"//SYSUT2   DD  DSN={dsn},DISP=SHR",
@@ -375,7 +395,10 @@ def pdsload_step(
         check_delimiter(raw_lines, path)
         stats = spf_stats(path, len(raw_lines), userid)
         out.append(f"./ ADD NAME={name:<8} {stats}")
-        out.extend(pad_line(ln) for ln in raw_lines)
+        out.extend(
+            pdsload_data_line(ln, path, i)
+            for i, ln in enumerate(raw_lines, 1)
+        )
 
     out.append(DLM)
     return out
