@@ -308,10 +308,10 @@ TERMFLAG DC     X'00'                                                   01720000
 TERMABND EQU    X'01'                                                   01730000
 RECORD   DS     0XL80                                                   01740000
 USERID   DS     CL8                                                     01750000
-DFLTGRPF DS     X                  DEFAULT GROUP FLAG                   01760000
+         DS     X                                                       01760000
 GROUP    DS     CL8                                                     01770000
-         DS     X                                                       01780000
-PASSWORD DS     CL8                                                     01790000
+DFLTGRPF DS     X                      Default group flag (C'*')        01780000
+PASSWORD DS     CL8                    Is moved to SHADOW               01790000
          DS     X                                                       01800000
 *                                                                       01810000
 OPERFLAG DS     X                                                       01820000
