@@ -12,6 +12,10 @@
   problem state program - it is the protection on the control data sets         
   that enforces this, not APF authorization.                                    
                                                                                 
+  NOTE - a profile record with UACC (the universal access record)               
+         must exist, otherwise the PERMIT fails.                                
+         Universal access records are created by ADDSD and RRDEFINE.            
+                                                                                
 )X SYNTAX -                                                                     
   PERMIT 'resource' CLASS(clasname) ACCESS(NONE/READ/UPDATE/ALTER) +            
          ID(group)                                                              
