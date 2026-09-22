@@ -104,8 +104,12 @@
       1: No plain passwords will be stored                       
       2: The shadow data set is introduced to encrypt and store  
          the passwords.                                          
-      3: The passwords in the table USERS are spaced out.        
-                                                                 
+      3: The passwords in the table USERS are spaced out.                          
+      4: TSO commands ADDUSER, ALTUSER and DELUSER developed                    
+         to process the USERS member and the shadow data set.                   
+      5: TSO commands ADDSD, RDEFINE, PERMIT and RDELETE                        
+         to process the PROFILES member.               
+ 
    COMPONENT:                                                    
       Resource Access Control Facility (RACF/RAKF).              
                                                                  
@@ -115,9 +119,8 @@
          this job !!!!!                                          
        o This function sysmod requires an IPL with CLPA          
          to take effect.                                         
-       o Allocate first the SHADOW data set on the system        
-         residence volume. Run job INITSHAD in this library      
-         first before applying this sysmod.                      
+       o Run job INITSHAD in this library first before  
+         applying this sysmod.                      
                                                                  
   */.                                                            
 ++JCLIN.
