@@ -106,7 +106,7 @@ MODULES = [
     Module("RAKFPWUP", ["RAKFPWUP"],                       ["ASMPWUP"],             "RAKFPWUP", "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
     Module("RACIND",   ["RACIND"],                         ["ASMIND"],              "RACIND",   "SYS1.LINKLIB", "MAP,LIST,LET,NCAL,AC=1"),
     Module("ADDUSER",  ["ADDUSER", "RAKFPWH", "RAKFHASH"], ["ASMADD", "ASMPWHA", "ASMHASHA"], "ADDUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS",
-           aliases=["ALU"]),
+           aliases=["AU"]),
     Module("ALTUSER",  ["ALTUSER", "RAKFPWH", "RAKFHASH"], ["ASMALT", "ASMPWHB", "ASMHASHB"], "ALTUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS",
            aliases=["ALU"]),
     Module("DELUSER",  ["DELUSER"],                        ["ASMDELU"], "DELUSER", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
