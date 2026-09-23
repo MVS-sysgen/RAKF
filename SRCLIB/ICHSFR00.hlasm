@@ -42,6 +42,9 @@ ICHSFR00 CSECT                                                          00070000
 *                       added to the user table. These have since   @05 00227805
 *                       been updated so that they can't be used     @05 00228105
 *                       interactively, a new WTO has been added also@05 00228505
+*                                                                   @02 00228555
+*    2026/09/23 @mg1    Test if first qualifier really match with  @mg1 00228605
+*                       UserID. Test the '.' after first qualifier @mg1 00228615
 ********************************************************************@02 00229002
 *                                                                       00230000
          USING AUTHDS,R10                                               00240000
@@ -705,10 +708,15 @@ ENTYCHCK L     R2,FLCCVT           LOAD CVT                             06080000
          MVC   WORKCLAS(8),=CL8'DATASET' --> yes, assume DATASET        06180000
 ENTYNBLK CLC   =C'DATASET',WORKCLAS  CHECK FOR OUR OWN DSNS.            06190000
          BNE   ENTYCLLP            NO, GO ON                            06200000
+         XR    R1,R1               Clear is needed for LA          @mg1 06200010
          IC    R1,ACEEUSRL         GET LENGTH                           06210000
          BCTR  R1,0                DOWN 1 FOR CLC                       06220000
          EX    R1,ENTYEXUS         CLC 0(0,ENTYREG),ACEEUSRN            06230000
-         BE    AUTHGOOD            GO FOR IT                            06240000
+         BNE   ENTYTEMP            No: not our dataset             @mg1 06240000
+         LA    R14,1(R1,ENTYREG)   Point after UserID              @mg1 06240010
+         CLI   0(R14),C'.'         First qualifier is UserID?      @mg1 06240020
+         BE    AUTHGOOD            Yes: definitely our dataset     @mg1 06240030
+ENTYTEMP DS    0H                                                  @mg1 06240040
          CLC   0(3,ENTYREG),=C'SYS' is it a ..                          06250000
          BNE   ENTYCLLP              --> no                             06260000
          CLC   8(2,ENTYREG),=C'.T'            .. temporary ..           06270000
