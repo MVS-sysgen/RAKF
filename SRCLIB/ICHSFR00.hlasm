@@ -325,7 +325,7 @@ RACIAUTL CLC   =F'0',0(R3)         END OF TABLE?                        02970000
          CLC   CDNAME-CDENTRY(,R2),0(R3) IS THIS US?                    02990000
          BE    RACIMDST            YES, BYPASS TESTAUTH                 03000000
          LA    R3,12(R3)           NEXT ENTRY                           03010000
-         BE    RACIAUTL            GO ON                                03020000
+         B     RACIAUTL            GO ON                           @rp1 03020000
 *                                                                       03030000
 RACINAUT TESTAUTH FCTN=1,STATE=YES,KEY=YES    APF/SUP/KEY0-7            03040000
          LTR   R15,R15             GOT IT?                              03050000
