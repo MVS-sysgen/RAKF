@@ -6,41 +6,41 @@ RAKFHASH CSECT
 *                                                                    *
 * NAME: RAKFHASH                                                     *
 *                                                                    *
-* TYPE: Assembler Source - reentrant callable subroutine            *
+* TYPE: Assembler Source - reentrant callable subroutine             *
 *                                                                    *
-* DESC: Compute a SHA-256 (FIPS 180-4) message digest.              *
-*       Pure register math - issues NO SVCs (no GETMAIN/MODESET),   *
-*       so it is callable from privileged key-0 code (ICHSFR00      *
-*       login path) AND from problem-state cc370 tooling. All       *
-*       working storage is in a caller-provided work area, so the   *
-*       routine is fully reentrant.                                 *
+* DESC: Compute a SHA-256 (FIPS 180-4) message digest.               *
+*       Pure register math - issues NO SVCs (no GETMAIN/MODESET),    *
+*       so it is callable from privileged key-0 code (ICHSFR00       *
+*       login path) AND from problem-state cc370 tooling. All        *
+*       working storage is in a caller-provided work area, so the    *
+*       routine is fully reentrant.                                  *
 *                                                                    *
-*       This is the SINGLE source of truth for RAKF password        *
-*       hashing.  Login and enrollment MUST call the same code so   *
-*       they compute byte-identical digests.  Validate against the  *
-*       NIST test vectors (see RHASHTST) before wiring into login.  *
+*       This is the SINGLE source of truth for RAKF password         *
+*       hashing.  Login and enrollment MUST call the same code so    *
+*       they compute byte-identical digests.  Validate against the   *
+*       NIST test vectors (see RHASHTST) before wiring into login.   *
 *                                                                    *
-* LINKAGE: Standard OS.  R1 -> parameter list of 4 addresses:       *
+* LINKAGE: Standard OS.  R1 -> parameter list of 4 addresses:        *
 *                                                                    *
-*   PLIST+0   A(INPUT)    address of the message bytes to hash      *
-*   PLIST+4   A(INLEN)    address of a fullword = input length in   *
-*                         BYTES (0..RHMAXIN)                        *
-*   PLIST+8   A(OUTPUT)   address of a 32-byte area to receive the  *
-*                         raw binary digest (H0..H7, big-endian)    *
-*   PLIST+12  A(WORK)     address of a work area, >= RHWORKL bytes  *
+*   PLIST+0   A(INPUT)    address of the message bytes to hash       *
+*   PLIST+4   A(INLEN)    address of a fullword = input length in    *
+*                         BYTES (0..RHMAXIN)                         *
+*   PLIST+8   A(OUTPUT)   address of a 32-byte area to receive the   *
+*                         raw binary digest (H0..H7, big-endian)     *
+*   PLIST+12  A(WORK)     address of a work area, >= RHWORKL bytes   *
 *                                                                    *
-*   R13 -> a standard 18-word save area (caller's).                 *
+*   R13 -> a standard 18-word save area (caller's).                  *
 *                                                                    *
-* RETURN: R15 = 0  digest produced in OUTPUT                        *
-*         R15 = 8  input length > RHMAXIN, OUTPUT unchanged         *
+* RETURN: R15 = 0  digest produced in OUTPUT                         *
+*         R15 = 8  input length > RHMAXIN, OUTPUT unchanged          *
 *                                                                    *
-* NOTE: RHMAXIN (119) bounds the message to at most two 512-bit     *
-*       blocks.  That is far more than salt||password ever needs;   *
-*       it keeps the padded-message buffer fixed-size and the       *
-*       routine free of any storage allocation.                     *
+* NOTE: RHMAXIN (119) bounds the message to at most two 512-bit      *
+*       blocks.  That is far more than salt||password ever needs;    *
+*       it keeps the padded-message buffer fixed-size and the        *
+*       routine free of any storage allocation.                      *
 *                                                                    *
-* BIG-ENDIAN NOTE: S/370 and SHA-256 are both big-endian, so L/ST   *
-*       move the 32-bit words with correct byte order - no swap.    *
+* BIG-ENDIAN NOTE: S/370 and SHA-256 are both big-endian, so L/ST    *
+*       move the 32-bit words with correct byte order - no swap.     *
 *                                                                    *
 **********************************************************************
          SPACE 1
@@ -174,7 +174,7 @@ RHEXT    DS    0H
          SRL   R8,10              shr10
          XR    R7,R8              R7 = s1
 *        W(t) = W(t-16) + s0 + W(t-7) + s1
-         L     R1,0(,R4)          W[t-16]
+         L     R1,0(,R4)          W(t-16)
          ALR   R1,R0              + s0
          AL    R1,36(,R4)         + W(t-7)
          ALR   R1,R7              + s1
@@ -388,7 +388,7 @@ RHE      DS    F                  working var e
 RHF      DS    F                  working var f
 RHG      DS    F                  working var g
 RHHH     DS    F                  working var h
-RHW      DS    64F                message schedule W[0..63]
+RHW      DS    64F                message schedule W(0..63)
 RHMSG    DS    CL128              padded message (max two blocks)
 RHINA    DS    F                  A(input)
 RHINLEN  DS    F                  input length in bytes
