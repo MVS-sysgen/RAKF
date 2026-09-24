@@ -738,7 +738,7 @@ def main() -> None:
         help=f"Limit upload to these libraries (default: all). Discovered: {lib_names}",
     )
     parser.add_argument(
-        "--jobname", metavar="NAME", default="RAKFLOAD",type=str.upper,
+        "--jobname", metavar="NAME", default="RAKFLOAD", type=str.upper,
         help="JCL job name, max 8 chars (default: RAKFLOAD)",
     )
     parser.add_argument(
@@ -750,7 +750,7 @@ def main() -> None:
         help=f"Mainframe password (default: {DEFAULT_PASSWORD})",
     )
     parser.add_argument(
-        "--hlq", metavar="HLQ", default=DEFAULT_HLQ,type=str.upper,
+        "--hlq", metavar="HLQ", default=DEFAULT_HLQ, type=str.upper,
         help=f"High-level qualifier for target datasets (default: {DEFAULT_HLQ})",
     )
     parser.add_argument(
