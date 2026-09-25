@@ -172,11 +172,16 @@ BRANCTBL DS    0H                                                       00910000
          B     NOTFND                  ... NO BLANKS/NO ASTERISKS       00920000
          B     ASTRKFND                ... AN ASTERISK                  00930000
          B     BLANKFND                ... A BLANK                      00940000
-BLANKFND DS    0H                                                       00950000
+ASTRKFND DS    0H                                                       00950000
          LA    R1,1(R1)                ADD 1 TO INCLUDE BLANK IN LENGTH 00960000
-ASTRKFND DS    0H                                                       00970000
-         S     R1,=A(ENTITY)           CALCULATE LENGTH                 00980000
+BLANKFND S     R1,=A(ENTITY)           CALCULATE LENGTH                 00980000
 NOTFND   DS    0H                      IF NOTFOUND LENGTH ALREADY IN R1 00990000
+         CL    R1,=F'45'               More than 44?                    00990010
+         BL    *+8                     No: good                         00990020
+         LA    R1,44                   Set to 44                        00990030
+         LTR   R1,R1                   Zero?                            00990040
+         BNZ   *+8                     No: also good                    00990050
+         LA    R1,1                    Set to 1                         00990060
          STC   R1,RPEENTYL             SAVE LENGTH                      01000000
          MVC   RPEENTYN,ENTITY           AND ENTITY NAME                01010000
 *                                                                       01020000
