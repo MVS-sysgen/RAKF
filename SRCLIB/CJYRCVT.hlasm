@@ -97,6 +97,7 @@ CDTELEN  EQU   *-CDT                                                    00730005
          DC    X'003029',C'PROGRAM PMBR    ',X'08C0E00180',XL24'00'     00800005
          DC    X'003030',C'TSOAUTH         ',X'08E0E00110',XL24'00'     00810005
          DC    X'003038',C'PROPCNTL        ',X'08E0E00110',XL24'00'     00820005
+         DC    X'003040',C'TERMINAL        ',X'08E0E00110',XL24'00'     00820015
 CDTE#    EQU   (*-CDT)/CDTELEN                                          00830005
 *                                                                       00840012
 ICHAUTAB DC    CL8'DSIOST',XL4'80000000'   NCCF                         00850012
