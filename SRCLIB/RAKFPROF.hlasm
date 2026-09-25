@@ -173,7 +173,7 @@ BRANCTBL DS    0H                                                       00910000
          B     ASTRKFND                ... AN ASTERISK                  00930000
          B     BLANKFND                ... A BLANK                      00940000
 ASTRKFND DS    0H                                                       00950000
-         LA    R1,1(R1)                ADD 1 TO INCLUDE BLANK IN LENGTH 00960000
+*        LA    R1,1(R1)                ADD 1 TO INCLUDE BLANK IN LENGTH 00960000
 BLANKFND S     R1,=A(ENTITY)           CALCULATE LENGTH                 00980000
 NOTFND   DS    0H                      IF NOTFOUND LENGTH ALREADY IN R1 00990000
          CL    R1,=F'45'               More than 44?                    00990010
