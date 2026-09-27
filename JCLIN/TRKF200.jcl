@@ -24,14 +24,12 @@
  NAME    ICHSEC00(R)                                                            
 /*                                                                              
 //*                                                                             
-//* JCLIN for RAKF 2.0 PTF RRKF002                                              
-//*                                                                             
 //ASMUSER  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
-//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RAKFUSER)                               
-//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RAKFUSER)                              
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(CJYRUIDS)                               
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(CJYRUIDS)                              
 //ASMPSAV  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
@@ -51,46 +49,48 @@
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
 //SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RAKFPWH)                                
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RAKFPWH)                               
-//RAKFUSER EXEC  PGM=IEWL,PARM='MAP,LIST,LET,NCAL,AC=1'                         
+//CJYRUIDS EXEC  PGM=IEWL,PARM='MAP,LIST,LET,NCAL,AC=1'                         
 //SYSLMOD  DD  DISP=SHR,DSN=SYS1.LINKLIB                                        
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ                                        
 //SYSLIN   DD  *                                                                
- INCLUDE SYSPUNCH(RAKFUSER)                                                     
+ INCLUDE SYSPUNCH(CJYRUIDS)                                                     
  INCLUDE SYSPUNCH(RAKFPSAV)                                                     
  INCLUDE SYSPUNCH(RAKFHASH)                                                     
  INCLUDE SYSPUNCH(RAKFPWH)                                                      
  ENTRY   CJYRUIDS                                                               
- NAME    RAKFUSER(R)                                                            
+ ALIAS   RAKFUSER                                                               
+ NAME    CJYRUIDS(R)                                                            
 /*                                                                              
 //*                                                                             
 //ASMPROF  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
-//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RAKFPROF)                               
-//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RAKFPROF)                              
-//RAKFPROF EXEC  PGM=IEWL,PARM='MAP,LIST,LET,NCAL,AC=1'                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(CJYRPROF)                               
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(CJYRPROF)                              
+//CJYRPROF EXEC  PGM=IEWL,PARM='MAP,LIST,LET,NCAL,AC=1'                         
 //SYSLMOD  DD  DISP=SHR,DSN=SYS1.LINKLIB                                        
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ                                        
 //SYSLIN   DD  *                                                                
  INCLUDE SYSPUNCH(RAKFPROF)                                                     
  ENTRY   CJYRPROF                                                               
- NAME    RAKFPROF(R)                                                            
+ ALIAS   RAKFPROF                                                               
+ NAME    CJYRPROF(R)                                                            
 /*                                                                              
 //*                                                                             
 //ASMPWUP  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
-//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RAKFPWUP)                               
-//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RAKFPWUP)                              
-//RAKFPWUP EXEC  PGM=IEWL,PARM='MAP,LIST,LET,NCAL,AC=1'                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(CJYRPWUP)                               
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(CJYRPWUP)                              
+//CJYRPWUP EXEC  PGM=IEWL,PARM='MAP,LIST,LET,NCAL,AC=1'                         
 //SYSLMOD  DD  DISP=SHR,DSN=SYS1.LINKLIB                                        
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ                                        
 //SYSLIN   DD  *                                                                
- INCLUDE SYSPUNCH(RAKFPWUP)                                                     
- ENTRY   RAKFPWUP                                                               
- NAME    RAKFPWUP(R)                                                            
+ INCLUDE SYSPUNCH(CJYRPWUP)                                                     
+ ALIAS   RAKFPWUP                                                               
+ NAME    CJYRPWUP(R)                                                            
 /*                                                                              
 //*                                                                             
 //ASMSFR   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
@@ -216,7 +216,6 @@
  NAME    ICHRIN00(R)                                                            
 /*                                                                              
 //*                                                                             
-//* JCLIN for RAKF 2.0 PTF RRKF005                                              
 //*                                                                             
 //ASMIND   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
