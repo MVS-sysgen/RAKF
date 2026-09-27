@@ -1,4 +1,4 @@
-          TITLE 'ESG-SECURITY USERID TABLE LOADER'                       00000100
+          TITLE 'ESG-SECURITY USERID TABLE LOADER'                      00000100
 * CPARM='XREF(SHORT)',LPARM='AC=1'                            CJYRUIDS  00000200
 *      DD DSN=SYS1.MACLIB,DISP=SHR                                      00000300
 *      DD DSN=SYS1.MODGEN,DISP=SHR                                      00000400
