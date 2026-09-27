@@ -1,0 +1,355 @@
+          TITLE 'ESG-SECURITY USERID TABLE LOADER'                       00000100
+* CPARM='XREF(SHORT)',LPARM='AC=1'                            CJYRUIDS  00000200
+*      DD DSN=SYS1.MACLIB,DISP=SHR                                      00000300
+*      DD DSN=SYS1.MODGEN,DISP=SHR                                      00000400
+*      DD DSN=RAKF.MACLIB,DISP=SHR                                      00000500
+         EJECT                                                          00000600
+CJYRUIDS CSECT                                                          00000700
+*                                                                       00000800
+**********************************************************************  00000900
+*                                                                    *  00001000
+*    COPYRIGHT (C) 1991 BY CRAIG J. YASUNA.  ALL RIGHTS RESERVED.    *  00001100
+*                                                                    *  00001200
+*    THIS SOFTWARE PRODUCT OR ANY OF ITS COMPONENTS MUST NOT BE      *  00001300
+*    SOLD, GIVEN, OR OTHERWISE DISTRIBUTED TO ANY OTHER COMPANY      *  00001400
+*    WITHOUT THE PRIOR WRITTEN PERMISSION OF:                        *  00001500
+*                                                                    *  00001600
+*                                  CRAIG J. YASUNA, PRESIDENT        *  00001700
+*                                  ENTERPRISE SYSTEMS GROUP          *  00001800
+*                                  2 MARC COURT                      *  00001900
+*                                  EDISON, NEW JERSEY 08820          *  00002000
+*                                                                    *  00002100
+*   !!!!! DO NOT RENUMBER !!!!! enter NUMBER OFF before editing      *  00002200
+*                               But better is letting SMP doing      *  00002300
+*                               the EDIT.                            *  00002400
+*                                                                    *  00002500
+**********************************************************************  00002600
+*                                                                   @01 00002700
+*    Change History                                                 @01 00002800
+*                                                                   @01 00002900
+*    2011/04/03 TRKF120 base version                                @01 00003000
+*    2011/04/18 RRKF001 introduce change history                    @01 00003100
+*                       enable comment lines in UDATA and PDATA     @01 00003200
+*                       consistently don't specify msg descriptor   @01 00003300
+*                       fix S378 after error in first line of UDATA @01 00003400
+*                       add missing DEQ for SECURITY,USERS          @01 00003500
+*    2011/04/26 RRKF002 enable end users to change their passwords  @02 00003600
+*                       permanently: Before updating the incore     @02 00003700
+*                       users table RAKFUSER calls RAKFPSAV to      @02 00003800
+*                       update UDATA with the temporary password    @02 00003900
+*                       changes queued since the previous execution @02 00004000
+*    2011/04/29 RRKF003 if in-core UDATA table already exists check @03 00004100
+*                       for READ access to profile RAKFADM in the   @03 00004200
+*                       FACILITY class to ensure that only properly @03 00004300
+*                       authorized users can replace the in-core    @03 00004400
+*                       UDATA table                                 @03 00004500
+*                                                                   @03 00004600
+*    2026/02/28 RRKF004 The user table was stored in unprotected    @04 00004700
+*                       memory, meaning anyone with access to the   @04 00004800
+*                       LPAR could dump that table and reverse all  @04 00004900
+*                       the users information and their password    @04 00005000
+*                       Now those user tables reside in fetch       @04 00005100
+*                       protected memory                            @04 00005200
+*    2022/10/21 RRKF007 Remove the need to sort the input in        @07 00005300
+*                       alphabetical order. Allocate a core table   @07 00005400
+*                       of 1,000 entries, read the USERS member     @07 00005500
+*                       into this table and sort the table          @07 00005600
+*                       before processing.                          @07 00005700
+*    2026/03/01         Moving CBLK to fetch protected storage, so  @07 00005800
+*                       users can't dump the user table,            @07 00005900
+*                       tested logon with FTP, TSO and JOB card.    @07 00006000
+*                       Everything seems to work.                   @07 00006100
+********************************************************************@07 00006200
+*                                                                       00006300
+         SAVE   (14,12),,CJYRUIDS_&SYSDATE._&SYSTIME                    00006400
+         LR     R12,R15             USE ENTRY AS BASE                   00006500
+         USING  CJYRUIDS,R12        " " "                               00006600
+         ST     R13,SAVEAREA+4      SAVE CALLER'S SAVE AREA ADDR        00006700
+         LA     R2,SAVEAREA         OUR SAVEAREA                        00006800
+         ST     R2,8(R13)           SAVE OUR AREA                       00006900
+         LR     R13,R2              LOAD REGISTER 13 WITH SAVEAREA      00007000
+*                                                                       00007100
+         L      R8,FLCCVT-PSA(0)    GET CVT ADDR                        00007200
+         ICM    R8,B'1111',CVTRAC-CVTMAP(R8) GET RCVT ADDR, IS IT 0?    00007300
+         BZ     ABEND100             Y - CJYRCVT FAILED, GO TO ABEND    00007400
+         ICM    R8,B'1111',RCVTISTL-RCVT(R8) GET OUR POINTER, IS IT 0?  00007500
+         BZ     ABEND100             YES, ABEND                         00007600
+*                                                                   @03 00007700
+         ICM    R5,B'0111',CJYUSERS-CJYRCVTD(R8) does UDATA exist?  @03 00007800
+         BZ     OK2GO                NO, go ahead                   @03 00007900
+         RACHECK ENTITY=RAKFADM,CLASS='FACILITY',ATTR=READ authorize@03 00008000
+         LTR    R15,R15             RAKFADM granted?                @03 00008100
+         BNZ    ABEND600             NO, abend                      @03 00008200
+*                                                                   @03 00008300
+OK2GO    ENQ    (SECURITY,USERS,E,,SYSTEM),RET=HAVE serialization   @03 00008400
+*                                                                   @02 00008500
+         L      R15,RAKFPSAV        get password changer address    @02 00008600
+         BALR   R14,R15             call it                         @02 00008700
+*                                                                   @02 00008800
+         OPEN   (CJYUDATA,(INPUT))  OPEN INPUT FILE                     00008900
+         MODESET MODE=SUP,KEY=ZERO  authorize ourselves                 00009000
+         XR     R5,R5               initialize GM chain             @01 00009100
+*                                                                   @07 00009200
+         GETMAIN RU,LV=80000           GETMAIN ROOM FOR 1000 ENT.   @07 00009300
+         LR    R2,R1                   SAVE ITS ADDRESS             @07 00009400
+         ST    R1,ADRTBL               SAVE FOR LATER USE           @07 00009500
+         XR    R9,R9                   RECORD COUNTER               @07 00009600
+GETMLOOP DS    0H                                                   @07 00009700
+         XC    0(80,R2),0(R2)          CLEAR CORE TABLE ENTRY       @07 00009800
+         GET   CJYUDATA,RECORD         READ A RECORD                @07 00009900
+         CLI   USERID,C'*'             COMMENT FIELD?               @07 00010000
+         BE    GETMLOOP                YES: SKIP                    @07 00010100
+         MVC   0(80,R2),RECORD         MOVE IN TEMPORARY TABLE      @07 00010200
+         LA    R9,1(,R9)               INCREASE COUNTER             @07 00010300
+         LA    R2,80(,R2)              NEXT ENTRY IN TABLE          @07 00010400
+         B     GETMLOOP                READ NEXT RECORD             @07 00010500
+ENDLOOP  DS    0H                                                   @07 00010600
+         L     R2,ADRTBL               POINT TO FIRST RECORD        @07 00010700
+         ICM   R1,15,0(R2)             NO DATA?                     @07 00010800
+         BZ    ABEND300            Y - TELL ABOUT IT AND TERMINATE. @07 00010900
+         STM   R4,R8,SAVESORT                                       @07 00011000
+         CH    R9,=H'2'                LESS THAN 2 RECORDS?         @07 00011100
+         BL    READLOOP                DO NOT SORT                  @07 00011200
+         BCTR  R9,0                    MINUS 1                      @07 00011300
+         MH    R9,=H'80'               ** RECORD LENGTH             @07 00011400
+         LA    R7,0(R2,R9)             POINT TO LAST RECORD         @07 00011500
+*                                                                   @07 00011600
+SORT01   DS    0H                      START SORT                   @07 00011700
+         ST    R7,SWAPLAST             LAST RECORD SWAPPED          @07 00011800
+         L     R4,ADRTBL               POINT TO FIRST RECORD        @07 00011900
+         LR    R5,R4                   NEXT                         @07 00012000
+         LA    R5,80(,R4)                   RECORD                  @07 00012100
+SORT03   DS    0H                      SORT TEMPORARY TABLE         @07 00012200
+         CL    R4,SWAPLAST             LAST RECORD REACHED?         @07 00012300
+         BNL   SORT07                  YES: LOOP COMPLETE           @07 00012400
+         CLC   0(80,R4),0(R5)          COMPARE                      @07 00012500
+         BNH   SORT05                  HIGH: SWAP THESE RECORDS     @07 00012600
+         XC    0(80,R4),0(R5)          SWAP                         @07 00012700
+         XC    0(80,R5),0(R4)              THE                      @07 00012800
+         XC    0(80,R4),0(R5)                   RECORDS             @07 00012900
+         LR    R7,R4                   LAST RECORD SWAPPED IN R7    @07 00013000
+SORT05   DS    0H                      LOAD NEXT ENTRY              @07 00013100
+         LA    R4,80(,R4)              NEXT RECORD                  @07 00013200
+         LA    R5,80(,R5)              NEXT RECORD                  @07 00013300
+         B     SORT03                  COMPARE NEXT RECORD          @07 00013400
+SORT07   DS    0H                      ALL RECORDS DONE             @07 00013500
+         CL    R7,SWAPLAST             ARE THESE SWAPS EXECUTED?    @07 00013600
+         BL    SORT01                  IF YES, THEN SORT AGAIN      @07 00013700
+*                                      ELSE END OF SORT             @07 00013800
+         L     R9,ADRTBL               START OF CORE TABLE          @07 00013900
+         SL    R9,=F'80'               POINT 1 RECORD BEFORE        @07 00014000
+         LM    R4,R8,SAVESORT          RESTORE REGISTERS            @07 00014100
+*                                                                       00014200
+*        read the shadow (salt+hash) table into storage                 00014300
+         OPEN   (SHADOW,(INPUT))   open shadow dataset                  00014400
+         GETMAIN RU,LV=48000       room for 1000 shadow entries         00014500
+         LR     R2,R1              table address                        00014600
+         ST     R1,ADRSHAD         save it                              00014700
+         XR     R3,R3              shadow record counter                00014800
+SHADRLP  GET    SHADOW,(R2)        read a shadow record (48 bytes)      00014900
+         LA     R2,48(,R2)         next slot                            00015000
+         LA     R3,1(,R3)          count it                             00015100
+         B      SHADRLP            read next                            00015200
+SHADEOD  ST     R3,SHADCNT         save count                           00015300
+         CLOSE  (SHADOW)           close shadow dataset                 00015400
+*                                                                       00015500
+READLOOP LA    R9,80(,R9)              NEXT RECORD IN TABLE         @07 00015600
+         ICM   R1,15,0(R9)             END OF DATA?                 @07 00015700
+         BZ    ENDDATA                 Y: ENTIRE TABLE PROCESSED    @07 00015800
+         MVC   RECORD,0(R9)            MOVE ENTRY                   @07 00015900
+         CLC    USERID,OLDUSER      IS INPUT IN SORT SEQUENCE?          00016000
+         BE     NEWGROUP             same USER, check for new group @01 00016100
+*        BNH    ABEND2               not in sort seq, tell about it @01 00016200
+         CLI    USERID,C' '         UID?                                00016300
+         BE     ABEND2               NO ---                             00016400
+         CLI    GROUP,C' '          GROUP.                              00016500
+         BE     ABEND2               NO ---                             00016600
+         CLI    OPERFLAG,C'Y'       FLAG ??                             00016700
+         BE     RECOK                RECORD OK                          00016800
+         CLI    OPERFLAG,C'N'       FLAG ??                             00016900
+         BNE    ABEND2               TOUGH                              00017000
+*                                                                       00017100
+RECOK    MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00017200
+         GETMAIN RU,LV=CBLKL,SP=231 GET AREA IN FETCH-PROTECTED CSA @07 00017300
+         LR     R5,R1               GM AREA ADDR TO WORK REG.           00017400
+         USING  CBLK,R5             HELLO BALL ---                      00017500
+         XC     CBLK(CBLKL),CBLK    CLEAR TO B'0'                       00017600
+         MVC    CBLKNEXT,LASTGM     GET PREV GETMAINED ADDR.            00017700
+         ST     R5,LASTGM           SAVE ADDR OF GM AREA.               00017800
+         LA     R7,CBLKGRPS        POINTER FOR GROUP                    00017900
+*                                                                       00018000
+         LA     R1,8               MAX                                  00018100
+         TRT    USERID,TRTBLANK    FIND BLANK                           00018200
+         BZ     MOVEUID            GO MOVE USERID                       00018300
+         S      R1,=A(USERID)      SUBTRACT BEGINNING                   00018400
+MOVEUID  STC    R1,CBLKUSRL        SAVE LENGTH                          00018500
+         MVC    CBLKUSRI,USERID    MOVE USERID                          00018600
+*                                                                       00018700
+         LA     R1,8               MAX                                  00018800
+         TRT    GROUP,TRTBLANK     FIND BLANK                           00018900
+         BZ     MOVEGRP            GO MOVE GROUP                        00019000
+         S      R1,=A(GROUP)       SUBTRACT BEGINNING                   00019100
+MOVEGRP  STC    R1,CBLKGRPL        SAVE LENGTH                          00019200
+         MVC    CBLKGRPN,GROUP     MOVE GROUP                           00019300
+*---------------------------------------------------------------------* 00019400
+*        Look up salt+hash for this UserID in the shadow table          00019500
+*---------------------------------------------------------------------* 00019600
+         L      R2,ADRSHAD         Dddress of shadow table              00019700
+         L      R3,SHADCNT         Number of shadow entries             00019800
+         LTR    R3,R3              Any entries?                         00019900
+         BZ     MOVENOSH           No -> zero hash (login denied)       00020000
+MOVESHLP CLC    0(8,R2),USERID     UserID match?                        00020100
+         BE     MOVESHFN           Yes, found                           00020200
+         LA     R2,48(,R2)         Next shadow entry                    00020300
+         BCT    R3,MOVESHLP        Check next                           00020400
+         B      MOVENOSH           Not found -> zero hash               00020500
+MOVESHFN MVC    CBLKSALT,8(R2)     Copy salt (8 bytes)                  00020600
+         MVC    CBLKHASH,16(R2)    Copy hash (32 bytes)                 00020700
+         B      MOVEOPER                                                00020800
+MOVENOSH XC     CBLKSALT,CBLKSALT  no salt                              00020900
+         XC     CBLKHASH,CBLKHASH  no hash -> nothing matches           00021000
+MOVEOPER MVC    CBLKFLG1,OPERFLAG  MOVE OPER FLAG TO ENTRY.             00021100
+*                                                                       00021200
+         B      ADDGROUP           ADD CONNECTS                         00021300
+*                                                                       00021400
+NEWGROUP CLC    GROUP,OLDGROUP      IS INPUT IN SORT SEQUENCE?          00021500
+*        BNH    ABEND2                 N - TELL ABOUT IT                00021600
+         MVC    OLDREC,RECORD       REFRESH LAST USER ID READ           00021700
+ADDGROUP GETMAIN RU,LV=CONNL,SP=231 GET AREA IN FETCH-PROTECTED CSA @07 00021800
+         LR     R6,R1              GM AREA ADDR TO WORK REG.            00021900
+         USING  CONNGRUP,R6        HELLO BALL ---                       00022000
+         XC     CONNGRUP(CONNL),CONNGRUP CLEAR AREA                     00022100
+         ST     R6,0(R7)           SAVE IN LAST POINTER                 00022200
+         LA     R7,CONNNEXT        SAVE FOR NEXT TIME                   00022300
+*                                                                       00022400
+         LA     R1,8               MAX                                  00022500
+         TRT    GROUP,TRTBLANK     FIND BLANK                           00022600
+         BZ     MOVECONN           GO MOVE GROUP                        00022700
+         S      R1,=A(GROUP)       SUBTRACT BEGINNING                   00022800
+MOVECONN STC    R1,CONNGRPL        SAVE LENGTH                          00022900
+         MVC    CONNGRPN,GROUP     MOVE GROUP                           00023000
+*                                                                       00023100
+         CLI    DFLTGRPF,C'*'      DEFAULT FLAG SET?                    00023200
+         BNE    READLOOP           NO, DON'T MOVE                       00023300
+         STC    R1,CBLKGRPL        SAVE LENGTH                          00023400
+         MVC    CBLKGRPN,GROUP     MOVE GROUP                           00023500
+         B      READLOOP           READ NEXT RECORD.                    00023600
+*                                                                       00023700
+ENDDATA  OC     OLDUSER,OLDUSER    EMPTY INPUT FILE?                    00023800
+         BZ     ABEND300              Y - TELL ABOUT IT AND TERMINATE.  00023900
+         L      R4,CJYUSERS-CJYRCVTD(R8)       GET OLD TABLE PTR        00024000
+         MVC    CJYUSERS-CJYRCVTD(,R8),LASTGM  UPDATE PTR TO NEW TABLE  00024100
+         B      ANYMORE                        GO CHK FOR ANY ENTRIES.  00024200
+*                                      N - FALL THROUGH                 00024300
+FREELOOP L      R4,CBLKNEXT        LOOP THRU OLD TABLE                  00024400
+         L      R7,CBLKGRPS-CBLK(R5)  GROUP LOOP                        00024500
+         B      FREECON2                                                00024600
+FREECONN L      R7,CONNNEXT        LOOP THRU OLD TABLE                  00024700
+         FREEMAIN RU,LV=CONNL,A=(R6),SP=231 FREE CURRENT ENTRY.     @07 00024800
+FREECON2 LTR    R6,R7              MORE ENTRIES?                        00024900
+         BNZ    FREECONN               Y - NEXT ENTRY                   00025000
+         FREEMAIN RU,LV=CBLKL,A=(R5),SP=231 FREE CURRENT ENTRY.     @07 00025100
+ANYMORE  LTR    R5,R4              MORE ENTRIES?                        00025200
+         BNZ    FREELOOP               Y - NEXT ENTRY                   00025300
+*                                                                       00025400
+         TM     TERMFLAG,TERMABND  WAS AN ABEND REQUESTED?              00025500
+         BO     ABEND200               Y-ABEND                          00025600
+         L     R2,ADRTBL               ADDRESS OF TEMP. CORE TABLE  @07 00025700
+         FREEMAIN RU,LV=80000,A=(2)    RELEASE WHILE STILL KEY=0    @07 00025800
+         L     R2,ADRSHAD              ADDRESS OF SHADOW TABLE          00025900
+         FREEMAIN RU,LV=48000,A=(2)    RELEASE SHADOW TABLE             00026000
+BYEBYE   MODESET MODE=PROB,KEY=NZERO   return to problem state          00026100
+         CLOSE (CJYUDATA)              close input dataset              00026200
+         DEQ   (SECURITY,USERS,,SYSTEM) release ENQ                 @01 00026300
+         WTO    'RAKFUIDS4  USER TABLE UPDATED'                         00026400
+         L      R13,SAVEAREA+4     LOAD CALLER'S SAVE AREA ADDR         00026500
+         RETURN (14,12),RC=0                                            00026600
+*                                                                       00026700
+ABEND100 WTO    'RAKFUIDS1  RCVT NOT PROPERLY INITIALIZED'          @01 00026800
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **'               @01 00026900
+         ABEND  100,,STEP                                               00027000
+*                                                                       00027100
+ABEND2   WTO    'RAKFUIDS2  INPUT DATA INVALID OR OUT OF SEQ.'      @01 00027200
+         MVC    PASSWORD,=C'********'                                   00027300
+         MVC    BADMSG+8(80),RECORD                                     00027400
+BADMSG   WTO    '                                                      X00027500
+                                           '                        @01 00027600
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **'               @01 00027700
+         OI     TERMFLAG,TERMABND          SET TO ABEND @ TERMINATION   00027800
+         LR     R4,R5                      GET LAST GM AREA ADDR AND    00027900
+         B      ANYMORE                    GO CLEAN THE GM CHAIN.       00028000
+*                                                                       00028100
+ABEND200 ABEND  200,,STEP              Y - ABEND !                      00028200
+*                                                                       00028300
+ABEND300 WTO    'RAKFUIDS3  EMPTY INPUT FILE ?!?!'                  @01 00028400
+         WTO    'RAKFUIDSX  ** PROGRAM TERMINATED **'               @01 00028500
+         ABEND  300,,STEP                                               00028600
+*                                                                   @03 00028700
+ABEND600 WTO    'RAKF008W illegal operation -- access denied'       @03 00028800
+         WTO    'RAKF008W   ** program terminated **'               @03 00028900
+         ABEND  600,,STEP                                           @03 00029000
+*                                                                       00029100
+TRTBLANK DC     XL256'00'          TABLE FOR TRT                        00029200
+         ORG    TRTBLANK+C' '      BLANK                                00029300
+         DC     X'04'                                                   00029400
+         ORG                                                            00029500
+*                                                                       00029600
+         PRINT  NOGEN                                                   00029700
+CJYUDATA DCB    DDNAME=RAKFUSER,MACRF=GM,EODAD=ENDLOOP,DSORG=PS     @07 00029800
+SHADOW   DCB    DDNAME=RAKFSHAD,MACRF=GM,EODAD=SHADEOD,DSORG=PS         00029900
+*                                                                       00030000
+RAKFPSAV DC     V(RAKFPSAV)        password change utility          @02 00030100
+RAKFADM  DC     CL39'RAKFADM'      facility name to authorize       @03 00030200
+*                                                                   @02 00030300
+SAVEAREA DS     18F                                                     00030400
+LASTGM   DC     F'0'                                                    00030500
+SECURITY DC     CL8'CJYRCVT'                                            00030600
+USERS    DC     CL8'CJYUSRS'                                            00030700
+TERMFLAG DC     X'00'                                                   00030800
+TERMABND EQU    X'01'                                                   00030900
+RECORD   DS     0XL80                                                   00031000
+USERID   DS     CL8                                                     00031100
+         DS     X                                                       00031200
+GROUP    DS     CL8                                                     00031300
+DFLTGRPF DS     X                      Default group flag (C'*')        00031400
+PASSWORD DS     CL8                    Is moved to SHADOW               00031500
+         DS     X                                                       00031600
+*                                                                       00031700
+OPERFLAG DS     X                                                       00031800
+         DS     XL(80-(*-RECORD))                                       00031900
+OLDREC   DS     0XL80                                                   00032000
+OLDUSER  DS     CL8                                                     00032100
+         DS     X                                                       00032200
+OLDGROUP DS     CL8                                                     00032300
+         DS     XL(80-(*-OLDREC))                                       00032400
+*                                                                       00032500
+SAVESORT DS    5F                      SAVE REGISTERS SORT          @07 00032600
+SWAPLAST DS    F                       LAST RECORD SWAPPED          @07 00032700
+ADRTBL   DS    F                       ADDRESS OF TEMP TABLE        @07 00032800
+ADRSHAD  DS    F                       ADDRESS OF SHADOW TABLE          00032900
+SHADCNT  DS    F                       NUMBER OF SHADOW ENTRIES         00033000
+*                                                                       00033100
+R0       EQU    00                                                      00033200
+R1       EQU    01                                                      00033300
+R2       EQU    02                                                      00033400
+R3       EQU    03                                                      00033500
+R4       EQU    04                                                      00033600
+R5       EQU    05                                                      00033700
+R6       EQU    06                                                      00033800
+R7       EQU    07                                                      00033900
+R8       EQU    08                                                      00034000
+R9       EQU    09                                                      00034100
+R10      EQU    10                                                      00034200
+R11      EQU    11                                                      00034300
+R12      EQU    12                                                      00034400
+R13      EQU    13                                                      00034500
+R14      EQU    14                                                      00034600
+R15      EQU    15                                                      00034700
+*                                                                       00034800
+         COPY    CJYRCVTD                                               00034900
+         COPY    CJYUCBLK                                               00035000
+         ICHPRCVT                                                       00035100
+         CVT     DSECT=YES                                              00035200
+         IHAPSA  DSECT=YES                                              00035300
+*                                                                       00035400
+         END                                                            00035500
