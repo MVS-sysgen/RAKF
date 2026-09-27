@@ -1,0 +1,364 @@
+         TITLE 'ESG-SECURITY DATA PROFILE PROCESSOR'                    00000100
+* CPARM='XREF(SHORT),OBJ,NODECK',LPARM='AC=1'                 CJYRPROF  00000200
+*      DD DSN=SYS1.MACLIB,DISP=SHR                                      00000300
+*      DD DSN=SYS1.MODGEN,DISP=SHR                                      00000400
+*      DD DSN=RAKF.MACLIB,DISP=SHR                                      00000500
+         EJECT                                                          00000600
+         MACRO                                                          00000700
+&LABEL   BASMAC &R1,&S2                                                 00000800
+&LABEL.  DC    0XL4'00',X'4D',AL.4(&R1.,0),S(&S2.)                      00000900
+         MEND                                                           00001000
+CJYRPROF CSECT                                                          00001100
+*                                                                       00001200
+**********************************************************************  00001300
+*                                                                    *  00001400
+*    COPYRIGHT (C) 1991 BY CRAIG J. YASUNA.  ALL RIGHTS RESERVED.    *  00001500
+*                                                                    *  00001600
+*    THIS SOFTWARE PRODUCT OR ANY OF ITS COMPONENTS MUST NOT BE      *  00001700
+*    SOLD, GIVEN, OR OTHERWISE DISTRIBUTED TO ANY OTHER COMPANY      *  00001800
+*    WITHOUT THE PRIOR WRITTEN PERMISSION OF:                        *  00001900
+*                                                                    *  00002000
+*                                  CRAIG J. YASUNA, PRESIDENT        *  00002100
+*                                  ENTERPRISE SYSTEMS GROUP          *  00002200
+*                                  2 MARC COURT                      *  00002300
+*                                  EDISON, NEW JERSEY 08820          *  00002400
+*                                                                    *  00002500
+*   !!!!! DO NOT RENUMBER !!!!! enter NUMBER OFF before editing      *  00002600
+*                               But better is letting SMP doing      *  00002700
+*                               the EDIT.                            *  00002800
+*                                                                    *  00002900
+**********************************************************************  00003000
+*                                                                   @01 00003100
+*    Change History                                                 @01 00003200
+*                                                                   @01 00003300
+*    2011/04/03 TRKF120 base version                                @01 00003400
+*    2011/04/18 RRKF001 introduce change history                    @01 00003500
+*                       enable comment lines in UDATA and PDATA     @01 00003600
+*    2011/04/29 RRKF003 if in-core PDATA table already exists check @03 00003700
+*                       for READ access to profile RAKFADM in the   @03 00003800
+*                       FACILITY class to ensure that only properly @03 00003900
+*                       authorized users can replace the in-core    @03 00004000
+*                       PDATA table                                 @03 00004100
+*                                                                   @03 00004200
+*    2022/10/21 RRKF007 Remove the need to sort the input in        @07 00004300
+*                       alphabetical order. Allocate a core table   @07 00004400
+*                       of 2,000 entries, read the PROFILES         @07 00004500
+*                       member into the table and sort the entries  @07 00004600
+*                       before processing.                          @07 00004700
+*                                                                   @07 00004800
+********************************************************************@07 00004900
+*                                                                       00005000
+         SAVE  (14,12),,CJYRPROF_&SYSDATE._&SYSTIME._                   00005100
+         LR    R12,R15                 SETUP BASE REG.                  00005200
+         USING CJYRPROF,R12            ESTABLISH ADDRESSABILITY         00005300
+         LA    R11,SAVEAREA            OUR SAVEAREA                     00005400
+         ST    R13,SAVEAREA+4          SAVE HIGH SAVEAREA               00005500
+         ST    R11,8(R13)              SAVE LOW SAVEAREA                00005600
+         LR    R13,R11                 POINT TO OUR SAVEAREA            00005700
+         L     R8,FLCCVT-PSA(R0)       GET CVT POINTER                  00005800
+         ICM   R8,B'1111',CVTRAC-CVTMAP(R8) IS RCVT POINTER ZERO?       00005900
+         BZ    NOGOOD                       YES, ABEND                  00006000
+         ICM   R8,B'1111',RCVTISTL-RCVT(R8) IS POINTER TO OUR AREA 0?   00006100
+         BZ    NOGOOD                       YES, ABEND                  00006200
+*                                                                   @03 00006300
+         ICM    R5,B'0111',CJYPROFS-CJYRCVTD(R8) does PDATA exist?  @03 00006400
+         BZ     OK2GO                   NO, go ahead                @03 00006500
+         RACHECK ENTITY=RAKFADM,CLASS='FACILITY',ATTR=READ authorize@03 00006600
+         LTR    R15,R15                RAKFADM granted?             @03 00006700
+         BNZ    ABEND600                NO, abend                   @03 00006800
+*                                                                       00006900
+         USING CJYRCVTD,R8                                              00007000
+OK2GO    DS    0H                      NO, CONTINUE                     00007100
+         ENQ   (SECURITY,PROFS,E,,SYSTEM),RET=HAVE                      00007200
+         OPEN  (CJYPDATA,(INPUT))      OPEN INPUT FILE                  00007300
+         MODESET MODE=SUP,KEY=ZERO     authorize ourselves              00007400
+*                                                                   @07 00007500
+         GETMAIN RU,LV=160000          GETMAIN ROOM FOR 2000 ENT.   @07 00007600
+         LR    R2,R1                   SAVE ITS ADDRESS             @07 00007700
+         ST    R1,ADRTBL               SAVE FOR LATER USE           @07 00007800
+         XR    R7,R7                   RECORD COUNTER               @07 00007900
+GETMLOOP DS    0H                                                   @07 00008000
+         XC    0(80,R2),0(R2)          CLEAR CORE TABLE ENTRY       @07 00008100
+         GET   CJYPDATA,RECORD         READ A RECORD                @07 00008200
+         CLI   RECORD,C'*'             COMMENT FIELD?               @07 00008300
+         BE    GETMLOOP                YES: SKIP                    @07 00008400
+         MVC   0(80,R2),RECORD         MOVE IN TEMPORARY TABLE      @07 00008500
+         LA    R7,1(,R7)               INCREASE COUNTER             @07 00008600
+         LA    R2,80(,R2)              NEXT ENTRY IN TABLE          @07 00008700
+         B     GETMLOOP                READ NEXT RECORD             @07 00008800
+ENDLOOP  DS    0H                                                   @07 00008900
+         L     R2,ADRTBL               POINT TO FIRST RECORD        @07 00009000
+         STM   R4,R8,SAVESORT                                       @07 00009100
+         CH    R7,=H'2'                LESS THAN 2 RECORDS?         @07 00009200
+         BL    READLOOP                DO NOT SORT                  @07 00009300
+         BCTR  R7,0                    MINUS 1                      @07 00009400
+         MH    R7,=H'80'               ** RECORD LENGTH             @07 00009500
+         LA    R7,0(R2,R7)             POINT TO LAST RECORD         @07 00009600
+*                                                                   @07 00009700
+SORT01   DS    0H                      START SORT                   @07 00009800
+         ST    R7,SWAPLAST             LAST RECORD SWAPPED          @07 00009900
+         L     R4,ADRTBL               POINT TO FIRST RECORD        @07 00010000
+         LR    R5,R4                   NEXT                         @07 00010100
+         LA    R5,80(,R4)                   RECORD                  @07 00010200
+SORT03   DS    0H                      SORT TEMPORARY TABLE         @07 00010300
+         CL    R4,SWAPLAST             LAST RECORD REACHED?         @07 00010400
+         BNL   SORT07                  YES: LOOP COMPLETE           @07 00010500
+         CLC   0(80,R4),0(R5)          COMPARE                      @07 00010600
+         BNH   SORT05                  HIGH: SWAP THESE RECORDS     @07 00010700
+         XC    0(80,R4),0(R5)          SWAP                         @07 00010800
+         XC    0(80,R5),0(R4)              THE                      @07 00010900
+         XC    0(80,R4),0(R5)                   RECORDS             @07 00011000
+         LR    R7,R4                   LAST RECORD SWAPPED IN R7    @07 00011100
+SORT05   DS    0H                      LOAD NEXT ENTRY              @07 00011200
+         LA    R4,80(,R4)              NEXT RECORD                  @07 00011300
+         LA    R5,80(,R5)              NEXT RECORD                  @07 00011400
+         B     SORT03                  COMPARE NEXT RECORD          @07 00011500
+SORT07   DS    0H                      ALL RECORDS DONE             @07 00011600
+         CL    R7,SWAPLAST             ARE THESE SWAPS EXECUTED?    @07 00011700
+         BL    SORT01                  IF YES, THEM SORT AGAIN      @07 00011800
+*                                      ELSE END OF SORT             @07 00011900
+         LM    R4,R8,SAVESORT          RESTORE REGISTERS            @07 00012000
+         L     R7,ADRTBL               START OF CORE TABLE          @07 00012100
+         SL    R7,=F'80'               POINT 1 RECORD BEFORE        @07 00012200
+*                                                                       00012300
+READLOOP DS    0H                                                       00012400
+         MVC   INRECOLD,INRECNEW       SAVE OLD I/P FOR COMPARE         00012500
+         LA    R7,80(,R7)              NEXT RECORD IN TABLE         @07 00012600
+         ICM   R1,15,0(R7)             END OF DATA?                 @07 00012700
+         BZ    EOFILE                  Y: ENTIRE TABLE PROCESSED    @07 00012800
+         MVC   INRECNEW,0(R7)          MOVE ENTRY                   @07 00012900
+         CLC   INRECNEW(ACCAUTH-INREC),INRECOLD  NEXT REC. > PREV?      00013000
+         BNH   OUTOFORD                          NO, NOT SORTED         00013100
+         CLC   INRECNEW(GROUPID-INREC),INRECOLD  SAME CLASS/ENTITY?     00013200
+         BE    PERMBLD                 YES, BUILD PERMIT RECORD         00013300
+         CLC   =CL8' ',GROUPID         IS THIS A UNIVERSAL RECORD?      00013400
+         BNE   NOUAR                   NO, A PERMIT WITHOUT UAR - ABEND 00013500
+         GETMAIN RU,LV=RPEL,SP=241                                      00013600
+         LR    R10,R1                  ESTABLISH ADDRESSABILITY         00013700
+         USING RPECBLK,R10               TO RPE                         00013800
+         XC    RPECBLK(RPEL),RPECBLK   INITIALIZE TO BINARY ZEROES      00013900
+         MVC   RPENEXT,LASTRPE         POINT TO PREVIOUS RPE            00014000
+         ST    R10,LASTRPE             SAVE -> THIS RPE                 00014100
+         LA    R11,RPEACCPT            SET PERMIT ANCHOR                00014200
+         LA    R1,L'RPECLASN           DEFAULT LENGTH IF NOTFOUND       00014300
+         TRT   CLASS,TRTTEST           SEARCH CLASS - BLANKS FOUND?     00014400
+         BZ    NOBLANKS                NO, LENGTH ALREADY IN R1         00014500
+         S     R1,=A(CLASS)            CALCULATE LENGTH OF DATA         00014600
+NOBLANKS DS    0H                                                       00014700
+         STC   R1,RPECLASL             SAVE LENGTH                      00014800
+         MVC   RPECLASN,CLASS            AND CLASS NAME                 00014900
+         XR    R2,R2                   CLEAR R2 FOR NOTFOUND            00015000
+         LA    R4,38                   PRESET LENGTH FOR FACILITY       00015100
+         CLC   =CL8'FACILITY',RPECLASN IS IT FACILITY?                  00015200
+         BE    TESTENT                 YES, TRT                         00015300
+         LA    R4,5                    PRESET LENGTH FOR DASDVOL        00015400
+         CLC   =CL8'DASDVOL',RPECLASN  IS IT DASDVOL?                   00015500
+         BE    TESTENT                 YES, TRT                         00015600
+         LA    R4,5                    PRESET LENGTH FOR TAPEVOL        00015700
+         CLC   =CL8'TAPEVOL',RPECLASN  IS IT TAPEVOL?                   00015800
+         BE    TESTENT                 YES, TRT                         00015900
+         LA    R4,43                   PRESET LENGTH FOR DATASET        00016000
+         CLC   =CL8'DATASET',RPECLASN  IS IT DATASET?                   00016100
+         BE    TESTENT                 YES, TRT                         00016200
+         LA    R4,7                    DEFAULT LENGTH IF NOTFOUND       00016300
+TESTENT  DS    0H                                                       00016400
+         LA    R1,1(R4)                DEFAULT LENGTH FOR SUBTRACTION   00016500
+         EX    R4,TRT                  EXECUTE THE TRT                  00016600
+         B     CONT                                                     00016700
+TRT      TRT   ENTITY(*-*),TRTTEST     SEARCH ENTITY FOR BLANK/*        00016800
+CONT     DS    0H                                                       00016900
+         B     BRANCTBL(R2)            AND WE FOUND...                  00017000
+BRANCTBL DS    0H                                                       00017100
+         B     NOTFND                  ... NO BLANKS/NO ASTERISKS       00017200
+         B     ASTRKFND                ... AN ASTERISK                  00017300
+         B     BLANKFND                ... A BLANK                      00017400
+ASTRKFND DS    0H                                                       00017500
+*        LA    R1,1(R1)                ADD 1 TO INCLUDE BLANK IN LENGTH 00017600
+BLANKFND S     R1,=A(ENTITY)           CALCULATE LENGTH                 00017700
+NOTFND   DS    0H                      IF NOTFOUND LENGTH ALREADY IN R1 00017800
+         STC   R1,RPEENTYL             SAVE LENGTH                      00017900
+         MVC   RPEENTYN,ENTITY           AND ENTITY NAME                00018000
+*                                                                       00018100
+         CLC   =CL8' ',ACCAUTH         IS THERE AN ACCESS AUTHORITY?    00018200
+         BE    NOACCAUT                NO, BLANK ACCESS AUTH. - ABEND   00018300
+*                                                                       00018400
+         LA    R1,PATTERN              BEGINNING OF TABLE               00018500
+         LA    R2,ROWLEN               LENGTH OF A ROW IN THE TABLE     00018600
+         LA    R3,PATTERN+PATTERNL-1   LAST BYTE OF TABLE               00018700
+AUTHLP1  DS    0H                                                       00018800
+         CLC   ACCAUTH,0(R1)           MATCH ON ACCESS AUTHORITY?       00018900
+         BE    MATCH1                  YES, MOVE IT IN                  00019000
+         BXLE  R1,R2,AUTHLP1           CHECK NEXT                       00019100
+MATCH1   MVC   RPEUACC,8(R1)           MOVE IN BIT PATTERN              00019200
+         B     READLOOP                SEE IF ANY MORE I/P RECORDS      00019300
+PERMBLD  DS    0H                                                       00019400
+         CLC   =CL8' ',GROUPID         IS THERE A GROUP/USERID?         00019500
+         BE    PERMINVL                NO, INVALID PERMIT RECORD- ABEND 00019600
+*                                                                       00019700
+         CLC   =CL8' ',ACCAUTH         IS THERE AN ACCESS AUTHORITY?    00019800
+         BE    NOACCAUT                NO, BLANK ACCESS AUTH. - ABEND   00019900
+*                                                                       00020000
+         GETMAIN RU,LV=RPEACCLN,SP=241                                  00020100
+         LR    R9,R1                   ESTABLISH ADDRESSABILITY         00020200
+         USING RPEACCLE,R9               TO ACCESS RECORD               00020300
+         XC    RPEACCLE(RPEACCLN),RPEACCLE INITIALIZE TO B'0'           00020400
+         ST    R9,0(R11)               ESTABLISH POINTER TO HERE        00020500
+         MVC   RPEAUSR,GROUPID         SAVE GROUP/USERID OF PERMIT      00020600
+*                                                                       00020700
+         LA    R1,PATTERN              BEGINNING OF TABLE               00020800
+         LA    R2,ROWLEN               LENGTH OF A ROW IN THE TABLE     00020900
+         LA    R3,PATTERN+PATTERNL-1   LAST BYTE OF TABLE               00021000
+AUTHLP2  DS    0H                                                       00021100
+         CLC   ACCAUTH,0(R1)           MATCH ON ACCESS AUTHORITY?       00021200
+         BE    MATCH2                  YES, MOVE IT IN                  00021300
+         BXLE  R1,R2,AUTHLP2           CHECK NEXT                       00021400
+MATCH2   MVC   RPEACS,8(R1)            MOVE IN BIT PATTERN              00021500
+         LA    R11,RPEANEXT            PROVIDE ANCHOR FOR NEXT PERMIT   00021600
+         B     READLOOP                SEE IF ANY MORE I/P RECORDS      00021700
+*                                                                       00021800
+EOFILE   DS    0H                                                       00021900
+         OC    LASTRPE,LASTRPE         WERE THERE ANY RECORDS I/P?      00022000
+         BZ    NOREC                   NO, ABEND                        00022100
+         L     R11,CJYPROFS            SAVE ADDRESS OF OLD CHAIN        00022200
+         MVC   CJYPROFS,LASTRPE        ACTIVATE NEW CHAIN               00022300
+         DROP  R8                                                       00022400
+         BASMAC R14,MORERPE            START TO FREE RPE'S              00022500
+*                                                                       00022600
+         DEQ   (SECURITY,PROFS,,SYSTEM)    RELEASE ENQ                  00022700
+         L     R2,ADRTBL               ADDRESS OF TEMP. CORE TABLE  @07 00022800
+         FREEMAIN RU,LV=160000,A=(2)   RELEASE WHILE STILL KEY=0    @07 00022900
+         MODESET MODE=PROB,KEY=NZERO   return to problem state          00023000
+         CLOSE (CJYPDATA)              CLOSE I/P DATASET                00023100
+         WTO   'RAKFPROF7  RAKF PROFILES UPDATED'                       00023200
+         L     R13,4(R13)              RESTORE HSA                      00023300
+         RETURN (14,12),,RC=0          END O.K.                         00023400
+FREERPE  DS    0H                                                       00023500
+         L     R8,RPEACCPT             GET ACCESS LIST POINTER          00023600
+         B     MOREACC                 SEE IF ANY PERMITS               00023700
+FREEACC  DS    0H                                                       00023800
+         L     R8,RPEANEXT             GET -> NEXT ACC                  00023900
+         FREEMAIN RU,LV=RPEACCLN,A=(R9),SP=241    FREE CURRENT RPE      00024000
+MOREACC  DS    0H                                                       00024100
+         LTR   R9,R8                   ANY MORE PERMITS?                00024200
+         BNZ   FREEACC                 YES, DELETE THEM                 00024300
+*                                                                       00024400
+         L     R11,RPENEXT             GET -> NEXT RPE                  00024500
+         FREEMAIN RU,LV=RPEL,A=(R10),SP=241   FREE CURRENT RPE          00024600
+MORERPE  DS    0H                                                       00024700
+         LTR   R10,R11                 ANYMORE RPE'S?                   00024800
+         BNZ   FREERPE                 YES, FREE THEM                   00024900
+         BR    R14                     RETURN TO END RUN                00025000
+*                                                                       00025100
+NOGOOD   DS    0H                                                       00025200
+         WTO   'RAKFPROF1  RCVT NOT PROPERLY INITIALIZED'               00025300
+         WTO   'RAKFPROF1  **  PROGRAM TERMINATED  **'                  00025400
+         ABEND 100,,STEP                                                00025500
+*                                                                       00025600
+NOREC    DS    0H                                                       00025700
+         WTO   'RAKFPROF2  NO RECORDS INPUT FROM CJYPDATA'              00025800
+         WTO   'RAKFPROF2  **  PROGRAM TERMINATED  **'                  00025900
+         ABEND 200,,STEP                                                00026000
+*                                                                       00026100
+OUTOFORD DS    0H                                                       00026200
+         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            00026300
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       00026400
+         BASMAC R14,BADMSG             WRITE BADMSG                     00026500
+         WTO   'RAKFPROF3  I/P RECORDS OUT OF ORDER'                    00026600
+         WTO   'RAKFPROF3  **  PROGRAM TERMINATED  **'                  00026700
+         ABEND 300,,STEP                                                00026800
+*                                                                       00026900
+NOUAR    DS    0H                                                       00027000
+         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            00027100
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       00027200
+         BASMAC R14,BADMSG             WRITE BADMSG                     00027300
+         WTO   'RAKFPROF4  PERMIT RECORD WITHOUT UNIVERSAL ACCESS RECOR*00027400
+               D'                                                       00027500
+         WTO   'RAKFPROF4  **  PROGRAM TERMINATED  **'                  00027600
+         ABEND 400,,STEP                                                00027700
+*                                                                       00027800
+PERMINVL DS    0H                                                       00027900
+         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            00028000
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       00028100
+         BASMAC R14,BADMSG             WRITE BADMSG                     00028200
+         WTO   'RAKFPROF5  PERMIT RECORD WITHOUT GROUPID/USERID'        00028300
+         WTO   'RAKFPROF5  **  PROGRAM TERMINATED  **'                  00028400
+         ABEND 500,,STEP                                                00028500
+*                                                                       00028600
+NOACCAUT DS    0H                                                       00028700
+         L     R11,LASTRPE             SETUP FOR RPE CLEANUP            00028800
+         BASMAC R14,MORERPE            GO CLEANUP AND RETURN HERE       00028900
+         BASMAC R14,BADMSG             WRITE BADMSG                     00029000
+         WTO   'RAKFPROF6  ENTITY RECORD WITH NO ACCESS AUTHORITY'      00029100
+         WTO   'RAKFPROF6  **  PROGRAM TERMINATED  **'                  00029200
+         ABEND 500,,STEP                                                00029300
+*                                                                   @03 00029400
+ABEND600 WTO    'RAKF008W illegal operation -- access denied'       @03 00029500
+         WTO    'RAKF008W   ** program terminated **'               @03 00029600
+         ABEND  600,,STEP                                           @03 00029700
+*                                                                       00029800
+BADMSG   DS    0H                                                       00029900
+         MVC   BADMSGN+18(80),INRECNEW                                  00030000
+BADMSGN  WTO   'RAKFPROF8                                              X00030100
+                                                  '                     00030200
+         BR    R14                                                      00030300
+**********************                                                  00030400
+         PRINT NOGEN                                                    00030500
+SAVEAREA DS    18F                                                      00030600
+LASTRPE  DC    F'0'                                                     00030700
+LASTACC  DC    F'0'                                                     00030800
+SECURITY DC    CL8'CJYRCVT'                                             00030900
+PROFS    DC    CL8'CJYPROFS'                                            00031000
+INREC    DS    0CL80                                                    00031100
+INRECNEW DS    0CL80                                                    00031200
+CLASS    DC    XL8'00'                                                  00031300
+ENTITY   DC    XL44'00'                                                 00031400
+GROUPID  DC    XL8'00'                                                  00031500
+ACCAUTH  DC    XL8'00'                                                  00031600
+         DC    XL(80-(*-INREC))'00'                                     00031700
+INRECOLD DC    XL80'00'                                                 00031800
+PATTERN  EQU   *                                                        00031900
+         DC    CL8'ALTER   ',AL1(RACFALTR)                              00032000
+ROWLEN   EQU   *-PATTERN                                                00032100
+         DC    CL8'CONTROL ',AL1(RACFCNTL)                              00032200
+         DC    CL8'UPDATE  ',AL1(RACFUPDT)                              00032300
+         DC    CL8'READ    ',AL1(RACFREAD)                              00032400
+         DC    CL8'EXEC    ',AL1(RACFEXEC)                              00032500
+         DC    CL8'NONE    ',AL1(RACFNONE)                              00032600
+PATTERNL EQU   *-PATTERN                                                00032700
+TRTTEST  DC    XL256'00'               TABLE TO FIND BLANK/ASTERISK     00032800
+         ORG   TRTTEST+C' '            SETUP FLAG FOR BLANK             00032900
+         DC    X'08'                                                    00033000
+         ORG   TRTTEST+C'*'            SETUP FLAG FOR ASTERISK          00033100
+         DC    X'04'                                                    00033200
+         ORG                                                            00033300
+CJYPDATA DCB   MACRF=GM,EODAD=ENDLOOP,DDNAME=RAKFPROF,DSORG=PS      @07 00033400
+*                                                                   @03 00033500
+RAKFADM  DC     CL39'RAKFADM'      facility name to authorize       @03 00033600
+*                                                                   @03 00033700
+SAVESORT DS    5F                      SAVE REGISTERS SORT          @07 00033800
+SWAPLAST DS    F                       LAST RECORD SWAPPED          @07 00033900
+ADRTBL   DS    F                       ADDRESS OF TEMP TABLE        @07 00034000
+RECORD   DS    CL80                                                 @07 00034100
+*                                                                   @07 00034200
+         COPY  CJYRCVTD                                                 00034300
+         COPY  CJYPCBLK                                                 00034400
+         IHAPSA DSECT=YES                                               00034500
+         CVT    DSECT=YES                                               00034600
+         ICHPRCVT                                                       00034700
+R0       EQU   00                                                       00034800
+R1       EQU   01                                                       00034900
+R2       EQU   02                                                       00035000
+R3       EQU   03                                                       00035100
+R4       EQU   04                                                       00035200
+R5       EQU   05                                                       00035300
+R6       EQU   06                                                       00035400
+R7       EQU   07                                                       00035500
+R8       EQU   08                                                       00035600
+R9       EQU   09                                                       00035700
+R10      EQU   10                                                       00035800
+R11      EQU   11                                                       00035900
+R12      EQU   12                                                       00036000
+R13      EQU   13                                                       00036100
+R14      EQU   14                                                       00036200
+R15      EQU   15                                                       00036300
+         END   CJYRPROF                                                 00036400
