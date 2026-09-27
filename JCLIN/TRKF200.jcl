@@ -72,7 +72,7 @@
 //SYSLMOD  DD  DISP=SHR,DSN=SYS1.LINKLIB                                        
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ                                        
 //SYSLIN   DD  *                                                                
- INCLUDE SYSPUNCH(RAKFPROF)                                                     
+ INCLUDE SYSPUNCH(CJYRPROF)                                                     
  ENTRY   CJYRPROF                                                               
  ALIAS   RAKFPROF                                                               
  NAME    CJYRPROF(R)                                                            
