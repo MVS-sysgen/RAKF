@@ -27,10 +27,10 @@ ICHSEC00 CSECT                                                          00000200
 *           - initialize user table                                  *  00002700
 *                                                                    *  00002800
 * REQUIREMENTS: - ICHSFR00 in LPA                                    *  00002900
-*               - RAKFPROF and RAKFUSER in linklist                  *  00003000
+*               - CJYRPROF and CJYRUIDS in linklist                  *  00003000
 *               - parmlib defined through ddname IEFPARM             *  00003100
 *               - user and profile table DDs as needed               *  00003200
-*                 by RAKFPROF and RAKFUSER                           *  00003300
+*                 by CJYRPROF and CJYRUIDS                           *  00003300
 *                                                                    *  00003400
 **********************************************************************  00003500
 *                                                                       00003600
@@ -121,14 +121,14 @@ INIT     MODESET MODE=SUP,KEY=ZERO authorize ourselves                  00010900
          BALR  R14,R15             call it                              00012100
          MODESET MODE=PROB,KEY=NZERO return to problem state            00012200
          WTO   'RAKF003I RAKF is now active',ROUTCDE=(2) tell operator  00012300
-PROFUSER LOAD  EP=RAKFPROF         load profile updater                 00012400
+PROFUSER LOAD  EP=CJYRPROF         load profile updater                 00012400
          LR    R15,R0              address of entry point               00012500
          BALR  R14,R15             call it                              00012600
-         DELETE EP=RAKFPROF        remove it                            00012700
-         LOAD  EP=RAKFUSER         load user updater                    00012800
+         DELETE EP=CJYRPROF        remove it                            00012700
+         LOAD  EP=CJYRUIDS         load user updater                    00012800
          LR    R15,R0              address of entry point               00012900
          BALR  R14,R15             call it                              00013000
-         DELETE EP=RAKFUSER        remove it                            00013100
+         DELETE EP=CJYRUIDS        remove it                            00013100
          B     RETURN              return                               00013200
 *                                                                       00013300
 * data area                                                             00013400
