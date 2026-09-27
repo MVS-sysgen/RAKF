@@ -109,6 +109,12 @@
          to process the USERS member and the shadow data set.                   
       5: TSO commands ADDSD, RDEFINE, PERMIT and RDELETE                        
          to process the PROFILES member.               
+      6: RACROUTE REQUEST=AUTH, DEFINE and VERIFY fully                         
+         supported.                                                             
+      7: All classes tested against the Class Descriptor                        
+         table in the RCVT (pointed to by RCVTCDTP).                            
+      8: Class Descriptor Table redefined in module                             
+         CJYRCVT.                                                               
  
    COMPONENT:                                                    
       Resource Access Control Facility (RACF/RAKF).              
