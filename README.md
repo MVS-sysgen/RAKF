@@ -971,6 +971,7 @@ changed.
   `SYS2.CMDLIB`, with TSO HELP members in `SYS2.HELP`. They locate the
   control datasets with TSO **IKJDAIR** dynamic allocation, so no DD
   statements are required.
+- Support RACROUTE REQUEST=(FAST)AUTH, REQUEST=DEFINE, REQUEST=VERIFY.
 - Initial credentials are hashed at release-generation time.
   `generate_release.py` blanks the password column and emits the shadow
   records into the install stream, so no clear-text password reaches the
