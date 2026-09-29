@@ -194,7 +194,7 @@ MOVEGRP  STC    R1,CBLKGRPL        SAVE LENGTH                          00019200
 *---------------------------------------------------------------------* 00019400
 *        Look up salt+hash for this UserID in the shadow table          00019500
 *---------------------------------------------------------------------* 00019600
-         L      R2,ADRSHAD         Dddress of shadow table              00019700
+         L      R2,ADRSHAD         Address of shadow table              00019700
          L      R3,SHADCNT         Number of shadow entries             00019800
          LTR    R3,R3              Any entries?                         00019900
          BZ     MOVENOSH           No -> zero hash (login denied)       00020000
