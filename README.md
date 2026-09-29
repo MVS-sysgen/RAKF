@@ -615,7 +615,7 @@ RDEFINE profile CLASS(class) UACC(NONE|READ|UPDATE|ALTER)
 Required: 'profile', CLASS. Default: UACC(NONE)
 
 PERMIT profile CLASS(class) ID(group) ACCESS(NONE|READ|UPDATE|ALTER)
-Required: 'profile', CLASS, ID. Default: UACC(NONE)
+Required: 'profile', CLASS, ID. Default: ACCESS(NONE)
 An alias of PERMIT is PE
 
 RDELETE profile CLASS(class) ID(group)
