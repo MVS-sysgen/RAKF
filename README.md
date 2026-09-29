@@ -966,10 +966,11 @@ changed.
   `SYS1.SECURE.*` profile at `UACC(NONE)`.
 - `RAKFUSER` loads the shadow into the in-core table at IPL through the new
   `RAKFSHAD` DD, added to `MSTJCL00` by usermod `ZPY0001`.
-- New `ADDUSER` and `ALTUSER` command processors, installed into
+- New `ADDUSER`, `ALTUSER', 'DELUSER', 'ADDSD', 'RDEFINE', PERMIT
+  and 'RDELETE'command processors, installed into
   `SYS2.CMDLIB`, with TSO HELP members in `SYS2.HELP`. They locate the
-  control datasets by reading the `RAKFUSER` procedure and allocate them
-  dynamically, so no DD statements are required.
+  control datasets with TSO **IKJDAIR** dynamic allocation, so no DD
+  statements are required.
 - Initial credentials are hashed at release-generation time.
   `generate_release.py` blanks the password column and emits the shadow
   records into the install stream, so no clear-text password reaches the
@@ -1204,7 +1205,7 @@ CVTSAF   EQU   248 CVTSAF doesn't exist but is a reserved field in 3.8J
 //*
 //* Desc: Run RACIND Utility
 //*
-//* FUNTION: Act upon control statements read from SYSIN to set or
+//* FUNCTION: Act upon control statements read from SYSIN to set or
 //*          clear the RACF indicator of VSAM catalog entries. The
 //*          following control statements are valid:
 //*
