@@ -582,7 +582,7 @@ RACINDGM GETMAIN RC,LV=ACEEL,SP=(R2) DO GETMAIN                         00056500
          CLI   CBLKFLG1,C'Y'       Operations authority?           @rp2 00058200
          BNE   RACINNOP            No: do not set flag                  00058300
          OI    ACEEFLG1,ACEEOPER   Set OPERATIONS authority        @rp2 00058400
-RACINNOP CLI   CBLKFLG1,C'Y'       SPECIAL authority?              @rp2 00058500
+RACINNOP CLI   CBLKSPEC,C'Y'       SPECIAL authority?              @rp2 00058500
          BNE   RACIPROC            No: do not set flag             @rp2 00058600
          OI    ACEEFLG1,ACEESPEC   Set SPECIAL authority           @rp2 00058700
 RACIPROC MVC   ACEEPROC,=CL8' '    Blank STC procedure name        @rp2 00058800
