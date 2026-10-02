@@ -96,6 +96,7 @@
   DEL  MAC(LPABACK)  .                                                  00009600
   DEL  MAC(LPAREST)  .                                                  00009700
   DEL  MAC(JRACIND)  .                                                  00009800
+  DEL  MAC(SPECIAL)  .                                                  00009810
   DEL  MAC(RAKFRMV)  .                                                  00009900
   DEL  MAC(RAKF2MVS) .                                                  00010000
   DEL  MAC(CJYPCBLK) .                                                  00010100
@@ -151,6 +152,7 @@
   DEL  MAC(LPABACK)  .                                                  00015100
   DEL  MAC(LPAREST)  .                                                  00015200
   DEL  MAC(JRACIND)  .                                                  00015300
+  DEL  MAC(SPECIAL)  .                                                  00015310
   DEL  MAC(RAKFRMV)  .                                                  00015400
   DEL  MAC(RAKF2MVS) .                                                  00015500
   DEL  MAC(CJYPCBLK) .                                                  00015600
