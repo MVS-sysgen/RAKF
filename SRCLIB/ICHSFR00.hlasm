@@ -76,1034 +76,1046 @@ ICHSFR00 CSECT                                                          00000600
 *                       class is in the Class Descriptor table     @rp2 00007600
 *                       (CDT) pointed to by RCVTCDTP.              @rp2 00007700
 *                                                                  @rp2 00007800
-********************************************************************@02 00007900
-*                                                                       00008000
-         USING AUTHDS,R10                                               00008100
-         SAVE  (14,12),,ICHSFR00.&SYSDATE..&SYSTIME                     00008200
-         LR    R12,R15                                                  00008300
-         LA    R11,2048(,R12)      SECOND BASE (COVERS 4096-8191)       00008400
-         LA    R11,2048(,R11)      R11 = ICHSFR00 + 4096                00008500
-         USING ICHSFR00,R12,R11    Base registers                  @rp2 00008600
-         USING ACEE,ACEEREG        ADDRESS ACEE                         00008700
-         USING PSA,0               ADDRESS PSA                          00008800
-         L     R9,24(R1)           Address exit work area (WORKA)       00008900
-         USING WORKSAVE,R9         ... HELLO SAVE AREA                  00009000
-         XC    WORKAREA(WORKAREL),WORKAREA CLEAR WORKAREA               00009100
-         ST    R13,WORKSAVE+4      Backward pointer                @rp2 00009200
-         ST    R9,8(,R13)          Forward pointer                 @rp2 00009300
-         LR    R13,R9              ADDRESS SAVE AREA                    00009400
-         DROP  R9                                                       00009500
-         USING WORKSAVE,R13        ... HELLO SAVE AREA                  00009600
-         MVC   WORKWTO,REALWTO     MOVE WTO SKEL                        00009700
-*                                                                       00009800
-STRTROUT LR    R9,R1               GET ADDR. OF SAF PARAMETER LIST      00009900
-         USING SAFP,R9             BASE FOR SAFP PARAMETER LIST         00010000
-         LA    R2,SAFPAU           RACHECK                              00010100
-         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00010200
-         BE    RACHECK             YES, GO ON                           00010300
-         LA    R2,SAFPFAU          FRACHECK                             00010400
-         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00010500
-         BE    FRACHECK            YES, GO ON                           00010600
-         LA    R2,SAFPDEF          RACDEF                               00010700
-         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00010800
-         BE    RACDEF              YES, GO ON                           00010900
-         LA    R2,SAFPVER          RACINIT                              00011000
-         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00011100
-         BE    RACINIT             YES, GO ON                           00011200
-         LA    R2,SAFPEXT          RACXTRT                              00011300
-         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00011400
-         BE    RACXTRT             YES, GO ON                           00011500
-         LA    R2,SAFPLIS          RACLIST                              00011600
-         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00011700
-         BE    RTRNGOOD            YES, GO ON                           00011800
-         B     RTRN0000            GO AWAY                              00011900
-         TITLE 'RACHECK PROCESSING (EXISTING RESOURCE) '                00012000
-*---------------------------------------------------------------------* 00012100
-*        RACHECK or RACROUTE REQUEST=AUTH from the caller.              00012200
-*        If the caller uses a RACROUTE, the flag ACHK31IN is            00012300
-*        set, telling you that the ENTITY and CLASS are in              00012400
-*        a different place in the RACHECK parameter list.               00012500
-*---------------------------------------------------------------------* 00012600
-RACHECK  L     R8,SAFPRACP         OFFSET TO RACHECK PARAMETER LIST     00012700
-         AR    R8,R9               ADDR. OF RACHECK PARAMETER LIST.     00012800
-         USING ACHKLIST,R8                                              00012900
-RACHLN31 XR    R2,R2               CLEAR R2                             00013000
-         XR    ENTYREG,ENTYREG     Clear entity register           @rp2 00013100
-         TM    ACHKFLG1,ACHK31IN   Are the 31 bit addresses used?  @rp2 00013200
-         BZ    RACHNC31            No: take the old address        @rp2 00013300
-         ICM   ENTYREG,B'1111',ACHKEN31 Get entity from 31 bit fld @rp2 00013400
-         ICM   R2,B'1111',ACHKCL31 Get CLASS from 31 bit field     @rp2 00013500
-         BNZ   RACHACEE            Found --> continue              @rp2 00013600
-         LA    R2,RACDDSNC         use our DSN CLASS               @rp2 00013700
-         B     RACHACEE            Carry on                        @rp2 00013800
-RACHNC31 ICM   ENTYREG,B'0111',ACHKENT GET ENTITY                       00013900
-         ICM   R2,B'0111',ACHKCLN  GET CLASS                            00014000
-         BNZ   RACHACEE            found --> continue                   00014100
-         LA    R2,RACDDSNC         use our DSN CLASS                    00014200
-*                                                                       00014300
-RACHACEE MVC   WORKCLAS,=CL8' '    BLANK IT OUT                         00014400
-         IC    R1,0(R2)            Length of class                      00014500
-         BCTR  R1,0                Minus 1 for EX                       00014600
-         EX    R1,RACHMVCC         MVC WORKCLAS(0),1(R2)                00014700
-         CLC   WORKCLAS(8),=CL8' ' CLASS blank?                         00014800
-         BNE   RACHNBLK               --> no, continue                  00014900
-         MVC   WORKCLAS,=CL8'DATASET' --> yes, assume DATASET           00015000
-RACHNBLK ICM   ACEEREG,B'1111',ACHKACEE POINT TO ACEE                   00015100
-         BNZ   RACHCHCK            NO ACEE -> ALLOW ACCES               00015200
-         L     R2,PSAAOLD          OUR ASCB                             00015300
-         L     R2,ASCBASXB-ASCB(R2) OUR ASXB                            00015400
-         ICM   ACEEREG,B'1111',ASXBSENV-ASXB(R2) ACEE                   00015500
-         BZ    RACHGOOD            WHO KNOWS                            00015600
-RACHCHCK IC    R2,ACHKFLG2         GET AUTH. REQ.                       00015700
-         SLL   R2,3                CONFORM TO RACDEF                    00015800
-         STC   R2,WORKAUTH         SAVE IT                              00015900
-         OC    WORKAUTH,ACHKFLG2   ADD BACK X'80'                       00016000
-         NI    WORKAUTH,X'F0'      TURN OFF LOW ORDER                   00016100
-*                                                                       00016200
-         TM    ACHKFLG1,ACHKLOGS   LOG SUPPRESSED?                      00016300
-         BZ    RACHCHK1            DO ENTITY CHECK                      00016400
-         OI    WORKFLAG,WORKNLOG   SUPPRESS LOG                         00016500
-*                                                                       00016600
-RACHCHK1 BAL   R10,ENTYCHCK        GO DO ENTITY CHECK                   00016700
-         B     RACHGOOD            GOOD RETURN                          00016800
-         B     RACHUNKN            RC4 - UNKN                           00016900
-         B     RACHFAIL            RC8 - FAIL                           00017000
-RACHMVCC MVC   WORKCLAS(0),1(R2)   MOVE CLASS << executed >>            00017100
-*                                                                       00017200
-RACHGOOD XC    SAFPRRET,SAFPRRET   NOTHING ...                          00017300
-         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00017400
-         B     RTRNGOOD            GO TO RC 200 CODE                    00017500
-*                                                                       00017600
-RACHUNKN MVC   SAFPRRET,=F'04'     NOT PROTECTED ...                    00017700
-         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00017800
-         B     RTRNWARN            GO TO RC 204 CODE                    00017900
-*                                                                       00018000
-RACHFAIL MVC   SAFPRRET,=F'08'     FAIL ....                            00018100
-         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00018200
-         B     RTRNFAIL            DO ANY EXCEPTIONS                    00018300
-         TITLE 'FRACHECK PROCESSING (EXISTING RESOURCE IN-CORE) '       00018400
-*---------------------------------------------------------------------* 00018500
-*        FRACHECK or RACROUTE REQUEST=FASTAUTH from the caller.         00018600
-*---------------------------------------------------------------------* 00018700
-FRACHECK L     R8,SAFPRACP         OFFSET TO RACHECK PARAMETER LIST     00018800
-         AR    R8,R9               ADDR. OF RACHECK PARAMETER LIST.     00018900
-         L     R2,ACHKCLNW         Class FRACHECK                  @rp2 00019000
-         LA    R2,0(,R2)           Clear high order byte           @rp2 00019100
-         L     ENTYREG,ACHKENTW    Get FRACHECK entity             @rp2 00019200
-         LA    ENTYREG,0(,ENTYREG) Clear high order byte           @rp2 00019300
-         TM    ACHKFLG1,ACHK31IN   Invoked from RACROUTE?          @rp2 00019400
-         BNO   FRACCN31            No: we are invoked from FRACHECK@rp2 00019500
-         L     R2,ACHKCL31         Take 31 bit addr from RACROUTE  @rp2 00019600
-         L     ENTYREG,ACHKEN31    Take 31 bit addr from RACROUTE  @rp2 00019700
-FRACCN31 MVC   WORKCLAS,0(R2)      Move class                           00019800
-         ICM   ACEEREG,B'1111',ACHKACEE Point to ACEE              @rp2 00019900
-         BNZ   FRACCHCK            GO DO CHECK                          00020000
-         L     R2,PSAAOLD          OUR ASCB                             00020100
-         L     R2,ASCBASXB-ASCB(R2) OUR ASXB                            00020200
-         ICM   ACEEREG,B'1111',ASXBSENV-ASXB(R2) ACEE                   00020300
-         BZ    FRACUNKN            UNKNOWN                              00020400
-FRACCHCK IC    R2,0(R8)            GET AUTH. REQ.                       00020500
-         SLL   R2,3                CONFORM TO RACDEF                    00020600
-         STC   R2,WORKAUTH         SAVE IT                              00020700
-         OC    WORKAUTH,0(R8)      ADD BACK X'80'                       00020800
-         NI    WORKAUTH,X'F0'      TURN OFF LOW ORDER                   00020900
-         BAL   R10,ENTYCHCK        GO DO ENTITY CHECK                   00021000
-         B     FRACGOOD            GOOD RETURN                          00021100
-         B     FRACUNKN            RC4 - UNKN                           00021200
-         B     FRACFAIL            RC8 - FAIL                           00021300
-*                                                                       00021400
-FRACGOOD XC    SAFPRRET,SAFPRRET   NOTHING ...                          00021500
-         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00021600
-         B     RTRNGOOD            GO TO RC 200 CODE                    00021700
-FRACUNKN MVC   SAFPRRET,=F'04'     NOT PROTECTED ...                    00021800
-         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00021900
-         B     RTRNWARN            GO TO RC 204 CODE                    00022000
-FRACFAIL MVC   SAFPRRET,=F'08'     FAIL ....                            00022100
-         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00022200
-         B     RTRNFAIL            DO ANY EXCEPTIONS                    00022300
-         TITLE 'RACDEF PROCESSING (NEW RESOURCE) '                      00022400
-*---------------------------------------------------------------------* 00022500
-*        RACDEF or RACROUTE REQUEST=DEFINE from the caller.             00022600
-*---------------------------------------------------------------------* 00022700
-RACDEF   L     R8,SAFPRACP         OFFSET TO RACDEF  PARAMETER LIST     00022800
-         AR    R8,R9               ADDR. OF RACDEF PARAMETER LIST.      00022900
-         USING RDDFLIST,R8                                              00023000
-         XC    SAFPRRET,SAFPRRET   PRIME RC/REAS = 0                    00023100
-         XC    SAFPRREA,SAFPRREA   PRIME RC/REAS = 0                    00023200
-         TM    RDDFFLGS,RDDFTDEL+RDDFNEWN DELETE OR NEWNAME             00023300
-         BZ    RACDNDEL            NOT DELETE                           00023400
-         TM    RDDFFLG2,RDDFCHKA   CHECKAUTH SPEC.?                     00023500
-         BZ    RACDGOOD            NO, RC=0                             00023600
-*                                                                       00023700
-RACDNDEL XR    ENTYREG,ENTYREG     CLEAR ENTYREG                        00023800
-         XR    R2,R2               Clear R2 (to contain CLASS)     @rp2 00023900
-         TM    RDDFFLGS,RDDF31IN   31 bit mode from RACROUTE?           00024000
-         BO    RACDGCLS            Yes: take from 31 bit segment   @rp2 00024100
-         ICM   ENTYREG,B'0111',RDDFENT Get entity name                  00024200
-         ICM   R2,B'0111',RDDFCLNW CLASS ???                            00024300
-         BNZ   RACDACEE            Yes: carry on                   @rp2 00024400
-         LA    R2,RACDDSNC         Use our DATASET class           @rp2 00024500
-         B     RACDACEE            Carry on                        @rp2 00024600
-RACDGCLS ICM   ENTYREG,B'1111',RDDFEN31 Get entity from 31 bit     @rp2 00024700
-         ICM   R2,B'0111',RDDFCLNW Get class                       @rp2 00024800
-         BNZ   RACDACEE            We have the CLASS               @rp2 00024900
-         LA    R2,RACDDSNC         Use our DATASET class           @rp2 00025000
-RACDACEE MVC   WORKCLAS,=CL8' '    BLANK IT OUT                         00025100
-         IC    R1,0(R2)            LENGTH                               00025200
-         BCTR  R1,0                SUB 1 FOR MVC                        00025300
-         EX    R1,RACDMVCC         MVC WORKCLAS(0),1(R2)                00025400
-         CLC   WORKCLAS(8),=CL8' ' CLASS blank?                         00025500
-         BNE   RACDNBLK               --> no, continue                  00025600
-         MVC   WORKCLAS,=CL8'DATASET' --> yes, assume DATASET           00025700
-RACDNBLK ICM   ACEEREG,B'1111',RDDFACEE POINT TO ACEE                   00025800
-         BNZ   RACDCHCK            GO CHECK                             00025900
-         L     R2,PSAAOLD          OUR ASCB                             00026000
-         L     R2,ASCBASXB-ASCB(R2) OUR ASXB                            00026100
-         ICM   ACEEREG,B'1111',ASXBSENV-ASXB(R2) ACEE                   00026200
-         BZ    RACDGOOD            WHO KNOWS                            00026300
-RACDCHCK MVI   WORKAUTH,RACFALTR   MOVE AUTH REQ.                       00026400
-*                                                                       00026500
-         TM    RDDFFLG2,RDDFRFI    RACFIND IND?                         00026600
-         BZ    RACDCHK1            NO, DO ENTITY CHECK                  00026700
-         OI    WORKFLAG,WORKNLOG   YES, SUPPRESS LOG                    00026800
-*                                                                       00026900
-RACDCHK1 BAL   R10,ENTYCHCK        GO DO ENTITY CHECK                   00027000
-         B     RACDNEW             GOOD RETURN - CHECK RENAME           00027100
-         B     RACDNEW             RC4 - UNKN                           00027200
-         B     RACDFAIL            RC8 - FAIL                           00027300
-RACDMVCC MVC   WORKCLAS(0),1(R2)   MOVE CLASS                           00027400
-RACDDSNC DC    X'07',CL8'DATASET'  DATASET CLASS                        00027500
+*                       Permit all resources in the TAPEVOL class  @rp2 00007900
+*                       if the user has the OPERATIONS authority   @rp2 00008000
+*                                                                  @rp2 00008100
+*                       Turn on ACEESPEC if the user has the       @rp2 00008200
+*                       SPECIAL authority and move the APPL        @rp2 00008300
+*                       from RACINIT into ACEEAPLN                 @rp2 00008400
+*                                                                  @rp2 00008500
+********************************************************************@02 00008600
+*                                                                       00008700
+         USING AUTHDS,R10                                               00008800
+         SAVE  (14,12),,ICHSFR00.&SYSDATE..&SYSTIME                     00008900
+         LR    R12,R15                                                  00009000
+         LA    R11,2048(,R12)      SECOND BASE (COVERS 4096-8191)       00009100
+         LA    R11,2048(,R11)      R11 = ICHSFR00 + 4096                00009200
+         USING ICHSFR00,R12,R11    Base registers                  @rp2 00009300
+         USING ACEE,ACEEREG        ADDRESS ACEE                         00009400
+         USING PSA,0               ADDRESS PSA                          00009500
+         L     R9,24(R1)           Address exit work area (WORKA)       00009600
+         USING WORKSAVE,R9         ... Base our save area          @rp2 00009700
+         XC    WORKAREA(WORKAREL),WORKAREA CLEAR WORKAREA               00009800
+         ST    R13,WORKSAVE+4      Backward pointer                @rp2 00009900
+         ST    R9,8(,R13)          Forward pointer                 @rp2 00010000
+         LR    R13,R9              ADDRESS SAVE AREA                    00010100
+         DROP  R9                                                       00010200
+         USING WORKSAVE,R13        ... HELLO SAVE AREA                  00010300
+         MVC   WORKWTO,REALWTO     MOVE WTO SKEL                        00010400
+*                                                                       00010500
+STRTROUT LR    R9,R1               GET ADDR. OF SAF PARAMETER LIST      00010600
+         USING SAFP,R9             BASE FOR SAFP PARAMETER LIST         00010700
+         LA    R2,SAFPAU           RACHECK                              00010800
+         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00010900
+         BE    RACHECK             YES, GO ON                           00011000
+         LA    R2,SAFPFAU          FRACHECK                             00011100
+         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00011200
+         BE    FRACHECK            YES, GO ON                           00011300
+         LA    R2,SAFPDEF          RACDEF                               00011400
+         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00011500
+         BE    RACDEF              YES, GO ON                           00011600
+         LA    R2,SAFPVER          RACINIT                              00011700
+         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00011800
+         BE    RACINIT             YES, GO ON                           00011900
+         LA    R2,SAFPEXT          RACXTRT                              00012000
+         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00012100
+         BE    RACXTRT             YES, GO ON                           00012200
+         LA    R2,SAFPLIS          RACLIST                              00012300
+         CH    R2,SAFPREQT         CHECK REQUEST TYPE                   00012400
+         BE    RTRNGOOD            YES, GO ON                           00012500
+         B     RTRN0000            GO AWAY                              00012600
+         TITLE 'RACHECK PROCESSING (EXISTING RESOURCE) '                00012700
+*---------------------------------------------------------------------* 00012800
+*        RACHECK or RACROUTE REQUEST=AUTH from the caller.              00012900
+*        If the caller uses a RACROUTE, the flag ACHK31IN is            00013000
+*        set, telling you that the ENTITY and CLASS are in              00013100
+*        a different place in the RACHECK parameter list.               00013200
+*---------------------------------------------------------------------* 00013300
+RACHECK  L     R8,SAFPRACP         OFFSET TO RACHECK PARAMETER LIST     00013400
+         AR    R8,R9               ADDR. OF RACHECK PARAMETER LIST.     00013500
+         USING ACHKLIST,R8                                              00013600
+RACHLN31 XR    R2,R2               CLEAR R2                             00013700
+         XR    ENTYREG,ENTYREG     Clear entity register           @rp2 00013800
+         TM    ACHKFLG1,ACHK31IN   Are the 31 bit addresses used?  @rp2 00013900
+         BZ    RACHNC31            No: take the old address        @rp2 00014000
+         ICM   ENTYREG,B'1111',ACHKEN31 Get entity from 31 bit fld @rp2 00014100
+         ICM   R2,B'1111',ACHKCL31 Get CLASS from 31 bit field     @rp2 00014200
+         BNZ   RACHACEE            Found --> continue              @rp2 00014300
+         LA    R2,RACDDSNC         use our DSN CLASS               @rp2 00014400
+         B     RACHACEE            Carry on                        @rp2 00014500
+RACHNC31 ICM   ENTYREG,B'0111',ACHKENT GET ENTITY                       00014600
+         ICM   R2,B'0111',ACHKCLN  GET CLASS                            00014700
+         BNZ   RACHACEE            found --> continue                   00014800
+         LA    R2,RACDDSNC         use our DSN CLASS                    00014900
+*                                                                       00015000
+RACHACEE MVC   WORKCLAS,=CL8' '    BLANK IT OUT                         00015100
+         IC    R1,0(R2)            Length of class                      00015200
+         BCTR  R1,0                Minus 1 for EX                       00015300
+         EX    R1,RACHMVCC         MVC WORKCLAS(0),1(R2)                00015400
+         CLC   WORKCLAS(8),=CL8' ' CLASS blank?                         00015500
+         BNE   RACHNBLK               --> no, continue                  00015600
+         MVC   WORKCLAS,=CL8'DATASET' --> yes, assume DATASET           00015700
+RACHNBLK ICM   ACEEREG,B'1111',ACHKACEE POINT TO ACEE                   00015800
+         BNZ   RACHCHCK            NO ACEE -> ALLOW ACCES               00015900
+         L     R2,PSAAOLD          OUR ASCB                             00016000
+         L     R2,ASCBASXB-ASCB(R2) OUR ASXB                            00016100
+         ICM   ACEEREG,B'1111',ASXBSENV-ASXB(R2) ACEE                   00016200
+         BZ    RACHGOOD            WHO KNOWS                            00016300
+RACHCHCK IC    R2,ACHKFLG2         GET AUTH. REQ.                       00016400
+         SLL   R2,3                CONFORM TO RACDEF                    00016500
+         STC   R2,WORKAUTH         SAVE IT                              00016600
+         OC    WORKAUTH,ACHKFLG2   ADD BACK X'80'                       00016700
+         NI    WORKAUTH,X'F0'      TURN OFF LOW ORDER                   00016800
+*                                                                       00016900
+         TM    ACHKFLG1,ACHKLOGS   LOG SUPPRESSED?                      00017000
+         BZ    RACHCHK1            DO ENTITY CHECK                      00017100
+         OI    WORKFLAG,WORKNLOG   SUPPRESS LOG                         00017200
+*                                                                       00017300
+RACHCHK1 BAL   R10,ENTYCHCK        GO DO ENTITY CHECK                   00017400
+         B     RACHGOOD            GOOD RETURN                          00017500
+         B     RACHUNKN            RC4 - UNKN                           00017600
+         B     RACHFAIL            RC8 - FAIL                           00017700
+RACHMVCC MVC   WORKCLAS(0),1(R2)   MOVE CLASS << executed >>            00017800
+*                                                                       00017900
+RACHGOOD XC    SAFPRRET,SAFPRRET   NOTHING ...                          00018000
+         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00018100
+         B     RTRNGOOD            GO TO RC 200 CODE                    00018200
+*                                                                       00018300
+RACHUNKN MVC   SAFPRRET,=F'04'     NOT PROTECTED ...                    00018400
+         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00018500
+         B     RTRNWARN            GO TO RC 204 CODE                    00018600
+*                                                                       00018700
+RACHFAIL MVC   SAFPRRET,=F'08'     FAIL ....                            00018800
+         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00018900
+         B     RTRNFAIL            DO ANY EXCEPTIONS                    00019000
+         TITLE 'FRACHECK PROCESSING (EXISTING RESOURCE IN-CORE) '       00019100
+*---------------------------------------------------------------------* 00019200
+*        FRACHECK or RACROUTE REQUEST=FASTAUTH from the caller.         00019300
+*---------------------------------------------------------------------* 00019400
+FRACHECK L     R8,SAFPRACP         OFFSET TO RACHECK PARAMETER LIST     00019500
+         AR    R8,R9               ADDR. OF RACHECK PARAMETER LIST.     00019600
+         L     R2,ACHKCLNW         Class FRACHECK                  @rp2 00019700
+         LA    R2,0(,R2)           Clear high order byte           @rp2 00019800
+         L     ENTYREG,ACHKENTW    Get FRACHECK entity             @rp2 00019900
+         LA    ENTYREG,0(,ENTYREG) Clear high order byte           @rp2 00020000
+         TM    ACHKFLG1,ACHK31IN   Invoked from RACROUTE?          @rp2 00020100
+         BNO   FRACCN31            No: we are invoked from FRACHECK@rp2 00020200
+         L     R2,ACHKCL31         Take 31 bit addr from RACROUTE  @rp2 00020300
+         L     ENTYREG,ACHKEN31    Take 31 bit addr from RACROUTE  @rp2 00020400
+FRACCN31 MVC   WORKCLAS,0(R2)      Move class                           00020500
+         ICM   ACEEREG,B'1111',ACHKACEE Point to ACEE              @rp2 00020600
+         BNZ   FRACCHCK            GO DO CHECK                          00020700
+         L     R2,PSAAOLD          OUR ASCB                             00020800
+         L     R2,ASCBASXB-ASCB(R2) OUR ASXB                            00020900
+         ICM   ACEEREG,B'1111',ASXBSENV-ASXB(R2) ACEE                   00021000
+         BZ    FRACUNKN            UNKNOWN                              00021100
+FRACCHCK IC    R2,0(R8)            GET AUTH. REQ.                       00021200
+         SLL   R2,3                CONFORM TO RACDEF                    00021300
+         STC   R2,WORKAUTH         SAVE IT                              00021400
+         OC    WORKAUTH,0(R8)      ADD BACK X'80'                       00021500
+         NI    WORKAUTH,X'F0'      TURN OFF LOW ORDER                   00021600
+         BAL   R10,ENTYCHCK        GO DO ENTITY CHECK                   00021700
+         B     FRACGOOD            GOOD RETURN                          00021800
+         B     FRACUNKN            RC4 - UNKN                           00021900
+         B     FRACFAIL            RC8 - FAIL                           00022000
+*                                                                       00022100
+FRACGOOD XC    SAFPRRET,SAFPRRET   NOTHING ...                          00022200
+         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00022300
+         B     RTRNGOOD            GO TO RC 200 CODE                    00022400
+FRACUNKN MVC   SAFPRRET,=F'04'     NOT PROTECTED ...                    00022500
+         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00022600
+         B     RTRNWARN            GO TO RC 204 CODE                    00022700
+FRACFAIL MVC   SAFPRRET,=F'08'     FAIL ....                            00022800
+         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00022900
+         B     RTRNFAIL            DO ANY EXCEPTIONS                    00023000
+         TITLE 'RACDEF PROCESSING (NEW RESOURCE) '                      00023100
+*---------------------------------------------------------------------* 00023200
+*        RACDEF or RACROUTE REQUEST=DEFINE from the caller.             00023300
+*---------------------------------------------------------------------* 00023400
+RACDEF   L     R8,SAFPRACP         OFFSET TO RACDEF  PARAMETER LIST     00023500
+         AR    R8,R9               ADDR. OF RACDEF PARAMETER LIST.      00023600
+         USING RDDFLIST,R8                                              00023700
+         XC    SAFPRRET,SAFPRRET   PRIME RC/REAS = 0                    00023800
+         XC    SAFPRREA,SAFPRREA   PRIME RC/REAS = 0                    00023900
+         TM    RDDFFLGS,RDDFTDEL+RDDFNEWN DELETE OR NEWNAME             00024000
+         BZ    RACDNDEL            NOT DELETE                           00024100
+         TM    RDDFFLG2,RDDFCHKA   CHECKAUTH SPEC.?                     00024200
+         BZ    RACDGOOD            NO, RC=0                             00024300
+*                                                                       00024400
+RACDNDEL XR    ENTYREG,ENTYREG     CLEAR ENTYREG                        00024500
+         XR    R2,R2               Clear R2 (to contain CLASS)     @rp2 00024600
+         TM    RDDFFLGS,RDDF31IN   31 bit mode from RACROUTE?           00024700
+         BO    RACDGCLS            Yes: take from 31 bit segment   @rp2 00024800
+         ICM   ENTYREG,B'0111',RDDFENT Get entity name                  00024900
+         ICM   R2,B'0111',RDDFCLNW CLASS ???                            00025000
+         BNZ   RACDACEE            Yes: carry on                   @rp2 00025100
+         LA    R2,RACDDSNC         Use our DATASET class           @rp2 00025200
+         B     RACDACEE            Carry on                        @rp2 00025300
+RACDGCLS ICM   ENTYREG,B'1111',RDDFEN31 Get entity from 31 bit     @rp2 00025400
+         ICM   R2,B'0111',RDDFCLNW Get class                       @rp2 00025500
+         BNZ   RACDACEE            We have the CLASS               @rp2 00025600
+         LA    R2,RACDDSNC         Use our DATASET class           @rp2 00025700
+RACDACEE MVC   WORKCLAS,=CL8' '    BLANK IT OUT                         00025800
+         IC    R1,0(R2)            LENGTH                               00025900
+         BCTR  R1,0                SUB 1 FOR MVC                        00026000
+         EX    R1,RACDMVCC         MVC WORKCLAS(0),1(R2)                00026100
+         CLC   WORKCLAS(8),=CL8' ' CLASS blank?                         00026200
+         BNE   RACDNBLK               --> no, continue                  00026300
+         MVC   WORKCLAS,=CL8'DATASET' --> yes, assume DATASET           00026400
+RACDNBLK ICM   ACEEREG,B'1111',RDDFACEE POINT TO ACEE                   00026500
+         BNZ   RACDCHCK            GO CHECK                             00026600
+         L     R2,PSAAOLD          OUR ASCB                             00026700
+         L     R2,ASCBASXB-ASCB(R2) OUR ASXB                            00026800
+         ICM   ACEEREG,B'1111',ASXBSENV-ASXB(R2) ACEE                   00026900
+         BZ    RACDGOOD            WHO KNOWS                            00027000
+RACDCHCK MVI   WORKAUTH,RACFALTR   MOVE AUTH REQ.                       00027100
+*                                                                       00027200
+         TM    RDDFFLG2,RDDFRFI    RACFIND IND?                         00027300
+         BZ    RACDCHK1            NO, DO ENTITY CHECK                  00027400
+         OI    WORKFLAG,WORKNLOG   YES, SUPPRESS LOG                    00027500
 *                                                                       00027600
-RACDNEW  TM    RDDFFLGS,RDDFNEWN   NEWNAME SPEC?                        00027700
-         BNO   RACDCK18            CHECK 1.8 STUFF                      00027800
-         L     ENTYREG,RDDFNNAM    LOAD NEWNAME                         00027900
-         BAL   R10,ENTYCHCK        GO DO ENTITY CHECK                   00028000
-         B     RACDCK18            CHECK 1.8 STUFF                      00028100
-         B     RACDCK18            CHECK 1.8 STUFF                      00028200
-         B     RACDFAIL            RC8 - FAIL                           00028300
-*                                                                       00028400
-RACDCK18 EQU   *                                                        00028500
-*                                                                       00028600
-RACDCMCL EQU   *                                                        00028700
-         B     RACDGOOD            RC4 - UNKN                           00028800
-*                                                                       00028900
-RACDGOOD TM    WORKENTY,8          RC=8                                 00029000
-         BO    RACDFAIL            BYPASS RC=4                          00029100
-RACDNVFY TM    WORKENTY,4          RC=4                                 00029200
-         BO    RACDUNKN            AT LEAST 1 WARN                      00029300
-         TM    RDDFFLGS,RDDFCHGV   DELETE OR ADD                        00029400
-         BNZ   RACDGDD0            GOOD 0                               00029500
-         TM    RDDFFLG2,RDDFRFIY   RACFIND=YES                          00029600
-         BO    RACDGDD0            --> Yes, RC=0                        00029700
-         TM    RDDFFLG2,RDDFRFI    RACFIND=NO                           00029800
-         BNO   RACDGDD0            --> No, RC=0                         00029900
-         MVC   SAFPRREA,=F'04'     --> Yes, RC=0 & Reason=4             00030000
-RACDGDD0 XC    SAFPRRET,SAFPRRET   NOTHING ...                          00030100
-         B     RTRNGOOD            GO TO RC 200 CODE                    00030200
-*                                                                       00030300
-RACDUNKN MVC   SAFPRRET,=F'04'     NOT PROTECTED ...                    00030400
-         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00030500
-         B     RTRNWARN            GO TO RC 204 CODE                    00030600
-*                                                                       00030700
-RACDFAIL MVC   SAFPRRET,=F'08'     FAIL ....                            00030800
-         B     RTRNFAIL            DO ANY EXCEPTIONS                    00030900
-         TITLE 'RACXTRT CODE - RETRIEVE DATA FROM PROFILE'              00031000
-RACXTRT  L     R8,SAFPRACP         OFFSET TO RACXTRT PARAMETER LIST     00031100
-         AR    R8,R9               ADDR. OF RACXTRT PARAMETER LIST.     00031200
-         TM    3(R8),X'01'         EXTRACT ...                          00031300
-         BO    RACXEXTR            GO ON                                00031400
-         TM    3(R8),X'03'         EXTRACTN...                          00031500
-         BO    RACXEXTR            GO ON                                00031600
-         B     RACXUNKN            NOT YET SUPPORTED ...                00031700
-*                                                                       00031800
-RACXEXTR XR    R2,R2               CLEAR R2                             00031900
-         LH    R2,6(R8)            GET OFFSET TO VARIABLE STUFF.        00032000
-         AR    R2,R8               ADD BEGINNING OF RACXTRT             00032100
-         ICM   R3,B'1111',0(R2)    GET CLASS ADDRESS                    00032200
-         BZ    RACXUNKN            NONE ....                            00032300
-         CLC   =C'USER',0(R3)      USER CLASS ????                      00032400
-         BNE   RACXUNKN            NO, NOT SUPPORTED                    00032500
-*                                                                       00032600
-         ICM   R3,B'1111',8(R8)    GET ENTITY ADDRESS                   00032700
-         BNZ   RACXENTY            GOT ENTITY(USERNAME)                 00032800
-         ICM   ACEEREG,B'1111',X'14'(R2) ACEE REQ?                      00032900
-         BNZ   RACXACEE            GO ON...                             00033000
-         L     R3,PSAAOLD-PSA(0)   OUR ASCB                             00033100
-         L     R3,ASCBASXB-ASCB(R3) OUR ASXB                            00033200
-         ICM   ACEEREG,B'1111',ASXBSENV-ASXB(R3) ACEE                   00033300
-         BZ    RACXUNKN            WHO KNOWS                            00033400
-RACXACEE LA    R3,ACEEUSRI         GET ACEEUSER                         00033500
-RACXENTY ICM   R8,B'1111',X'0C'(R2) CHECK SEGMENT                       00033600
-         BZ    RACXUNKN            BASE NOT SUPPORTED                   00033700
-         CLC   =C'TSO',0(R8)       TSO SEGMENT?                         00033800
-         BNE   RACXUNKN            NO, NOT SUPPORTED                    00033900
-         B     RACXUNKN            GO THERE ANYWAY                      00034000
-*        FIELDS ...                                                     00034100
-*  GETMAIN AREA IN SP... & RETURN IN ...                                00034200
-*                                                                       00034300
-RACXUNKN MVC   SAFPRRET,=F'08'     NOT PROTECTED ...                    00034400
-         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00034500
-         B     RTRNWARN            GO TO RC 208 CODE                    00034600
-*                                                                       00034700
-         TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) - CHECK AUTH' 00034800
-*---------------------------------------------------------------------* 00034900
-*        RACINIT or RACROUTE REQUEST=VERIFY from the caller.            00035000
-*---------------------------------------------------------------------* 00035100
-RACINIT  L     R8,SAFPRACP         OFFSET TO RACINIT PARAMETER LIST     00035200
-         AR    R8,R9               ADDR. OF RACINIT PARAMETER LIST.     00035300
-         TM    3(R8),X'C0'         TEST FOR VERIFY                      00035400
-         BO    RTRN0000            ENVIR=VERIFY USED BY JES2 EARLY VFY  00035500
-*                                                                       00035600
-         L     R2,PSATOLD          ADDRESS TCB                          00035700
-         L     R2,TCBRBP-TCB(R2)   ADDRESS RB                           00035800
-         TM    RBSTAB1-RBSECT(R2),RBFTP CHECK RBTYPE                    00035900
-         BZ    RACIRACR            PRB DID RACROUTE                     00036000
-*                                                                       00036100
-         XR    R3,R3               CLEAR R3                             00036200
-         ICM   R3,B'0111',RBLINKB-RBSECT(R2) PRIOR RB                   00036300
-         S     R3,=A(RBSECT-RBPREFIX) SUBTRACT PFIX LENG                00036400
-         CLI   RBINTCOD-RBPREFIX+1(R3),X'83' SVC 131 (RACINIT SVC)      00036500
-         BNE   RACIRACR            SVC ISSUED RACROUTE                  00036600
-*                                                                       00036700
-         ICM   R2,B'0111',RBLINKB-RBSECT(R2) PRIOR RB                   00036800
-         TM    RBSTAB1-RBSECT(R2),RBFTP PRB?????                        00036900
-         BNZ   RACINAUT            NO, DON'T BOTHER WITH TABLE          00037000
-*                                                                       00037100
-         ICM   R2,B'0111',RBCDE1-RBSECT(R2) PRIOR RB                    00037200
-         BZ    RACINAUT            NO CDE                               00037300
-         L     R3,FLCCVT           LOAD CVT                             00037400
-         ICM   R3,B'1111',CVTRAC-CVTMAP(R3) CHECK RCVT                  00037500
-         BZ    RACIERR1            WHO KNOWS                            00037600
-         ICM   R3,B'1111',RCVTAUTP-RCVT(R3) CHECK AUTHORIZED CALLERS    00037700
-         BZ    RACINAUT            NO TABLE                             00037800
-*                                                                       00037900
-RACIAUTL CLC   =F'0',0(R3)         END OF TABLE?                        00038000
-         BE    RACINAUT            YES, SORRY                           00038100
-         CLC   CDNAME-CDENTRY(,R2),0(R3) IS THIS US?                    00038200
-         BE    RACIMDST            YES, BYPASS TESTAUTH                 00038300
-         LA    R3,12(,R3)          NEXT ENTRY                           00038400
-         B     RACIAUTL            GO ON                           @rp1 00038500
+RACDCHK1 BAL   R10,ENTYCHCK        GO DO ENTITY CHECK                   00027700
+         B     RACDNEW             GOOD RETURN - CHECK RENAME           00027800
+         B     RACDNEW             RC4 - UNKN                           00027900
+         B     RACDFAIL            RC8 - FAIL                           00028000
+RACDMVCC MVC   WORKCLAS(0),1(R2)   MOVE CLASS                           00028100
+RACDDSNC DC    X'07',CL8'DATASET'  DATASET CLASS                        00028200
+*                                                                       00028300
+RACDNEW  TM    RDDFFLGS,RDDFNEWN   NEWNAME SPEC?                        00028400
+         BNO   RACDCK18            CHECK 1.8 STUFF                      00028500
+         L     ENTYREG,RDDFNNAM    LOAD NEWNAME                         00028600
+         BAL   R10,ENTYCHCK        GO DO ENTITY CHECK                   00028700
+         B     RACDCK18            CHECK 1.8 STUFF                      00028800
+         B     RACDCK18            CHECK 1.8 STUFF                      00028900
+         B     RACDFAIL            RC8 - FAIL                           00029000
+*                                                                       00029100
+RACDCK18 EQU   *                                                        00029200
+*                                                                       00029300
+RACDCMCL EQU   *                                                        00029400
+         B     RACDGOOD            RC4 - UNKN                           00029500
+*                                                                       00029600
+RACDGOOD TM    WORKENTY,8          RC=8                                 00029700
+         BO    RACDFAIL            BYPASS RC=4                          00029800
+RACDNVFY TM    WORKENTY,4          RC=4                                 00029900
+         BO    RACDUNKN            AT LEAST 1 WARN                      00030000
+         TM    RDDFFLGS,RDDFCHGV   DELETE OR ADD                        00030100
+         BNZ   RACDGDD0            GOOD 0                               00030200
+         TM    RDDFFLG2,RDDFRFIY   RACFIND=YES                          00030300
+         BO    RACDGDD0            --> Yes, RC=0                        00030400
+         TM    RDDFFLG2,RDDFRFI    RACFIND=NO                           00030500
+         BNO   RACDGDD0            --> No, RC=0                         00030600
+         MVC   SAFPRREA,=F'04'     --> Yes, RC=0 & Reason=4             00030700
+RACDGDD0 XC    SAFPRRET,SAFPRRET   NOTHING ...                          00030800
+         B     RTRNGOOD            GO TO RC 200 CODE                    00030900
+*                                                                       00031000
+RACDUNKN MVC   SAFPRRET,=F'04'     NOT PROTECTED ...                    00031100
+         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00031200
+         B     RTRNWARN            GO TO RC 204 CODE                    00031300
+*                                                                       00031400
+RACDFAIL MVC   SAFPRRET,=F'08'     FAIL ....                            00031500
+         B     RTRNFAIL            DO ANY EXCEPTIONS                    00031600
+         TITLE 'RACXTRT CODE - RETRIEVE DATA FROM PROFILE'              00031700
+RACXTRT  L     R8,SAFPRACP         OFFSET TO RACXTRT PARAMETER LIST     00031800
+         AR    R8,R9               ADDR. OF RACXTRT PARAMETER LIST.     00031900
+         TM    3(R8),X'01'         EXTRACT ...                          00032000
+         BO    RACXEXTR            GO ON                                00032100
+         TM    3(R8),X'03'         EXTRACTN...                          00032200
+         BO    RACXEXTR            GO ON                                00032300
+         B     RACXUNKN            NOT YET SUPPORTED ...                00032400
+*                                                                       00032500
+RACXEXTR XR    R2,R2               CLEAR R2                             00032600
+         LH    R2,6(R8)            GET OFFSET TO VARIABLE STUFF.        00032700
+         AR    R2,R8               ADD BEGINNING OF RACXTRT             00032800
+         ICM   R3,B'1111',0(R2)    GET CLASS ADDRESS                    00032900
+         BZ    RACXUNKN            NONE ....                            00033000
+         CLC   =C'USER',0(R3)      USER CLASS ????                      00033100
+         BNE   RACXUNKN            NO, NOT SUPPORTED                    00033200
+*                                                                       00033300
+         ICM   R3,B'1111',8(R8)    GET ENTITY ADDRESS                   00033400
+         BNZ   RACXENTY            GOT ENTITY(USERNAME)                 00033500
+         ICM   ACEEREG,B'1111',X'14'(R2) ACEE REQ?                      00033600
+         BNZ   RACXACEE            GO ON...                             00033700
+         L     R3,PSAAOLD-PSA(0)   OUR ASCB                             00033800
+         L     R3,ASCBASXB-ASCB(R3) OUR ASXB                            00033900
+         ICM   ACEEREG,B'1111',ASXBSENV-ASXB(R3) ACEE                   00034000
+         BZ    RACXUNKN            WHO KNOWS                            00034100
+RACXACEE LA    R3,ACEEUSRI         GET ACEEUSER                         00034200
+RACXENTY ICM   R8,B'1111',X'0C'(R2) CHECK SEGMENT                       00034300
+         BZ    RACXUNKN            BASE NOT SUPPORTED                   00034400
+         CLC   =C'TSO',0(R8)       TSO SEGMENT?                         00034500
+         BNE   RACXUNKN            NO, NOT SUPPORTED                    00034600
+         B     RACXUNKN            GO THERE ANYWAY                      00034700
+*        FIELDS ...                                                     00034800
+*  GETMAIN AREA IN SP... & RETURN IN ...                                00034900
+*                                                                       00035000
+RACXUNKN MVC   SAFPRRET,=F'08'     NOT PROTECTED ...                    00035100
+         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00035200
+         B     RTRNWARN            GO TO RC 208 CODE                    00035300
+*                                                                       00035400
+         TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) - CHECK AUTH' 00035500
+*---------------------------------------------------------------------* 00035600
+*        RACINIT or RACROUTE REQUEST=VERIFY from the caller.            00035700
+*---------------------------------------------------------------------* 00035800
+RACINIT  L     R8,SAFPRACP         OFFSET TO RACINIT PARAMETER LIST     00035900
+         AR    R8,R9               ADDR. OF RACINIT PARAMETER LIST.     00036000
+         TM    3(R8),X'C0'         TEST FOR VERIFY                      00036100
+         BO    RTRN0000            ENVIR=VERIFY USED BY JES2 EARLY VFY  00036200
+*                                                                       00036300
+         L     R2,PSATOLD          ADDRESS TCB                          00036400
+         L     R2,TCBRBP-TCB(R2)   ADDRESS RB                           00036500
+         TM    RBSTAB1-RBSECT(R2),RBFTP CHECK RBTYPE                    00036600
+         BZ    RACIRACR            PRB DID RACROUTE                     00036700
+*                                                                       00036800
+         XR    R3,R3               CLEAR R3                             00036900
+         ICM   R3,B'0111',RBLINKB-RBSECT(R2) PRIOR RB                   00037000
+         S     R3,=A(RBSECT-RBPREFIX) SUBTRACT PFIX LENG                00037100
+         CLI   RBINTCOD-RBPREFIX+1(R3),X'83' SVC 131 (RACINIT SVC)      00037200
+         BNE   RACIRACR            SVC ISSUED RACROUTE                  00037300
+*                                                                       00037400
+         ICM   R2,B'0111',RBLINKB-RBSECT(R2) PRIOR RB                   00037500
+         TM    RBSTAB1-RBSECT(R2),RBFTP PRB?????                        00037600
+         BNZ   RACINAUT            NO, DON'T BOTHER WITH TABLE          00037700
+*                                                                       00037800
+         ICM   R2,B'0111',RBCDE1-RBSECT(R2) PRIOR RB                    00037900
+         BZ    RACINAUT            NO CDE                               00038000
+         L     R3,FLCCVT           LOAD CVT                             00038100
+         ICM   R3,B'1111',CVTRAC-CVTMAP(R3) CHECK RCVT                  00038200
+         BZ    RACIERR1            WHO KNOWS                            00038300
+         ICM   R3,B'1111',RCVTAUTP-RCVT(R3) CHECK AUTHORIZED CALLERS    00038400
+         BZ    RACINAUT            NO TABLE                             00038500
 *                                                                       00038600
-RACINAUT TESTAUTH FCTN=1,STATE=YES,KEY=YES    APF/SUP/KEY0-7            00038700
-         LTR   R15,R15             GOT IT?                              00038800
-         BZ    RACIMDST            YES, GO ON                           00038900
-         ABEND 1667,,,SYSTEM       Abend S683                           00039000
-*                                                                       00039100
-RACIRACR TESTAUTH FCTN=1,STATE=YES,KEY=YES,RBLEVEL=1 APF/SUP/KEY0-7     00039200
-         LTR   R15,R15             GOT IT?                              00039300
-         BZ    RACISCHP            YES, GO ON                           00039400
-         ABEND 1667,,,SYSTEM       Abend S683                           00039500
-*                                                                       00039600
-RACISCHP TESTAUTH STATE=YES,RBLEVEL=1 SUPV STATE?                       00039700
-         LTR   R15,R15             GOT IT?                              00039800
-         BZ    RACIMDST            YES, GO ON                           00039900
-         OI    WORKFLAG,WORKSUPO   SUP. ON                              00040000
-         MODESET MODE=SUP          SET STATE                            00040100
-*                                                                       00040200
-RACIMDST MODESET EXTKEY=ZERO,SAVEKEY=WORKKEY,WORKREG=2                  00040300
-         TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) '             00040400
-         TM    3(R8),X'40'         ENVIR=CHANGE?                   @rp2 00040500
-         BO    RACIGOOD            NOT YET SUPPORTED ...                00040600
-         TM    3(R8),X'80'         ENVIR=DELETE?                   @rp2 00040700
-         BO    RACINDEL            NO, GO DELETE ACEE                   00040800
+RACIAUTL CLC   =F'0',0(R3)         END OF TABLE?                        00038700
+         BE    RACINAUT            YES, SORRY                           00038800
+         CLC   CDNAME-CDENTRY(,R2),0(R3) IS THIS US?                    00038900
+         BE    RACIMDST            YES, BYPASS TESTAUTH                 00039000
+         LA    R3,12(,R3)          NEXT ENTRY                           00039100
+         B     RACIAUTL            GO ON                           @rp1 00039200
+*                                                                       00039300
+RACINAUT TESTAUTH FCTN=1,STATE=YES,KEY=YES    APF/SUP/KEY0-7            00039400
+         LTR   R15,R15             GOT IT?                              00039500
+         BZ    RACIMDST            YES, GO ON                           00039600
+         ABEND 1667,,,SYSTEM       Abend S683                           00039700
+*                                                                       00039800
+RACIRACR TESTAUTH FCTN=1,STATE=YES,KEY=YES,RBLEVEL=1 APF/SUP/KEY0-7     00039900
+         LTR   R15,R15             GOT IT?                              00040000
+         BZ    RACISCHP            YES, GO ON                           00040100
+         ABEND 1667,,,SYSTEM       Abend S683                           00040200
+*                                                                       00040300
+RACISCHP TESTAUTH STATE=YES,RBLEVEL=1 SUPV STATE?                       00040400
+         LTR   R15,R15             GOT IT?                              00040500
+         BZ    RACIMDST            YES, GO ON                           00040600
+         OI    WORKFLAG,WORKSUPO   SUP. ON                              00040700
+         MODESET MODE=SUP          SET STATE                            00040800
 *                                                                       00040900
-         ICM   R5,B'1111',4(R8)    UserID from RACINIT parmlist    @rp2 00041000
-         BZ    RACINOID            NONE, CHECK FOR STC ...              00041100
-         L     R4,FLCCVT           LOAD CVT                             00041200
-         ICM   R4,B'1111',CVTRAC-CVTMAP(R4) CHECK RCVT                  00041300
-         BZ    RACIERR1            Error: No RCVT                  @rp2 00041400
-*---------------------------------------------------------------------* 00041500
-*        CJYRCVT contains 2 pointers. 1 = address of users table      * 00041600
-*                                     2 = address of profiles table   * 00041700
-*---------------------------------------------------------------------* 00041800
-         ICM   R4,B'1111',RCVTISTL-RCVT(R4) CJYRCVTD present?      @rp2 00041900
-         BZ    RACIERR1            WHO KNOWS                            00042000
-         ICM   R4,B'1111',CJYUSERS-CJYRCVTD(R4) Point to user table@rp2 00042100
-         BZ    RACIERR1            Not there: error                     00042200
-         USING CBLK,R4             Base CJYUCBLK                        00042300
-RACICKLP IC    R1,CBLKUSRL         Length of UserID                     00042400
-         EX    R1,RACINCLC         CLC CBLKUSER(0),0(R5)                00042500
-         BE    RACIIDOK            ID OK                                00042600
-         ICM   R4,B'1111',CBLKNEXT GO TO NEXT ID                        00042700
-         BNZ   RACICKLP            GO FOR NEXT                          00042800
-*RACICSTC removed - STC/PROD explicit login no longer permitted         00042900
-         B     RACIREVK            Not in Users table - reject          00043000
-RACINCLC CLC   CBLKUSER(0),0(R5)   CORE UID VS RACINIT << executed >>   00043100
-*                                                                       00043200
-RACIIDOK TM    3(R8),X'08'         PASSCHK=NO in RACINIT parmlist? @rp2 00043300
-         BO    RACIACEE            Yes: go make ACEE                    00043400
-         ICM   R3,B'1111',8(R8)    Pickup password address              00043500
-         BZ    RACIINPW            No password -> invalid               00043600
-         MVC   WORKPASS,0(R3)      MOVE PASSWORD (LEN + UP TO 8 CHARS)  00043700
-*---------------------------------------------------------------------* 00043800
-*        Hash SALT||candidate via RAKFPWH and compare to stored hash  * 00043900
-*---------------------------------------------------------------------* 00044000
-         GETMAIN RU,LV=HASHWKL     Work area for hashing (key 0 here)   00044100
-         LR    R2,R1               R2 -> gotten area                    00044200
-         USING HASHWKD,R2                                               00044300
-         ST    R13,HWR13           Save caller save-area pointer        00044400
-         LA    R0,CBLKSALT         A(salt) - CBLK based on R4           00044500
-         ST    R0,HWPL+0                                                00044600
-         LA    R0,WORKPASS+1       A(candidate password chars)          00044700
-         ST    R0,HWPL+4                                                00044800
-         SR    R0,R0                                                    00044900
-         IC    R0,WORKPASS         Candidate password length            00045000
-         ST    R0,HWPWLEN                                               00045100
-         LA    R0,HWPWLEN                                               00045200
-         ST    R0,HWPL+8           A(PASSWORD length)                   00045300
-         LA    R0,HWOUT                                                 00045400
-         ST    R0,HWPL+12          A(output hash)                       00045500
-         LA    R0,HWWORK                                                00045600
-         ST    R0,HWPL+16          A(RAKFPWH work area)                 00045700
-         LA    R1,HWPL             R1 -> parameter list                 00045800
-         LA    R13,HWSAVE          Save area for the call               00045900
-         L     R15,=V(RAKFPWH)                                          00046000
-         BALR  R14,R15             Compute SHA-256(salt||password)      00046100
-         L     R13,HWR13           Restore caller save-area pointer     00046200
-         CLC   CBLKHASH,HWOUT      Stored Hash vs computed Hash         00046300
-         BNE   RACIPWNO            mismatch                             00046400
-         LA    R3,1                Passwords do match                   00046500
-         B     RACIPWFR                                                 00046600
-RACIPWNO LA    R3,0                Passwords dont match                 00046700
-RACIPWFR LR    R1,R2               Area to free                         00046800
-         DROP  R2                                                       00046900
-         FREEMAIN RU,LV=HASHWKL,A=(R1)  Release work area               00047000
-         LTR   R3,R3               Matched?                             00047100
-         BNZ   RACIPWOK            Yes, password is correct             00047200
-         B     RACIINPW            No, invalid password                 00047300
-RACIPWOK EQU   *                                                        00047400
-RACICHPW EQU   *                                                        00047500
-RACINCL2 EQU   *                                                        00047600
-*                                                                       00047700
-         ICM   R3,15,24(R8)        Set new password in RACINIT PLIST?   00047800
-         BZ    RACIACEE            No: go make ACEE                     00047900
-         MVC   WORKPASS,0(R3)      Yes, move new password               00048000
-         GETMAIN RU,LV=PWUPL,SP=227 Get fetch protected CSA         @02 00048100
-         MVC   0(PWUPCMDL,R1),PWUPSTRT move SVC 34 plist to CSA area@02 00048200
-         L     R3,PWUPXTBA         Get translate table address      @02 00048300
-         USING PWUPSTRT,R1         Address CSA area now             @02 00048400
-         ST    R1,PWUPADDR         Store CSA area address for unpack@02 00048500
-         UNPK  PWUPUNPK(9),PWUPADDR(5) unpack CSA area address      @02 00048600
-         MVC   PWUPAHEX(8),PWUPUNPK unpacked address to SVC 34 plist@02 00048700
-         TR    PWUPAHEX(8),0(R3)   Translate address to printable   @02 00048800
-         DROP  R1                  Revert to standard addressability@02 00048900
-         MVC   PWUPCMDL(PWUPRECL,R1),PWUP initialize change record  @02 00049000
-         IC    R3,0(,R5)           Length of user                   @02 00049100
-         BCTR  R3,0                Subtract 1 for MVC               @02 00049200
-         EX    R3,PWUPMVCU         Copy user                        @02 00049300
-         IC    R3,WORKPASS         Length of new password           @02 00049400
-         BCTR  R3,0                Subtract 1 for MVC               @02 00049500
-         EX    R3,PWUPMVCP         Copy new password                @02 00049600
-         XR    R0,R0               Set R0 = 0 for SVC 34            @02 00049700
-         SVC   34                  S RAKFPWUP,PARM='PWUPAHEX'       @02 00049800
-         XC    WORKPASS+1(8),=C'SECURITY' encrypt                       00049900
-         IC    R1,WORKPASS         Length of new password               00050000
-         EX    R1,RACIRPWD         Replace password                     00050100
-         B     RACIACEE            Go make ACEE                         00050200
-PWUPSTRT DC    AL2(PWUPCMDL)       Parameter list to start RAKFPWUP>@02 00050300
-         DC    X'0000'              >is copied to CSA subpool 227  >@02 00050400
-         DC    C'S RAKFPWUP,PARM=''' >fetch protected storage with >@02 00050500
-PWUPAHEX DS    CL8                 >address passed in PARM field  > @02 00050600
-         DC    C''''               >in hexadecimal printable format @02 00050700
-PWUPCMDL EQU   *-PWUPSTRT          Length of parameter list         @02 00050800
-PWUP     DS    0C                  Changes queue record             @02 00050900
-PWUPUSER DC    CL8' '              UserID                           @02 00051000
-         DC    C' '                Filler                           @02 00051100
-PWUPPSWD DC    CL8' '              New password                     @02 00051200
-         DC    C' '                Filler                           @02 00051300
-PWUPRECL EQU   *-PWUP              Record length of changes queue   @02 00051400
-PWUPL    EQU   *-PWUPSTRT          Total length of CSA area         @02 00051500
-         ORG   PWUP                Changes queue record is >        @02 00051600
-PWUPADDR DS    F                      > temporarily used   >        @02 00051700
-         DS    X                      > for conversion of  >        @02 00051800
-PWUPUNPK DS    CL8                    > CSA area to        >        @02 00051900
-         DS    X                      > unpacked format             @02 00052000
-         ORG   PWUP+PWUPRECL       Restore program counter          @02 00052100
-         USING PWUPSTRT,R1         Address CSA area now             @02 00052200
-PWUPMVCU MVC   PWUPUSER(1),1(R5)   Get user and new password >      @02 00052300
-PWUPMVCP MVC   PWUPPSWD(1),WORKPASS+1  > into change queue record   @02 00052400
-         DROP  R1                  Revert to standard addressability@02 00052500
-PWUPHXTB DC    C'0123456789ABCDEF' translate RAKFPWUP address to >  @02 00052600
-PWUPXTBA DC    A(PWUPHXTB-240)      > hex printable format          @02 00052700
-RACIRPWD MVC   CBLKPWDL(1),WORKPASS replace in core password            00052800
-RACICKPW CLC   CBLKPWDL(1),WORKPASS check password                      00052900
-*RACISTPW removed - no longer referenced                                00053000
-RACIERR1 MVC   WORKWTO+4(60),WTOMSG1 CJYUSERS INVALID                   00053100
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00053200
-         MVC   WORKWTO+4(60),WTOMSG2 STC ACCESS                         00053300
-         ICM   R5,B'1111',4(R8)    GO TO USERID                         00053400
-         IC    R1,0(R5)            GET LENGTH                           00053500
-         EX    R1,RACIWTO1         MOVE NAME FOR WTO                    00053600
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00053700
-         B     RACISSTC            ASSUME STC                           00053800
-RACIWTO1 MVC   WORKWTO+5+WTOMSG2U(0),1(R5) MOVE USERID                  00053900
-*                                                                       00054000
-RACINOID CLC   =F'0',X'C'(R8)      STC ?                                00054100
-         BNE   RACISSTC            YES, DO IT ...                       00054200
-         CLC   =F'0',X'28'(R8)     TERMID specified in RACINIT parmlist 00054300
-         BNE   RACIREVK            TSO ---- > REVOKED                   00054400
-         CLC   =F'0',X'2C'(R8)     JOBNAME SPEC.?                       00054500
-         BNE   RACISBAT            BATCH, OK ....                       00054600
-         ICM   R2,B'1111',PSAAOLD   POINT TO ASCB OLD                   00054700
-         BZ    RACISSTC            ASSUME STC                           00054800
-         CLC   =F'0',ASCBJBNI-ASCB(R2) JOBNAME SPEC.?                   00054900
-         BNE   RACISBAT            BATCH, OK ....                       00055000
-RACISSTC LA    R4,STCUID-L'CBLKNEXT POINT TO UID                        00055100
-         BAL   R10,WTOSTC          REPORT STC DEFAULT USAGE             00055200
-         B     RACIACEE            GO BUILD ACEE                        00055300
-RACISBAT LA    R4,PRODUID-L'CBLKNEXT POINT TO UID                       00055400
-         BAL   R10,WTOPROD         REPORT PROD DEFAULT USAGE            00055500
-         B     RACIACEE            GO BUILD ACEE                        00055600
-         TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) - BUILD ACEE' 00055700
-*---------------------------------------------------------------------* 00055800
-*        Build the Accesor Environment Element (ACEE)                 * 00055900
-*---------------------------------------------------------------------* 00056000
-RACIACEE LA    R2,255              PRE-FILL WITH LSQA SUBPOOL           00056100
-         TM    3(R8),X'10'         Subpool specified?              @rp2 00056200
-         BNO   RACINDGM            DO GETMAIN                           00056300
-         IC    R2,1(R8)            Subpool number from RACINIT     @rp2 00056400
-RACINDGM GETMAIN RC,LV=ACEEL,SP=(R2) DO GETMAIN                         00056500
-         LR    ACEEREG,R1          ADDRESS AREA                         00056600
-         XC    ACEE(ACEEL),ACEE    CLEAR IT                             00056700
-         MVC   ACEEACEE,=C'ACEE'   ACEE NAME                            00056800
-         STC   R2,ACEESP           Subpool to GETRAIN              @rp2 00056900
-         MVC   ACEEAPLN,=CL8' '    Application name                @rp2 00057000
-         ICM   R2,B'1111',48(R8)   APPL specified in RACINIT?      @rp2 00057100
-         BZ    *+10                No: leave blank                 @rp2 00057200
-         MVC   ACEEAPLN,0(R2)      Move APPL name                  @rp2 00057300
-         MVC   ACEELEN,=AL3(ACEEL) LENGTH                               00057400
-         MVI   ACEEVRSN,C'1'       VERSION 1                            00057500
-         MVC   ACEEUSER,CBLKUSER   UserID (Length + User)          @rp2 00057600
-         MVC   ACEEGRP,CBLKGRP     Default GROUP (Length + group)  @rp2 00057700
-         OI    ACEEFLG1,ACEERACF+ACEECNTL                               00057800
-         OI    ACEEFLG2,ACEENONE   Default UACC = NONE             @rp2 00057900
-         L     R2,FLCCVT           CVT                                  00058000
-         MVC   ACEEDATE,CVTDATE+1-CVT(R2) MOVE DATE                     00058100
-         CLI   CBLKFLG1,C'Y'       Operations authority?           @rp2 00058200
-         BNE   RACINNOP            No: do not set flag                  00058300
-         OI    ACEEFLG1,ACEEOPER   Set OPERATIONS authority        @rp2 00058400
-RACINNOP CLI   CBLKSPEC,C'Y'       SPECIAL authority?              @rp2 00058500
-         BNE   RACIPROC            No: do not set flag             @rp2 00058600
-         OI    ACEEFLG1,ACEESPEC   Set SPECIAL authority           @rp2 00058700
-RACIPROC MVC   ACEEPROC,=CL8' '    Blank STC procedure name        @rp2 00058800
-         ICM   R2,B'1111',12(R8)   STC ?                                00058900
-         BZ    RACINANS            NO, BATCH                            00059000
-         MVC   ACEEPROC,0(R2)      MOVE PROC NAME FOR STC               00059100
-RACINANS ICM   R2,B'1111',40(R8)   TERMID specified?               @rp2 00059200
-         BZ    RACINNTR            No: not specified               @rp2 00059300
-         MVC   ACEETRID,0(R2)      Move Terminal ID                @rp2 00059400
-RACINNTR CLM   ACEEREG,B'1000',=X'00' ABOVE THE LINE?                   00059500
-         BE    RACICGRP            NO, ADD GROUPS                       00059600
-*                                                                       00059700
-RACICGRP ICM   R3,B'1111',CBLKGRPS Pointer to connected groups     @rp2 00059800
-         BNZ   RACICGP1            NONE IN PROFS                        00059900
-         LA    R3,STCGROUP         STC GROUP IF STC                     00060000
-         CLC   =CL8'STC',ACEEUSRI  STC?                                 00060100
-         BE    RACICGP1            YES, GO ON                           00060200
-         LA    R3,PRDGROUP         NO USE PRD GROUP                     00060300
-RACICGP1 LA    R5,ACEECGRP         FIRST POINTER                        00060400
-         XR    R2,R2               CLEAR R2                             00060500
-         IC    R2,ACEESP           GET SUBPOOL                          00060600
-RACICGPL GETMAIN RC,LV=CONNL,SP=(R2)                                    00060700
-         XC    0(CONNL,R1),0(R1)   CLEAR AREA                           00060800
-         ST    R1,0(R5)            SAVE IN PTR                          00060900
-         MVC   CONNGRP-CONNGRUP(,R1),CONNGRP-CONNGRUP(R3) THEM TO US    00061000
-         LA    R5,CONNNEXT-CONNGRUP(R1) NEXT POINTER                    00061100
-         ICM   R3,B'1111',CONNNEXT-CONNGRUP(R3) NEXT CONN.              00061200
-         BNZ   RACICGPL            NEXT CGRP.                           00061300
-*                                                                       00061400
-         CLI   0(R8),X'34'         check length of RACINIT plist        00061500
-         BNL   RACIAPPL            -> ge x'34' continue                 00061600
-         B     RACINSTA            -> lt x'34' store ACEE addr in ASXB  00061700
-RACIAPPL ICM   ENTYREG,B'1111',X'30'(R8) ANY APPL REQ?                  00061800
-         BZ    RACITERM            NO, GO ON                            00061900
-         MVC   WORKCLAS,=CL8'APPL' APPL CLASS                           00062000
-         MVI   WORKAUTH,RACFREAD   READ REQ                             00062100
-         BAL   R10,ENTYCHCK        CHECK ENTITY                         00062200
-         B     RACITERM            0 -> OK                              00062300
-         B     RACITERM            4 -> OK                              00062400
-         B     RACIFAPL            8 -> NG                              00062500
-*                                                                       00062600
-RACITERM ICM   ENTYREG,B'1111',X'28'(R8) ANY APPL REQ?                  00062700
-         BZ    RACIALOK            NO, GO ON                            00062800
-         MVC   WORKCLAS,=CL8'TERMINAL' TERM CLASS                       00062900
-         MVI   WORKAUTH,RACFREAD   READ REQ                             00063000
-         BAL   R10,ENTYCHCK        CHECK ENTITY                         00063100
-         B     RACIALOK            0 -> OK                              00063200
-         B     RACIALOK            4 -> OK                              00063300
-         B     RACIFTRM            8 -> NG                              00063400
-*                                                                       00063500
-RACIALOK ICM   R2,B'1111',X'34'(R8) ACEE PTR                            00063600
-         BZ    RACINSTA            SAVE ACEE                            00063700
-         ST    ACEEREG,0(R2)       SAVE ACEE ADDRESS                    00063800
-         B     RACIGOOD            OK ..........                        00063900
-RACINSTA EQU   *                                                        00064000
-         L     R2,PSAAOLD          ADDRESS ASCB                         00064100
-         L     R2,ASCBASXB-ASCB(R2) ADDRESS ASCB                        00064200
-         ST    ACEEREG,ASXBSENV-ASXB(R2) STORE IN ASXB                  00064300
-         B     RACIGOOD            OK ..........                        00064400
-*                                                                       00064500
-         DROP  R4                                                       00064600
-         TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) - DEL. ACEE'  00064700
-*---------------------------------------------------------------------* 00064800
-*        RACINIT or RACROUTE REQUEST=VERIFY,ENVIR=DELETE                00064900
-*---------------------------------------------------------------------* 00065000
-RACINDEL ICM   R2,B'1111',X'34'(R8) ACEE PTR                            00065100
-         BZ    RACIDNAC            DELETE, NO ACEE                      00065200
-         L     ACEEREG,0(R2)       GET ACEE ADDRESS                     00065300
-         B     RACINFRE            GO DO FREEMAIN                       00065400
-RACIDNAC EQU   *                                                        00065500
-         L     R2,PSAAOLD          OUR ASCB                             00065600
-         L     R2,ASCBASXB-ASCB(R2) OUR ASXB                            00065700
-         C     ACEEREG,ASXBSENV-ASXB(R2) ACEE SAME?                     00065800
-         BNE   RACINTDM            NO, GO DO FREE                       00065900
-         XC    ASXBSENV-ASXB(,R2),ASXBSENV-ASXB(R2) YES, CLEAR          00066000
-         B     RACINFRE            GO FREE ACEE                         00066100
-*                                                                       00066200
-RACINTDM L     R2,PSAAOLD          OUR ASCB                             00066300
+RACIMDST MODESET EXTKEY=ZERO,SAVEKEY=WORKKEY,WORKREG=2                  00041000
+         TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) '             00041100
+         TM    3(R8),X'40'         ENVIR=CHANGE?                   @rp2 00041200
+         BO    RACIGOOD            NOT YET SUPPORTED ...                00041300
+         TM    3(R8),X'80'         ENVIR=DELETE?                   @rp2 00041400
+         BO    RACINDEL            NO, GO DELETE ACEE                   00041500
+*                                                                       00041600
+         ICM   R5,B'1111',4(R8)    UserID from RACINIT parmlist    @rp2 00041700
+         BZ    RACINOID            NONE, CHECK FOR STC ...              00041800
+         L     R4,FLCCVT           LOAD CVT                             00041900
+         ICM   R4,B'1111',CVTRAC-CVTMAP(R4) CHECK RCVT                  00042000
+         BZ    RACIERR1            Error: No RCVT                  @rp2 00042100
+*---------------------------------------------------------------------* 00042200
+*        CJYRCVT contains 2 pointers. 1 = address of users table      * 00042300
+*                                     2 = address of profiles table   * 00042400
+*---------------------------------------------------------------------* 00042500
+         ICM   R4,B'1111',RCVTISTL-RCVT(R4) CJYRCVTD present?      @rp2 00042600
+         BZ    RACIERR1            WHO KNOWS                            00042700
+         ICM   R4,B'1111',CJYUSERS-CJYRCVTD(R4) Point to user table@rp2 00042800
+         BZ    RACIERR1            Not there: error                     00042900
+         USING CBLK,R4             Base CJYUCBLK                        00043000
+RACICKLP IC    R1,CBLKUSRL         Length of UserID                     00043100
+         EX    R1,RACINCLC         CLC CBLKUSER(0),0(R5)                00043200
+         BE    RACIIDOK            ID OK                                00043300
+         ICM   R4,B'1111',CBLKNEXT GO TO NEXT ID                        00043400
+         BNZ   RACICKLP            GO FOR NEXT                          00043500
+*RACICSTC removed - STC/PROD explicit login no longer permitted         00043600
+         B     RACIREVK            Not in Users table - reject          00043700
+RACINCLC CLC   CBLKUSER(0),0(R5)   CORE UID VS RACINIT << executed >>   00043800
+*                                                                       00043900
+RACIIDOK TM    3(R8),X'08'         PASSCHK=NO in RACINIT parmlist? @rp2 00044000
+         BO    RACIACEE            Yes: go make ACEE                    00044100
+         ICM   R3,B'1111',8(R8)    Pickup password address              00044200
+         BZ    RACIINPW            No password -> invalid               00044300
+         MVC   WORKPASS,0(R3)      MOVE PASSWORD (LEN + UP TO 8 CHARS)  00044400
+*---------------------------------------------------------------------* 00044500
+*        Hash SALT||candidate via RAKFPWH and compare to stored hash  * 00044600
+*---------------------------------------------------------------------* 00044700
+         GETMAIN RU,LV=HASHWKL     Work area for hashing (key 0 here)   00044800
+         LR    R2,R1               R2 -> gotten area                    00044900
+         USING HASHWKD,R2                                               00045000
+         ST    R13,HWR13           Save caller save-area pointer        00045100
+         LA    R0,CBLKSALT         A(salt) - CBLK based on R4           00045200
+         ST    R0,HWPL+0                                                00045300
+         LA    R0,WORKPASS+1       A(candidate password chars)          00045400
+         ST    R0,HWPL+4                                                00045500
+         SR    R0,R0                                                    00045600
+         IC    R0,WORKPASS         Candidate password length            00045700
+         ST    R0,HWPWLEN                                               00045800
+         LA    R0,HWPWLEN                                               00045900
+         ST    R0,HWPL+8           A(PASSWORD length)                   00046000
+         LA    R0,HWOUT                                                 00046100
+         ST    R0,HWPL+12          A(output hash)                       00046200
+         LA    R0,HWWORK                                                00046300
+         ST    R0,HWPL+16          A(RAKFPWH work area)                 00046400
+         LA    R1,HWPL             R1 -> parameter list                 00046500
+         LA    R13,HWSAVE          Save area for the call               00046600
+         L     R15,=V(RAKFPWH)                                          00046700
+         BALR  R14,R15             Compute SHA-256(salt||password)      00046800
+         L     R13,HWR13           Restore caller save-area pointer     00046900
+         CLC   CBLKHASH,HWOUT      Stored Hash vs computed Hash         00047000
+         BNE   RACIPWNO            mismatch                             00047100
+         LA    R3,1                Passwords do match                   00047200
+         B     RACIPWFR                                                 00047300
+RACIPWNO LA    R3,0                Passwords dont match                 00047400
+RACIPWFR LR    R1,R2               Area to free                         00047500
+         DROP  R2                                                       00047600
+         FREEMAIN RU,LV=HASHWKL,A=(R1)  Release work area               00047700
+         LTR   R3,R3               Matched?                             00047800
+         BNZ   RACIPWOK            Yes, password is correct             00047900
+         B     RACIINPW            No, invalid password                 00048000
+RACIPWOK EQU   *                                                        00048100
+RACICHPW EQU   *                                                        00048200
+RACINCL2 EQU   *                                                        00048300
+*                                                                       00048400
+         ICM   R3,15,24(R8)        Set new password in RACINIT PLIST?   00048500
+         BZ    RACIACEE            No: go make ACEE                     00048600
+         MVC   WORKPASS,0(R3)      Yes, move new password               00048700
+         GETMAIN RU,LV=PWUPL,SP=227 Get fetch protected CSA         @02 00048800
+         MVC   0(PWUPCMDL,R1),PWUPSTRT move SVC 34 plist to CSA area@02 00048900
+         L     R3,PWUPXTBA         Get translate table address      @02 00049000
+         USING PWUPSTRT,R1         Address CSA area now             @02 00049100
+         ST    R1,PWUPADDR         Store CSA area address for unpack@02 00049200
+         UNPK  PWUPUNPK(9),PWUPADDR(5) unpack CSA area address      @02 00049300
+         MVC   PWUPAHEX(8),PWUPUNPK unpacked address to SVC 34 plist@02 00049400
+         TR    PWUPAHEX(8),0(R3)   Translate address to printable   @02 00049500
+         DROP  R1                  Revert to standard addressability@02 00049600
+         MVC   PWUPCMDL(PWUPRECL,R1),PWUP initialize change record  @02 00049700
+         IC    R3,0(,R5)           Length of user                   @02 00049800
+         BCTR  R3,0                Subtract 1 for MVC               @02 00049900
+         EX    R3,PWUPMVCU         Copy user                        @02 00050000
+         IC    R3,WORKPASS         Length of new password           @02 00050100
+         BCTR  R3,0                Subtract 1 for MVC               @02 00050200
+         EX    R3,PWUPMVCP         Copy new password                @02 00050300
+         XR    R0,R0               Set R0 = 0 for SVC 34            @02 00050400
+         SVC   34                  S RAKFPWUP,PARM='PWUPAHEX'       @02 00050500
+         XC    WORKPASS+1(8),=C'SECURITY' encrypt                       00050600
+         IC    R1,WORKPASS         Length of new password               00050700
+         EX    R1,RACIRPWD         Replace password                     00050800
+         B     RACIACEE            Go make ACEE                         00050900
+PWUPSTRT DC    AL2(PWUPCMDL)       Parameter list to start RAKFPWUP>@02 00051000
+         DC    X'0000'              >is copied to CSA subpool 227  >@02 00051100
+         DC    C'S RAKFPWUP,PARM=''' >fetch protected storage with >@02 00051200
+PWUPAHEX DS    CL8                 >address passed in PARM field  > @02 00051300
+         DC    C''''               >in hexadecimal printable format @02 00051400
+PWUPCMDL EQU   *-PWUPSTRT          Length of parameter list         @02 00051500
+PWUP     DS    0C                  Changes queue record             @02 00051600
+PWUPUSER DC    CL8' '              UserID                           @02 00051700
+         DC    C' '                Filler                           @02 00051800
+PWUPPSWD DC    CL8' '              New password                     @02 00051900
+         DC    C' '                Filler                           @02 00052000
+PWUPRECL EQU   *-PWUP              Record length of changes queue   @02 00052100
+PWUPL    EQU   *-PWUPSTRT          Total length of CSA area         @02 00052200
+         ORG   PWUP                Changes queue record is >        @02 00052300
+PWUPADDR DS    F                      > temporarily used   >        @02 00052400
+         DS    X                      > for conversion of  >        @02 00052500
+PWUPUNPK DS    CL8                    > CSA area to        >        @02 00052600
+         DS    X                      > unpacked format             @02 00052700
+         ORG   PWUP+PWUPRECL       Restore program counter          @02 00052800
+         USING PWUPSTRT,R1         Address CSA area now             @02 00052900
+PWUPMVCU MVC   PWUPUSER(1),1(R5)   Get user and new password >      @02 00053000
+PWUPMVCP MVC   PWUPPSWD(1),WORKPASS+1  > into change queue record   @02 00053100
+         DROP  R1                  Revert to standard addressability@02 00053200
+PWUPHXTB DC    C'0123456789ABCDEF' translate RAKFPWUP address to >  @02 00053300
+PWUPXTBA DC    A(PWUPHXTB-240)      > hex printable format          @02 00053400
+RACIRPWD MVC   CBLKPWDL(1),WORKPASS replace in core password            00053500
+RACICKPW CLC   CBLKPWDL(1),WORKPASS check password                      00053600
+*RACISTPW removed - no longer referenced                                00053700
+RACIERR1 MVC   WORKWTO+4(60),WTOMSG1 CJYUSERS INVALID                   00053800
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00053900
+         MVC   WORKWTO+4(60),WTOMSG2 STC ACCESS                         00054000
+         ICM   R5,B'1111',4(R8)    GO TO USERID                         00054100
+         IC    R1,0(R5)            GET LENGTH                           00054200
+         EX    R1,RACIWTO1         MOVE NAME FOR WTO                    00054300
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00054400
+         B     RACISSTC            ASSUME STC                           00054500
+RACIWTO1 MVC   WORKWTO+5+WTOMSG2U(0),1(R5) MOVE USERID                  00054600
+*                                                                       00054700
+RACINOID CLC   =F'0',X'C'(R8)      STC ?                                00054800
+         BNE   RACISSTC            YES, DO IT ...                       00054900
+         CLC   =F'0',X'28'(R8)     TERMID specified in RACINIT parmlist 00055000
+         BNE   RACIREVK            TSO ---- > REVOKED                   00055100
+         CLC   =F'0',X'2C'(R8)     JOBNAME SPEC.?                       00055200
+         BNE   RACISBAT            BATCH, OK ....                       00055300
+         ICM   R2,B'1111',PSAAOLD   POINT TO ASCB OLD                   00055400
+         BZ    RACISSTC            ASSUME STC                           00055500
+         CLC   =F'0',ASCBJBNI-ASCB(R2) JOBNAME SPEC.?                   00055600
+         BNE   RACISBAT            BATCH, OK ....                       00055700
+RACISSTC LA    R4,STCUID-L'CBLKNEXT POINT TO UID                        00055800
+         BAL   R10,WTOSTC          REPORT STC DEFAULT USAGE             00055900
+         B     RACIACEE            GO BUILD ACEE                        00056000
+RACISBAT LA    R4,PRODUID-L'CBLKNEXT POINT TO UID                       00056100
+         BAL   R10,WTOPROD         REPORT PROD DEFAULT USAGE            00056200
+         B     RACIACEE            GO BUILD ACEE                        00056300
+         TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) - BUILD ACEE' 00056400
+*---------------------------------------------------------------------* 00056500
+*        Build the Accesor Environment Element (ACEE)                 * 00056600
+*---------------------------------------------------------------------* 00056700
+RACIACEE LA    R2,255              PRE-FILL WITH LSQA SUBPOOL           00056800
+         TM    3(R8),X'10'         Subpool specified?              @rp2 00056900
+         BNO   RACINDGM            DO GETMAIN                           00057000
+         IC    R2,1(R8)            Subpool number from RACINIT     @rp2 00057100
+RACINDGM GETMAIN RC,LV=ACEEL,SP=(R2) DO GETMAIN                         00057200
+         LR    ACEEREG,R1          ADDRESS AREA                         00057300
+         XC    ACEE(ACEEL),ACEE    CLEAR IT                             00057400
+         MVC   ACEEACEE,=C'ACEE'   ACEE NAME                            00057500
+         STC   R2,ACEESP           Subpool to GETRAIN              @rp2 00057600
+         MVC   ACEEAPLN,=CL8' '    Application name                @rp2 00057700
+         ICM   R2,B'1111',48(R8)   APPL specified in RACINIT?      @rp2 00057800
+         BZ    *+10                No: leave blank                 @rp2 00057900
+         MVC   ACEEAPLN,0(R2)      Move APPL name                  @rp2 00058000
+         MVC   ACEELEN,=AL3(ACEEL) LENGTH                               00058100
+         MVI   ACEEVRSN,C'1'       VERSION 1                            00058200
+         MVC   ACEEUSER,CBLKUSER   UserID (Length + User)          @rp2 00058300
+         MVC   ACEEGRP,CBLKGRP     Default GROUP (Length + group)  @rp2 00058400
+         OI    ACEEFLG1,ACEERACF+ACEECNTL                               00058500
+         OI    ACEEFLG2,ACEENONE   Default UACC = NONE             @rp2 00058600
+         L     R2,FLCCVT           CVT                                  00058700
+         MVC   ACEEDATE,CVTDATE+1-CVT(R2) MOVE DATE                     00058800
+         CLI   CBLKFLG1,C'Y'       Operations authority?           @rp2 00058900
+         BNE   RACINNOP            No: do not set flag                  00059000
+         OI    ACEEFLG1,ACEEOPER   Set OPERATIONS authority        @rp2 00059100
+RACINNOP CLI   CBLKSPEC,C'Y'       SPECIAL authority?              @rp2 00059200
+         BNE   RACIPROC            No: do not set flag             @rp2 00059300
+         OI    ACEEFLG1,ACEESPEC   Set SPECIAL authority           @rp2 00059400
+RACIPROC MVC   ACEEPROC,=CL8' '    Blank STC procedure name        @rp2 00059500
+         ICM   R2,B'1111',12(R8)   STC ?                                00059600
+         BZ    RACINANS            NO, BATCH                            00059700
+         MVC   ACEEPROC,0(R2)      MOVE PROC NAME FOR STC               00059800
+RACINANS ICM   R2,B'1111',40(R8)   TERMID specified?               @rp2 00059900
+         BZ    RACINNTR            No: not specified               @rp2 00060000
+         MVC   ACEETRID,0(R2)      Move Terminal ID                @rp2 00060100
+RACINNTR CLM   ACEEREG,B'1000',=X'00' ABOVE THE LINE?                   00060200
+         BE    RACICGRP            NO, ADD GROUPS                       00060300
+*                                                                       00060400
+RACICGRP ICM   R3,B'1111',CBLKGRPS Pointer to connected groups     @rp2 00060500
+         BNZ   RACICGP1            NONE IN PROFS                        00060600
+         LA    R3,STCGROUP         STC GROUP IF STC                     00060700
+         CLC   =CL8'STC',ACEEUSRI  STC?                                 00060800
+         BE    RACICGP1            YES, GO ON                           00060900
+         LA    R3,PRDGROUP         NO USE PRD GROUP                     00061000
+RACICGP1 LA    R5,ACEECGRP         FIRST POINTER                        00061100
+         XR    R2,R2               CLEAR R2                             00061200
+         IC    R2,ACEESP           GET SUBPOOL                          00061300
+RACICGPL GETMAIN RC,LV=CONNL,SP=(R2)                                    00061400
+         XC    0(CONNL,R1),0(R1)   CLEAR AREA                           00061500
+         ST    R1,0(R5)            SAVE IN PTR                          00061600
+         MVC   CONNGRP-CONNGRUP(,R1),CONNGRP-CONNGRUP(R3) THEM TO US    00061700
+         LA    R5,CONNNEXT-CONNGRUP(R1) NEXT POINTER                    00061800
+         ICM   R3,B'1111',CONNNEXT-CONNGRUP(R3) NEXT CONN.              00061900
+         BNZ   RACICGPL            NEXT CGRP.                           00062000
+*                                                                       00062100
+         CLI   0(R8),X'34'         check length of RACINIT plist        00062200
+         BNL   RACIAPPL            -> ge x'34' continue                 00062300
+         B     RACINSTA            -> lt x'34' store ACEE addr in ASXB  00062400
+RACIAPPL ICM   ENTYREG,B'1111',X'30'(R8) ANY APPL REQ?                  00062500
+         BZ    RACITERM            NO, GO ON                            00062600
+         MVC   WORKCLAS,=CL8'APPL' APPL CLASS                           00062700
+         MVI   WORKAUTH,RACFREAD   READ REQ                             00062800
+         BAL   R10,ENTYCHCK        CHECK ENTITY                         00062900
+         B     RACITERM            0 -> OK                              00063000
+         B     RACITERM            4 -> OK                              00063100
+         B     RACIFAPL            8 -> NG                              00063200
+*                                                                       00063300
+RACITERM ICM   ENTYREG,B'1111',X'28'(R8) ANY APPL REQ?                  00063400
+         BZ    RACIALOK            NO, GO ON                            00063500
+         MVC   WORKCLAS,=CL8'TERMINAL' TERM CLASS                       00063600
+         MVI   WORKAUTH,RACFREAD   READ REQ                             00063700
+         BAL   R10,ENTYCHCK        CHECK ENTITY                         00063800
+         B     RACIALOK            0 -> OK                              00063900
+         B     RACIALOK            4 -> OK                              00064000
+         B     RACIFTRM            8 -> NG                              00064100
+*                                                                       00064200
+RACIALOK ICM   R2,B'1111',X'34'(R8) ACEE PTR                            00064300
+         BZ    RACINSTA            SAVE ACEE                            00064400
+         ST    ACEEREG,0(R2)       SAVE ACEE ADDRESS                    00064500
+         B     RACIGOOD            OK ..........                        00064600
+RACINSTA EQU   *                                                        00064700
+         L     R2,PSAAOLD          ADDRESS ASCB                         00064800
+         L     R2,ASCBASXB-ASCB(R2) ADDRESS ASCB                        00064900
+         ST    ACEEREG,ASXBSENV-ASXB(R2) STORE IN ASXB                  00065000
+         B     RACIGOOD            OK ..........                        00065100
+*                                                                       00065200
+         DROP  R4                                                       00065300
+         TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) - DEL. ACEE'  00065400
+*---------------------------------------------------------------------* 00065500
+*        RACINIT or RACROUTE REQUEST=VERIFY,ENVIR=DELETE                00065600
+*---------------------------------------------------------------------* 00065700
+RACINDEL ICM   R2,B'1111',X'34'(R8) ACEE PTR                            00065800
+         BZ    RACIDNAC            DELETE, NO ACEE                      00065900
+         L     ACEEREG,0(R2)       GET ACEE ADDRESS                     00066000
+         B     RACINFRE            GO DO FREEMAIN                       00066100
+RACIDNAC EQU   *                                                        00066200
+         L     R2,PSAAOLD          OUR ASCB                             00066300
          L     R2,ASCBASXB-ASCB(R2) OUR ASXB                            00066400
-         ICM   ACEEREG,B'1111',ASXBSENV-ASXB(R2) ACEE                   00066500
-         BZ    RACIGOOD            ASXB & TCB  BOTH DUMMY               00066600
-         XC    ASXBSENV-ASXB(,R2),ASXBSENV-ASXB(R2) CLEAR ASXB          00066700
-RACINFRE ICM   R2,B'1111',ACEEIEP  ANY OTHER F.M?                       00066800
-         BZ    RACINIEP            NO, SO BYE...                        00066900
-         XR    R3,R3               CLEAR R3                             00067000
-         IC    R3,0(R2)            SUBPOOL                              00067100
-         XR    R4,R4               CLEAR R4                             00067200
-         ICM   R4,B'0111',1(R2)    LENGTH                               00067300
-         FREEMAIN RC,A=(R2),SP=(R3),LV=(R4) FREE ????                   00067400
-*                                                                       00067500
-RACINIEP XR    R2,R2               CLEAR R2                             00067600
-         IC    R2,ACEESP           SUBPOOL                              00067700
-         LA    R3,CONNL            CLEAR R3                             00067800
-         L     R5,ACEECGRP         CONN. GROUPS                         00067900
-         B     RACIFCN2            START FREEMAINS                      00068000
-RACIFCNL L     R5,CONNNEXT-CONNGRUP(R4) LOOP THRU OLD TABLE             00068100
-         FREEMAIN RC,A=(R4),SP=(R2),LV=(R3) FREE ACEE                   00068200
-RACIFCN2 LTR   R4,R5               MORE ENTRIES?                        00068300
-         BNZ   RACIFCNL             Y - NEXT ENTRY                      00068400
-*                                                                       00068500
-RACINCGP XR    R2,R2               CLEAR R2                             00068600
-         IC    R2,ACEESP           SUBPOOL                              00068700
-         XR    R3,R3               CLEAR R3                             00068800
-         ICM   R3,B'0111',ACEELEN  LENGTH                               00068900
-         FREEMAIN RC,A=(ACEEREG),SP=(R2),LV=(R3) FREE ACEE              00069000
-         B     RACIGOOD            GO TO GOOD RETURN CODE               00069100
-         TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) - Bye'        00069200
-RACIGOOD XC    SAFPRRET,SAFPRRET   NOTHING ...                          00069300
-         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00069400
-         XC    WORKPASS,WORKPASS   CLEAR JUST IN CASE                   00069500
-         MODESET KEYADDR=WORKKEY,WORKREG=2                              00069600
-         TM    WORKFLAG,WORKSUPO   SUP. ON                              00069700
-         BNO   RTRNGOOD            NO, GO TO RC 200 CODE                00069800
-         MODESET MODE=PROB         SET STATE                            00069900
-         B     RTRNGOOD            GO TO RC 200 CODE                    00070000
-*                                                                       00070100
-RACIUNKN MVC   SAFPRRET,=F'04'     NOT PROTECTED ...                    00070200
+         C     ACEEREG,ASXBSENV-ASXB(R2) ACEE SAME?                     00066500
+         BNE   RACINTDM            NO, GO DO FREE                       00066600
+         XC    ASXBSENV-ASXB(,R2),ASXBSENV-ASXB(R2) YES, CLEAR          00066700
+         B     RACINFRE            GO FREE ACEE                         00066800
+*                                                                       00066900
+RACINTDM L     R2,PSAAOLD          OUR ASCB                             00067000
+         L     R2,ASCBASXB-ASCB(R2) OUR ASXB                            00067100
+         ICM   ACEEREG,B'1111',ASXBSENV-ASXB(R2) ACEE                   00067200
+         BZ    RACIGOOD            ASXB & TCB  BOTH DUMMY               00067300
+         XC    ASXBSENV-ASXB(,R2),ASXBSENV-ASXB(R2) CLEAR ASXB          00067400
+RACINFRE ICM   R2,B'1111',ACEEIEP  ANY OTHER F.M?                       00067500
+         BZ    RACINIEP            NO, SO BYE...                        00067600
+         XR    R3,R3               CLEAR R3                             00067700
+         IC    R3,0(R2)            SUBPOOL                              00067800
+         XR    R4,R4               CLEAR R4                             00067900
+         ICM   R4,B'0111',1(R2)    LENGTH                               00068000
+         FREEMAIN RC,A=(R2),SP=(R3),LV=(R4) FREE ????                   00068100
+*                                                                       00068200
+RACINIEP XR    R2,R2               CLEAR R2                             00068300
+         IC    R2,ACEESP           SUBPOOL                              00068400
+         LA    R3,CONNL            CLEAR R3                             00068500
+         L     R5,ACEECGRP         CONN. GROUPS                         00068600
+         B     RACIFCN2            START FREEMAINS                      00068700
+RACIFCNL L     R5,CONNNEXT-CONNGRUP(R4) LOOP THRU OLD TABLE             00068800
+         FREEMAIN RC,A=(R4),SP=(R2),LV=(R3) FREE ACEE                   00068900
+RACIFCN2 LTR   R4,R5               MORE ENTRIES?                        00069000
+         BNZ   RACIFCNL             Y - NEXT ENTRY                      00069100
+*                                                                       00069200
+RACINCGP XR    R2,R2               CLEAR R2                             00069300
+         IC    R2,ACEESP           SUBPOOL                              00069400
+         XR    R3,R3               CLEAR R3                             00069500
+         ICM   R3,B'0111',ACEELEN  LENGTH                               00069600
+         FREEMAIN RC,A=(ACEEREG),SP=(R2),LV=(R3) FREE ACEE              00069700
+         B     RACIGOOD            GO TO GOOD RETURN CODE               00069800
+         TITLE 'RACINIT PROCESS. (GET INTO/OUT OF SYSTEM) - Bye'        00069900
+RACIGOOD XC    SAFPRRET,SAFPRRET   NOTHING ...                          00070000
+         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00070100
+         XC    WORKPASS,WORKPASS   CLEAR JUST IN CASE                   00070200
          MODESET KEYADDR=WORKKEY,WORKREG=2                              00070300
          TM    WORKFLAG,WORKSUPO   SUP. ON                              00070400
-         BNO   RTRNWARN            NO, GO TO RC 204 CODE                00070500
+         BNO   RTRNGOOD            NO, GO TO RC 200 CODE                00070500
          MODESET MODE=PROB         SET STATE                            00070600
-         B     RTRNWARN            GO TO RC 204 CODE                    00070700
+         B     RTRNGOOD            GO TO RC 200 CODE                    00070700
 *                                                                       00070800
-RACIINPW MVC   SAFPRRET,=F'08'     Invalid or no password entered       00070900
-         XC    WORKPASS,WORKPASS   Clear just in case                   00071000
-         B     RACIFAIL            BRANCH TO FAIL COMMON                00071100
-*                                                                       00071200
-RACIREVK MVC   SAFPRRET,=F'28'     REVOKED....                          00071300
-         B     RACIFAIL            BRANCH TO FAIL COMMON                00071400
+RACIUNKN MVC   SAFPRRET,=F'04'     NOT PROTECTED ...                    00070900
+         MODESET KEYADDR=WORKKEY,WORKREG=2                              00071000
+         TM    WORKFLAG,WORKSUPO   SUP. ON                              00071100
+         BNO   RTRNWARN            NO, GO TO RC 204 CODE                00071200
+         MODESET MODE=PROB         SET STATE                            00071300
+         B     RTRNWARN            GO TO RC 204 CODE                    00071400
 *                                                                       00071500
-RACIFAPL MVC   SAFPRRET,=F'52'     NOT AUTH TO APPL...                  00071600
-         B     RACIFAFM            FAIL & FREEMAIN                      00071700
-RACIFTRM MVC   SAFPRRET,=F'48'     NOT AUTH TO TERM...                  00071800
+RACIINPW MVC   SAFPRRET,=F'08'     Invalid or no password entered       00071600
+         XC    WORKPASS,WORKPASS   Clear just in case                   00071700
+         B     RACIFAIL            BRANCH TO FAIL COMMON                00071800
 *                                                                       00071900
-RACIFAFM ICM   R4,B'1111',ACEECGRP CONN. GROUPS                         00072000
-         BZ    RACIFACF            NO: GO FREEMAIN ACEE                 00072100
-         XR    R2,R2               CLEAR R2                             00072200
-         IC    R2,ACEESP           SUBPOOL                              00072300
-         LA    R3,CONNL            CLEAR R3                             00072400
-         B     RACIFAG2            BYPASS MOVE                          00072500
-RACIFAGL L     R5,CONNNEXT-CONNGRUP(R4) LOOP THRU OLD TABLE             00072600
-         FREEMAIN RC,A=(R4),SP=(R2),LV=(R3) FREE ACEE                   00072700
-RACIFAG2 LTR   R4,R5               MORE ENTRIES?                        00072800
-         BNZ   RACIFAGL             Y - NEXT ENTRY                      00072900
-*                                                                       00073000
-RACIFACF XR    R2,R2               CLEAR R2                             00073100
-         IC    R2,ACEESP           SUBPOOL                              00073200
-         XR    R3,R3               CLEAR R3                             00073300
-         ICM   R3,B'0111',ACEELEN  LENGTH                               00073400
-         FREEMAIN RC,A=(ACEEREG),SP=(R2),LV=(R3) FREE ACEE              00073500
-         B     RACIFAIL            BRANCH TO FAIL COMMON                00073600
+RACIREVK MVC   SAFPRRET,=F'28'     REVOKED....                          00072000
+         B     RACIFAIL            BRANCH TO FAIL COMMON                00072100
+*                                                                       00072200
+RACIFAPL MVC   SAFPRRET,=F'52'     NOT AUTH TO APPL...                  00072300
+         B     RACIFAFM            FAIL & FREEMAIN                      00072400
+RACIFTRM MVC   SAFPRRET,=F'48'     NOT AUTH TO TERM...                  00072500
+*                                                                       00072600
+RACIFAFM ICM   R4,B'1111',ACEECGRP CONN. GROUPS                         00072700
+         BZ    RACIFACF            NO: GO FREEMAIN ACEE                 00072800
+         XR    R2,R2               CLEAR R2                             00072900
+         IC    R2,ACEESP           SUBPOOL                              00073000
+         LA    R3,CONNL            CLEAR R3                             00073100
+         B     RACIFAG2            BYPASS MOVE                          00073200
+RACIFAGL L     R5,CONNNEXT-CONNGRUP(R4) LOOP THRU OLD TABLE             00073300
+         FREEMAIN RC,A=(R4),SP=(R2),LV=(R3) FREE ACEE                   00073400
+RACIFAG2 LTR   R4,R5               MORE ENTRIES?                        00073500
+         BNZ   RACIFAGL             Y - NEXT ENTRY                      00073600
 *                                                                       00073700
-RACIFAIL MODESET KEYADDR=WORKKEY,WORKREG=2                              00073800
-         TM    WORKFLAG,WORKSUPO   SUP. ON                              00073900
-         BNO   RACINPWF            No  --> check for WTO suppression    00074000
-         MODESET MODE=PROB         SET STATE                            00074100
-RACINPWF CLC   SAFPRRET,=F'08'     Invalid or no password entered?      00074200
-         BNE   RACIFWTO            No  --> write message                00074300
-         LTR   R3,R3               yes --> no password entered?         00074400
-         BZ    RTRNFAIL            yes --> don't write message          00074500
-RACIFWTO MVC   WORKWTO+4(60),WTOMSG4  ATTEMPTED ACCESS                  00074600
-         ICM   R5,B'1111',4(R8)    GO TO USERID                         00074700
-         IC    R1,0(R5)            GET LENGTH                           00074800
-         EX    R1,RACIWTO2         MOVE NAME FOR WTO                    00074900
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00075000
-         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00075100
-         XC    WORKPASS,WORKPASS   CLEAR JUST IN CASE                   00075200
-         B     RTRNFAIL            BYE ............                     00075300
-RACIWTO2 MVC   WORKWTO+4+WTOMSG4U(0),1(R5) MOVE USERID                  00075400
-         TITLE 'ALL ROADS LEAD HERE'                                    00075500
-RTRN0000 LA    R15,0               RC = 0                               00075600
-         B     RTRNRTRN            GO BACK                              00075700
-*                                                                       00075800
-RTRNGOOD LA    R15,0               RACF RC=0                            00075900
-         B     RTRNRTRN            GO BACK                              00076000
-*                                                                       00076100
-RTRNWARN LA    R15,4               RACF RC=4                       @rp2 00076200
-         B     RTRNRTRN            GO BACK                              00076300
-*                                                                       00076400
-RTRNFAIL LA    R15,8               RACF RC=8                       @rp2 00076500
-         B     RTRNRTRN            GO BACK                              00076600
-*                                                                       00076700
-RTRNRTRN L     R13,WORKSAVE+4      RETURN R13                           00076800
-         RETURN (14,12),RC=(15)    BYE                                  00076900
-*                                                                       00077000
-         TITLE 'CHECK FOR ACCESS'                                       00077100
-ENTYCHCK MVI   WORKENTL,0          Nullify Entity length           @rp2 00077200
-         L     R2,FLCCVT           LOAD CVT                             00077300
-         ICM   R2,B'1111',CVTRAC-CVTMAP(R2) CHECK RCVT                  00077400
-         BZ    ENTYERR1            WHO KNOWS?                           00077500
-         ICM   R2,B'1111',RCVTISTL-RCVT(R2) OUR STUFF?                  00077600
-         BZ    ENTYERR1            WHO KNOWS?                           00077700
-         ICM   R2,B'1111',CJYPROFS-CJYRCVTD(R2) OUR STUFF?              00077800
-         BZ    ENTYERR1            WHO KNOWS?                           00077900
-         USING RPECBLK,R2          ADDRESS CBLK                         00078000
-         CLC   WORKCLAS(8),=CL8' '    CLASS blank?                      00078100
-         BNE   ENTYNBLK                  --> no, continue               00078200
-         MVC   WORKCLAS(8),=CL8'DATASET' --> yes, assume DATASET        00078300
-ENTYNBLK CLC   =C'DATASET',WORKCLAS  CHECK FOR OUR OWN DSNS.            00078400
-         BNE   ENTYCLLP            NO, GO ON                            00078500
-         XR    R1,R1               Clear is needed for LA          @mg1 00078600
-         IC    R1,ACEEUSRL         GET LENGTH                           00078700
-         BCTR  R1,0                DOWN 1 FOR CLC                       00078800
-         EX    R1,ENTYEXUS         CLC 0(0,ENTYREG),ACEEUSRN            00078900
-         BNE   ENTYTEMP            No: not our dataset             @mg1 00079000
-         LA    R14,1(R1,ENTYREG)   Point after UserID              @mg1 00079100
-         CLI   0(R14),C'.'         First qualifier is UserID?      @mg1 00079200
-         BE    AUTHGOOD            Yes: definitely our dataset     @mg1 00079300
-ENTYTEMP DS    0H                                                  @mg1 00079400
-         CLC   0(3,ENTYREG),=C'SYS' is it a ..                          00079500
-         BNE   ENTYCLLP              --> no                             00079600
-         CLC   8(2,ENTYREG),=C'.T'            .. temporary ..           00079700
-         BNE   ENTYCLLP              --> no                             00079800
-         CLC   16(3,ENTYREG),=C'.RA'                         .. dataset 00079900
-         BNE   ENTYCLLP              --> no, go on                      00080000
-         B     AUTHGOOD              --> yes, go for it                 00080100
-ENTYCLLP XC    WORKSTAT,WORKSTAT   Parameter for RACSTAT           @rp2 00080200
-         LA    R1,WORKCLAS         Class name                      @rp2 00080300
-         ST    R1,WORKSTAT         Class name to check             @rp2 00080400
-         LA    R1,WORKSTAT         Parameter for RACSTAT           @rp2 00080500
-         L     R3,X'4C'            Pointer CVT                     @rp2 00080600
-         ICM   R3,B'1111',CVTRAC-CVTMAP(R3) Load RCVT              @rp2 00080700
-         ICM   R15,15,RCVTREXP-RCVT(R3)  Entry point RACSTAT       @rp2 00080800
-         BZ    ENTYCLL2            Give it the benefit of the doubt@rp2 00080900
-         BALR  R14,R15             Invoke RACSTAT (in CJYRCVT)     @rp2 00081000
-         LTR   R15,R15             Is CLASS present in CDT?        @rp2 00081100
-         BZ    ENTYCLL2            Yes: continue                   @rp2 00081200
-         LR    R5,R10              Save entry register             @rp2 00081300
-         BAL   R10,WTOUNKN         Msg: Undefined Class xxxxxxxx   @rp2 00081400
-         LR    R10,R5              Restore entry register          @rp2 00081500
-         B     AUTHFAIL            RC=8 --> exit                   @rp2 00081600
-ENTYCLL2 IC    R1,RPECLASL         Get length from Profile entry   @rp2 00081700
-         BCTR  R1,0                SUBTRACT 1 FOR CLC                   00081800
-         EX    R1,ENTYEXEC         CLC RPECLASN(0),WORKCLAS             00081900
-         BL    ENTYNFND            NOT FOUND                            00082000
-         BNE   ENTYNCLS            NO, GET NEXT                         00082100
-         MVC   WORKENTL,RPEENTYL   Copy Entity length field        @rp2 00082200
-         ICM   R1,B'0001',RPEENTYL GET LENGTH                           00082300
-         BZ    ENTYENFN            '*' ONLY ENTITY?                     00082400
-         BCTR  R1,0                NO, SUBTRACT 1 FOR CLC               00082500
-         EX    R1,ENTYEXEN         CLC RPEENTYN(0),0(ENTYREG)           00082600
-         BE    ENTYENFN            FOUND ENTITY                         00082700
-ENTYNCLS ICM   R2,B'1111',RPENEXT  GET NEXT                             00082800
-         BNZ   ENTYCLLP            GO FOR NEXT                          00082900
-ENTYNFND B     ENTYWARN            RETURN WARN                          00083000
-ENTYEXEC CLC   RPECLASN(0),WORKCLAS SAME CLASS? << executed >>          00083100
-ENTYEXEN CLC   RPEENTYN(0),0(ENTYREG) CHECK ENTITY                      00083200
-ENTYEXUS CLC   0(0,ENTYREG),ACEEUSRI US?                                00083300
-*                                                                       00083400
-ENTYENFN ICM   R3,B'1111',RPEACCPT POINTER TO ACCESSES                  00083500
-         BZ    ENTYUACC            GO CHECK UACC                        00083600
-*                                                                       00083700
-         USING RPEACCLE,R3         VARIABLE SECTION                     00083800
-ENTYULOP CLC   RPEAUSR,ACEEUSRI    USER EXCEPTION?                      00083900
-         BE    ENTYEXCP            MATCH, GO CHECK                      00084000
-         ICM   R3,B'1111',RPEANEXT NEXT POINTER                         00084100
-         BNZ   ENTYULOP            GO CHECK NEXT                        00084200
-*                                                                       00084300
-ENTYCONN ICM   R4,B'1111',ACEECGRP CONNECT GROUPS                       00084400
-         BZ    ENTYUACC            NONE, GO ON                          00084500
-         USING CONNGRUP,R4         ADDRESS IT                           00084600
-ENTYCONL L     R3,RPEACCPT         GET POINTER AGAIN                    00084700
-ENTYCON2 CLC   RPEAUSR,CONNGRPN    GROUP EXCEPTION?                     00084800
-         BNE   ENTYNCRP            NO, NEXT RPE                         00084900
-         OI    WORKFLAG,WORKOPRB   SET OPER BYPASS                      00085000
-         CLC   WORKAUTH,RPEACS     SUFFICENT ACCESS IN PERMIT?          00085100
-         BH    ENTYNCRP            NO, CHECK NEXT AUTH.                 00085200
-         B     AUTHGOOD            YES, GO ON ...                       00085300
-ENTYNCRP ICM   R3,B'1111',RPEANEXT NEXT POINTER                         00085400
-         BNZ   ENTYCON2            GO CHECK NEXT EXCEPTION              00085500
-ENTYNCON ICM   R4,B'1111',CONNNEXT NEXT POINTER                         00085600
-         BNZ   ENTYCONL            GO CHECK NEXT CONNECT                00085700
-         TM    WORKFLAG,WORKOPRB   BYPASS OPER CHECK?                   00085800
-         BNO   ENTYUACC            NO, GO UACC                          00085900
-         B     ENTYFAIL            ALL CONN.S FAILED                    00086000
-*                                                                       00086100
-ENTYUACC CLC   WORKAUTH,RPEUACC    SUFFICENT ACCESS IN UACC?            00086200
-         BH    ENTYOPER            NO, RETURN CHECK FOR OP. AUTH        00086300
-         B     AUTHGOOD            YES, GO ON ...                       00086400
-*                                                                       00086500
-ENTYEXCP CLC   WORKAUTH,RPEACS     SUFFICENT ACCESS IN PERMIT?          00086600
-         BH    ENTYFAIL            NO, RETURN CHECK FOR OP. AUTH        00086700
-         B     AUTHGOOD            YES, GO ON ...                       00086800
-*                                                                       00086900
-ENTYOPER CLC   =C'DATASET',RPECLASN  DATASET CLASS                      00087000
-         BE    ENTYOPR2            YES, CHECK OPER AUTH                 00087100
-         CLC   =C'DASDVOL',RPECLASN DASDVOL CLASS                       00087200
-         BE    ENTYOPR2            YES, CHECK OPER AUTH                 00087300
-         B     ENTYFAIL            TOUGH                                00087400
-ENTYOPR2 TM    ACEEFLG1,ACEEOPER   MAKE OPER AUTH.                      00087500
-         BNO   ENTYFAIL            TOUGH                                00087600
-*                                                                       00087700
-         DROP  R4,R3,R2            RPEACCLE CONNGRUP RPECBLK       @rp2 00087800
-         CLC   =C'PROD',ACEEUSRI   PROD USERID?                         00087900
-         BNE   AUTHGOOD            NO MSG NEC. -> OPER ALLOWED          00088000
-         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00088100
-         BO    AUTHGOOD            YES, NO MESS..                       00088200
-         MVC   WORKWTO+4(60),WTOMSG7 INVALID ACCESS TO RESOURCE         00088300
-         MVC   WORKWTO+4+WTOMSG7U(L'WTOMSG7U),ACEEUSRI MOVE USERID      00088400
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00088500
-         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00088600
-         MVC   WORKWTO+4(9),=C'RAKF0006 ' USERID/CLASS                  00088700
-         BAL   R4,ENTYENTY         ENTY COMMON                          00088800
-         B     AUTHGOOD            ALLOW ACCESS                         00088900
-*                                                                       00089000
-ENTYERR1 MVC   WORKWTO+4(60),WTOMSG3 PROFS IN ERROR                     00089100
-         MVC   WORKWTO+4+WTOMSG3U(L'WTOMSG3U),ACEEUSRI MOVE USERID      00089200
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00089300
-         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00089400
-         MVC   WORKWTO+4(9),=C'RAKF0009 ' USERID/CLASS                  00089500
-         BAL   R4,ENTYENTY         ENTY COMMON                          00089600
-         B     AUTHGOOD            ALLOW ACCESS                         00089700
-*                                                                       00089800
-ENTYWARN OI    WORKENTY,4          RC = 4                               00089900
-         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00090000
-         BO    AUTHWARN            SORRY ....                           00090100
-         MVC   WORKWTO+4(60),WTOMSG8 INVALID ACCESS TO RESOURCE         00090200
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00090300
-         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00090400
-         MVC   WORKWTO+4(9),=C'RAKF000B ' USERID/CLASS                  00090500
-         BAL   R4,ENTYENTY         ENTY COMMON                          00090600
-         B     AUTHGOOD            ALLOW ACCESS                         00090700
-*                                                                       00090800
-ENTYFAIL OI    WORKENTY,8          RC = 8                               00090900
-         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00091000
-         BO    AUTHFAIL            SORRY ....                           00091100
-         MVC   WORKWTO+4(60),WTOMSG5 INVALID ACCESS TO RESOURCE         00091200
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00091300
-         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00091400
-         MVC   WORKWTO+4(9),=C'RAKF000A ' USERID/CLASS                  00091500
-         BAL   R4,ENTYENTY         ENTY COMMON                          00091600
-         B     AUTHFAIL            FAIL ACCESS                          00091700
-*                                                                       00091800
-ENTYENTY MVC   WORKWTO+4+WTOMSGEU(L'WTOMSGEU),ACEEUSRI MOVE USERID      00091900
-         MVC   WORKWTO+4+WTOMSGEC(L'WTOMSGEC),WORKCLAS MOVE CLASS       00092000
-         L     R2,PSAAOLD          ASCB ADDRESS                         00092100
-         ICM   R3,B'1111',ASCBJBNI-ASCB(R2) JOBNAME SPEC.?              00092200
-         BNZ   ENTYJOBN            YES, GO USE NAME                     00092300
-         L     R3,ASCBJBNS-ASCB(R2) STC ... NAME                        00092400
-ENTYJOBN MVC   WORKWTO+4+WTOMSGEJ(L'WTOMSGEJ),0(R3) MOVE JOBNAME        00092500
-         XR    R1,R1               Entity length                   @rp2 00092600
-         IC    R1,WORKENTL         Saved entity length             @rp2 00092700
-         LTR   R1,R1               Length is zero?                 @rp2 00092800
-         BZ    ENTYWTO1            Yes: assume some lengths        @rp2 00092900
-         BCTR  R1,0                Minus 1 for EX                  @rp2 00093000
-         B     ENTYWTO2            Set ENTITY in WTO               @rp2 00093100
-ENTYWTO1 L     R1,WORKSTAT+4       Default entity len from RACSTAT @rp2 00093200
-         BCTR  R1,0                Minus 1 for EX instruction      @rp2 00093300
-         LA    R2,L'WTOMSGEE-1     Maximum room in WTO             @rp2 00093400
-         CR    R2,R1               Too long?                       @rp2 00093500
-         BH    ENTYWTO2            No: good                        @rp2 00093600
-         LR    R1,R2               Yes: truncate                   @rp2 00093700
-ENTYWTO2 EX    R1,ENTYERRX         MVC WORKWTO+4+WTOMSGEE(0),0(ENTYREG) 00093800
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00093900
-         BR    R4                  RETURN                               00094000
-*                                                                       00094100
-ENTYERRX MVC   WORKWTO+4+WTOMSGEE(0),0(ENTYREG) MOVE ENTITY             00094200
-*                                                                  @rp2 00094300
-*        Report unknown CLASS                                      @rp2 00094400
-*                                                                  @rp2 00094500
-WTOUNKN  MVC   WORKWTO(REALWTOL),REALWTO Initialize WTO            @rp2 00094600
-         MVC   WORKWTO+4(60),WTOMSG12 Move message                 @rp2 00094700
-         MVC   WORKWTO+4+WTMSG12C(8),WORKCLAS   Move class name    @rp2 00094800
-         WTO   MF=(E,WORKWTO)      Inform operator                 @rp2 00094900
-         BR    R10                 Return                          @rp2 00095000
-*                                                                       00095100
-*                                                                       00095200
-* Report when hardcoded STC account is used                             00095300
-*                                                                       00095400
-WTOSTC   MVC   WORKWTO(REALWTOL),REALWTO INIT WTO                       00095500
-         MVC   WORKWTO+4(60),WTOMSG10 MOVE MESSAGE                      00095600
-         ICM   R2,B'1111',X'C'(R8) GET STC PROC NAME PTR                00095700
-         BZR   R10                 No proc name, no message        @rp2 00095800
-         MVC   WORKWTO+4+WTMSG10P(8),0(R2) MOVE PROC NAME               00095900
-WTOSTC1  WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        00096000
-         BR    R10                 RETURN                               00096100
-*                                                                       00096200
-* Report when hardcoded PROD account is used                            00096300
+RACIFACF XR    R2,R2               CLEAR R2                             00073800
+         IC    R2,ACEESP           SUBPOOL                              00073900
+         XR    R3,R3               CLEAR R3                             00074000
+         ICM   R3,B'0111',ACEELEN  LENGTH                               00074100
+         FREEMAIN RC,A=(ACEEREG),SP=(R2),LV=(R3) FREE ACEE              00074200
+         B     RACIFAIL            BRANCH TO FAIL COMMON                00074300
+*                                                                       00074400
+RACIFAIL MODESET KEYADDR=WORKKEY,WORKREG=2                              00074500
+         TM    WORKFLAG,WORKSUPO   SUP. ON                              00074600
+         BNO   RACINPWF            No  --> check for WTO suppression    00074700
+         MODESET MODE=PROB         SET STATE                            00074800
+RACINPWF CLC   SAFPRRET,=F'08'     Invalid or no password entered?      00074900
+         BNE   RACIFWTO            No  --> write message                00075000
+         LTR   R3,R3               yes --> no password entered?         00075100
+         BZ    RTRNFAIL            yes --> don't write message          00075200
+RACIFWTO MVC   WORKWTO+4(60),WTOMSG4  ATTEMPTED ACCESS                  00075300
+         ICM   R5,B'1111',4(R8)    GO TO USERID                         00075400
+         IC    R1,0(R5)            GET LENGTH                           00075500
+         EX    R1,RACIWTO2         MOVE NAME FOR WTO                    00075600
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00075700
+         XC    SAFPRREA,SAFPRREA   NOTHING ...                          00075800
+         XC    WORKPASS,WORKPASS   CLEAR JUST IN CASE                   00075900
+         B     RTRNFAIL            BYE ............                     00076000
+RACIWTO2 MVC   WORKWTO+4+WTOMSG4U(0),1(R5) MOVE USERID                  00076100
+         TITLE 'ALL ROADS LEAD HERE'                                    00076200
+RTRN0000 LA    R15,0               RC = 0                               00076300
+         B     RTRNRTRN            GO BACK                              00076400
+*                                                                       00076500
+RTRNGOOD LA    R15,0               RACF RC=0                            00076600
+         B     RTRNRTRN            GO BACK                              00076700
+*                                                                       00076800
+RTRNWARN LA    R15,4               RACF RC=4                       @rp2 00076900
+         B     RTRNRTRN            GO BACK                              00077000
+*                                                                       00077100
+RTRNFAIL LA    R15,8               RACF RC=8                       @rp2 00077200
+         B     RTRNRTRN            GO BACK                              00077300
+*                                                                       00077400
+RTRNRTRN L     R13,WORKSAVE+4      RETURN R13                           00077500
+         RETURN (14,12),RC=(15)    BYE                                  00077600
+*                                                                       00077700
+         TITLE 'CHECK FOR ACCESS'                                       00077800
+ENTYCHCK MVI   WORKENTL,0          Nullify Entity length           @rp2 00077900
+         L     R2,FLCCVT           LOAD CVT                             00078000
+         ICM   R2,B'1111',CVTRAC-CVTMAP(R2) CHECK RCVT                  00078100
+         BZ    ENTYERR1            WHO KNOWS?                           00078200
+         ICM   R2,B'1111',RCVTISTL-RCVT(R2) OUR STUFF?                  00078300
+         BZ    ENTYERR1            WHO KNOWS?                           00078400
+         ICM   R2,B'1111',CJYPROFS-CJYRCVTD(R2) OUR STUFF?              00078500
+         BZ    ENTYERR1            WHO KNOWS?                           00078600
+         USING RPECBLK,R2          ADDRESS CBLK                         00078700
+         CLC   WORKCLAS(8),=CL8' '    CLASS blank?                      00078800
+         BNE   ENTYNBLK                  --> no, continue               00078900
+         MVC   WORKCLAS(8),=CL8'DATASET' --> yes, assume DATASET        00079000
+ENTYNBLK CLC   =C'DATASET',WORKCLAS  CHECK FOR OUR OWN DSNS.            00079100
+         BNE   ENTYCLLP            NO, GO ON                            00079200
+         XR    R1,R1               Clear is needed for LA          @mg1 00079300
+         IC    R1,ACEEUSRL         GET LENGTH                           00079400
+         BCTR  R1,0                DOWN 1 FOR CLC                       00079500
+         EX    R1,ENTYEXUS         CLC 0(0,ENTYREG),ACEEUSRN            00079600
+         BNE   ENTYTEMP            No: not our dataset             @mg1 00079700
+         LA    R14,1(R1,ENTYREG)   Point after UserID              @mg1 00079800
+         CLI   0(R14),C'.'         First qualifier is UserID?      @mg1 00079900
+         BE    AUTHGOOD            Yes: definitely our dataset     @mg1 00080000
+ENTYTEMP DS    0H                                                  @mg1 00080100
+         CLC   0(3,ENTYREG),=C'SYS' is it a ..                          00080200
+         BNE   ENTYCLLP              --> no                             00080300
+         CLC   8(2,ENTYREG),=C'.T'            .. temporary ..           00080400
+         BNE   ENTYCLLP              --> no                             00080500
+         CLC   16(3,ENTYREG),=C'.RA'                         .. dataset 00080600
+         BNE   ENTYCLLP              --> no, go on                      00080700
+         B     AUTHGOOD              --> yes, go for it                 00080800
+ENTYCLLP XC    WORKSTAT,WORKSTAT   Parameter for RACSTAT           @rp2 00080900
+         LA    R1,WORKCLAS         Class name                      @rp2 00081000
+         ST    R1,WORKSTAT         Class name to check             @rp2 00081100
+         LA    R1,WORKSTAT         Parameter for RACSTAT           @rp2 00081200
+         L     R3,X'4C'            Pointer CVT                     @rp2 00081300
+         ICM   R3,B'1111',CVTRAC-CVTMAP(R3) Load RCVT              @rp2 00081400
+         ICM   R15,15,RCVTREXP-RCVT(R3)  Entry point RACSTAT       @rp2 00081500
+         BZ    ENTYCLL2            Give it the benefit of the doubt@rp2 00081600
+         BALR  R14,R15             Invoke RACSTAT (in CJYRCVT)     @rp2 00081700
+         LTR   R15,R15             Is CLASS present in CDT?        @rp2 00081800
+         BZ    ENTYCLL2            Yes: continue                   @rp2 00081900
+         LR    R5,R10              Save entry register             @rp2 00082000
+         BAL   R10,WTOUNKN         Msg: Undefined Class xxxxxxxx   @rp2 00082100
+         LR    R10,R5              Restore entry register          @rp2 00082200
+         B     AUTHFAIL            RC=8 --> exit                   @rp2 00082300
+ENTYCLL2 IC    R1,RPECLASL         Get length from Profile entry   @rp2 00082400
+         BCTR  R1,0                SUBTRACT 1 FOR CLC                   00082500
+         EX    R1,ENTYEXEC         CLC RPECLASN(0),WORKCLAS             00082600
+         BL    ENTYNFND            NOT FOUND                            00082700
+         BNE   ENTYNCLS            NO, GET NEXT                         00082800
+         MVC   WORKENTL,RPEENTYL   Copy Entity length field        @rp2 00082900
+         ICM   R1,B'0001',RPEENTYL GET LENGTH                           00083000
+         BZ    ENTYENFN            '*' ONLY ENTITY?                     00083100
+         BCTR  R1,0                NO, SUBTRACT 1 FOR CLC               00083200
+         EX    R1,ENTYEXEN         CLC RPEENTYN(0),0(ENTYREG)           00083300
+         BE    ENTYENFN            FOUND ENTITY                         00083400
+ENTYNCLS ICM   R2,B'1111',RPENEXT  GET NEXT                             00083500
+         BNZ   ENTYCLLP            GO FOR NEXT                          00083600
+ENTYNFND B     ENTYWARN            RETURN WARN                          00083700
+ENTYEXEC CLC   RPECLASN(0),WORKCLAS SAME CLASS? << executed >>          00083800
+ENTYEXEN CLC   RPEENTYN(0),0(ENTYREG) CHECK ENTITY                      00083900
+ENTYEXUS CLC   0(0,ENTYREG),ACEEUSRI US?                                00084000
+*                                                                       00084100
+ENTYENFN ICM   R3,B'1111',RPEACCPT POINTER TO ACCESSES                  00084200
+         BZ    ENTYUACC            GO CHECK UACC                        00084300
+*                                                                       00084400
+         USING RPEACCLE,R3         VARIABLE SECTION                     00084500
+ENTYULOP CLC   RPEAUSR,ACEEUSRI    USER EXCEPTION?                      00084600
+         BE    ENTYEXCP            MATCH, GO CHECK                      00084700
+         ICM   R3,B'1111',RPEANEXT NEXT POINTER                         00084800
+         BNZ   ENTYULOP            GO CHECK NEXT                        00084900
+*                                                                       00085000
+ENTYCONN ICM   R4,B'1111',ACEECGRP CONNECT GROUPS                       00085100
+         BZ    ENTYUACC            NONE, GO ON                          00085200
+         USING CONNGRUP,R4         ADDRESS IT                           00085300
+ENTYCONL L     R3,RPEACCPT         GET POINTER AGAIN                    00085400
+ENTYCON2 CLC   RPEAUSR,CONNGRPN    GROUP EXCEPTION?                     00085500
+         BNE   ENTYNCRP            NO, NEXT RPE                         00085600
+         OI    WORKFLAG,WORKOPRB   SET OPER BYPASS                      00085700
+         CLC   WORKAUTH,RPEACS     SUFFICENT ACCESS IN PERMIT?          00085800
+         BH    ENTYNCRP            NO, CHECK NEXT AUTH.                 00085900
+         B     AUTHGOOD            YES, GO ON ...                       00086000
+ENTYNCRP ICM   R3,B'1111',RPEANEXT NEXT POINTER                         00086100
+         BNZ   ENTYCON2            GO CHECK NEXT EXCEPTION              00086200
+ENTYNCON ICM   R4,B'1111',CONNNEXT NEXT POINTER                         00086300
+         BNZ   ENTYCONL            GO CHECK NEXT CONNECT                00086400
+         TM    WORKFLAG,WORKOPRB   BYPASS OPER CHECK?                   00086500
+         BNO   ENTYUACC            NO, GO UACC                          00086600
+         B     ENTYFAIL            ALL CONN.S FAILED                    00086700
+*                                                                       00086800
+ENTYUACC CLC   WORKAUTH,RPEUACC    SUFFICENT ACCESS IN UACC?            00086900
+         BH    ENTYOPER            NO, RETURN CHECK FOR OP. AUTH        00087000
+         B     AUTHGOOD            YES, GO ON ...                       00087100
+*                                                                       00087200
+ENTYEXCP CLC   WORKAUTH,RPEACS     SUFFICENT ACCESS IN PERMIT?          00087300
+         BH    ENTYFAIL            NO, RETURN CHECK FOR OP. AUTH        00087400
+         B     AUTHGOOD            YES, GO ON ...                       00087500
+*---------------------------------------------------------------------* 00087600
+*        Users with the OPERATIONS authority are permitted to         * 00087700
+*        use all resources in the DATASET, DASDVOL and TAPEVOL class. * 00087800
+*---------------------------------------------------------------------* 00087900
+ENTYOPER CLC   =C'DATASET',RPECLASN  DATASET CLASS                      00088000
+         BE    ENTYOPR2            YES, CHECK OPER AUTH                 00088100
+         CLC   =C'DASDVOL',RPECLASN DASDVOL CLASS                       00088200
+         BE    ENTYOPR2            YES, CHECK OPER AUTH                 00088300
+         CLC   =C'TAPEVOL',RPECLASN TAPEVOL class?                 @rp2 00088400
+         BE    ENTYOPR2            Yes: check operations privilege @rp2 00088500
+         B     ENTYFAIL            TOUGH                                00088600
+ENTYOPR2 TM    ACEEFLG1,ACEEOPER   MAKE OPER AUTH.                      00088700
+         BNO   ENTYFAIL            TOUGH                                00088800
+*                                                                       00088900
+         DROP  R4,R3,R2            RPEACCLE CONNGRUP RPECBLK       @rp2 00089000
+         CLC   =C'PROD',ACEEUSRI   PROD USERID?                         00089100
+         BNE   AUTHGOOD            NO MSG NEC. -> OPER ALLOWED          00089200
+         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00089300
+         BO    AUTHGOOD            YES, NO MESS..                       00089400
+         MVC   WORKWTO+4(60),WTOMSG7 INVALID ACCESS TO RESOURCE         00089500
+         MVC   WORKWTO+4+WTOMSG7U(L'WTOMSG7U),ACEEUSRI MOVE USERID      00089600
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00089700
+         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00089800
+         MVC   WORKWTO+4(9),=C'RAKF0006 ' USERID/CLASS                  00089900
+         BAL   R4,ENTYENTY         ENTY COMMON                          00090000
+         B     AUTHGOOD            ALLOW ACCESS                         00090100
+*                                                                       00090200
+ENTYERR1 MVC   WORKWTO+4(60),WTOMSG3 PROFS IN ERROR                     00090300
+         MVC   WORKWTO+4+WTOMSG3U(L'WTOMSG3U),ACEEUSRI MOVE USERID      00090400
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00090500
+         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00090600
+         MVC   WORKWTO+4(9),=C'RAKF0009 ' USERID/CLASS                  00090700
+         BAL   R4,ENTYENTY         ENTY COMMON                          00090800
+         B     AUTHGOOD            ALLOW ACCESS                         00090900
+*                                                                       00091000
+ENTYWARN OI    WORKENTY,4          RC = 4                               00091100
+         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00091200
+         BO    AUTHWARN            SORRY ....                           00091300
+         MVC   WORKWTO+4(60),WTOMSG8 INVALID ACCESS TO RESOURCE         00091400
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00091500
+         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00091600
+         MVC   WORKWTO+4(9),=C'RAKF000B ' USERID/CLASS                  00091700
+         BAL   R4,ENTYENTY         ENTY COMMON                          00091800
+         B     AUTHGOOD            ALLOW ACCESS                         00091900
+*                                                                       00092000
+ENTYFAIL OI    WORKENTY,8          RC = 8                               00092100
+         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00092200
+         BO    AUTHFAIL            SORRY ....                           00092300
+         MVC   WORKWTO+4(60),WTOMSG5 INVALID ACCESS TO RESOURCE         00092400
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00092500
+         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00092600
+         MVC   WORKWTO+4(9),=C'RAKF000A ' USERID/CLASS                  00092700
+         BAL   R4,ENTYENTY         ENTY COMMON                          00092800
+         B     AUTHFAIL            FAIL ACCESS                          00092900
+*                                                                       00093000
+ENTYENTY MVC   WORKWTO+4+WTOMSGEU(L'WTOMSGEU),ACEEUSRI MOVE USERID      00093100
+         MVC   WORKWTO+4+WTOMSGEC(L'WTOMSGEC),WORKCLAS MOVE CLASS       00093200
+         L     R2,PSAAOLD          ASCB ADDRESS                         00093300
+         ICM   R3,B'1111',ASCBJBNI-ASCB(R2) JOBNAME SPEC.?              00093400
+         BNZ   ENTYJOBN            YES, GO USE NAME                     00093500
+         L     R3,ASCBJBNS-ASCB(R2) STC ... NAME                        00093600
+ENTYJOBN MVC   WORKWTO+4+WTOMSGEJ(L'WTOMSGEJ),0(R3) MOVE JOBNAME        00093700
+         XR    R1,R1               Entity length                   @rp2 00093800
+         IC    R1,WORKENTL         Saved entity length             @rp2 00093900
+         LTR   R1,R1               Length is zero?                 @rp2 00094000
+         BZ    ENTYWTO1            Yes: assume some lengths        @rp2 00094100
+         BCTR  R1,0                Minus 1 for EX                  @rp2 00094200
+         B     ENTYWTO2            Set ENTITY in WTO               @rp2 00094300
+ENTYWTO1 L     R1,WORKSTAT+4       Default entity len from RACSTAT @rp2 00094400
+         BCTR  R1,0                Minus 1 for EX instruction      @rp2 00094500
+         LA    R2,L'WTOMSGEE-1     Maximum room in WTO             @rp2 00094600
+         CR    R2,R1               Too long?                       @rp2 00094700
+         BH    ENTYWTO2            No: good                        @rp2 00094800
+         LR    R1,R2               Yes: truncate                   @rp2 00094900
+ENTYWTO2 EX    R1,ENTYERRX         MVC WORKWTO+4+WTOMSGEE(0),0(ENTYREG) 00095000
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00095100
+         BR    R4                  RETURN                               00095200
+*                                                                       00095300
+ENTYERRX MVC   WORKWTO+4+WTOMSGEE(0),0(ENTYREG) MOVE ENTITY             00095400
+*                                                                  @rp2 00095500
+*        Report unknown CLASS                                      @rp2 00095600
+*                                                                  @rp2 00095700
+WTOUNKN  MVC   WORKWTO(REALWTOL),REALWTO Initialize WTO            @rp2 00095800
+         MVC   WORKWTO+4(60),WTOMSG12 Move message                 @rp2 00095900
+         MVC   WORKWTO+4+WTMSG12C(8),WORKCLAS   Move class name    @rp2 00096000
+         WTO   MF=(E,WORKWTO)      Inform operator                 @rp2 00096100
+         BR    R10                 Return                          @rp2 00096200
+*                                                                       00096300
 *                                                                       00096400
-WTOPROD  MVC   WORKWTO(REALWTOL),REALWTO INIT WTO                       00096500
-         MVC   WORKWTO+4(60),WTOMSG11 MOVE MESSAGE                      00096600
-         ICM   R2,B'1111',PSAAOLD  GET ASCB                             00096700
-         BZ    WTOPROD1            NO ASCB                              00096800
-         ICM   R2,B'1111',ASCBJBNI-ASCB(R2)  Point to jobname           00096900
-         BZ    WTOPROD1            No Jobname                           00097000
-         MVC   WORKWTO+4+WTMSG11J(8),0(R2) Move Jobname                 00097100
-WTOPROD1 WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        00097200
+* Report when hardcoded STC account is used                             00096500
+*                                                                       00096600
+WTOSTC   MVC   WORKWTO(REALWTOL),REALWTO INIT WTO                       00096700
+         MVC   WORKWTO+4(60),WTOMSG10 MOVE MESSAGE                      00096800
+         ICM   R2,B'1111',X'C'(R8) GET STC PROC NAME PTR                00096900
+         BZR   R10                 No proc name, no message        @rp2 00097000
+         MVC   WORKWTO+4+WTMSG10P(8),0(R2) MOVE PROC NAME               00097100
+WTOSTC1  WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        00097200
          BR    R10                 RETURN                               00097300
 *                                                                       00097400
-         TITLE 'CONSTANTS AND SUCH'                                     00097500
-         LTORG                                                          00097600
-*                                                                       00097700
-STCUID   DC    AL4(0),X'03',CL8'STC',X'08',C'STCGROUP'                  00097800
-STCPASS  DC    X'08251C06253A1F362D',C'Y'                               00097900
-STCGROUP DC    AL4(0),AL1(8),CL8'STCGROUP'                              00098000
-PRODUID  DC    AL4(0),X'04',CL8'PROD',X'08',C'PRDGROUP'                 00098100
-PRODPASS DC    X'08251C06253A1F362D',C'N'                               00098200
-PRDGROUP DC    AL4(0),AL1(8),CL8'PRDGROUP'                              00098300
-*                                                                       00098400
-REALWTO  WTO   '1234567 101234567 201234567 301234567 401234567 5012345X00098500
-               67 60',MF=L                                              00098600
-REALWTOL EQU   *-REALWTO           LENGTH                               00098700
-*                                                                       00098800
-WTOMSG1  DC    CL60'RAKF0001 USERID TABLE INVALID OR MISSING'           00098900
-WTOMSG2  DC    C'RAKF0002 STC ACCESS ALLOWED: USER:'                    00099000
-WTOMSG2U EQU   *-WTOMSG2,8                                              00099100
-         DC    CL8' ',CL(60-(*-WTOMSG2))' '                             00099200
-WTOMSG3  DC    C'RAKF0003 RESOURCE TABLE INVALID/MISSING: ALLOWED:'     00099300
-*        DC    C': USER ALLOWED:'                                       00099400
-WTOMSG3U EQU   *-WTOMSG3,8                                              00099500
-         DC    CL8' ',CL(60-(*-WTOMSG3))' '                             00099600
-WTOMSG4  DC    C'RAKF0004 INVALID ATTEMPT TO ACCESS SYSTEM:  USER:'     00099700
-WTOMSG4U EQU   *-WTOMSG4,8                                              00099800
-         DC    CL8' ',CL(60-(*-WTOMSG4))' '                             00099900
-WTOMSG5  DC    CL60'RAKF0005 INVALID ATTEMPT TO ACCESS RESOURCE'        00100000
-WTOMSG7  DC    C'RAKF0007 ACCESS ALLOWED VIA OPERATIONS:  USER:'        00100100
-WTOMSG7U EQU   *-WTOMSG7,8                                              00100200
-         DC    CL8' ',CL(60-(*-WTOMSG7))' '                             00100300
-WTOMSG8  DC    CL60'RAKF0008 UNDEFINED RESOURCE - ACCESS ALLOWED'       00100400
-WTOMSG10 DC    C'RAKF0010I STC '                                        00100500
-WTMSG10P EQU   *-WTOMSG10,8                                             00100600
-         DC    CL8' ',C' STARTED USING DEFAULT STC ACCOUNT'             00100700
-         DC    CL(60-(*-WTOMSG10))' '                                   00100800
-WTOMSG11 DC    C'RAKF0011I JOB '                                        00100900
-WTMSG11J EQU   *-WTOMSG11,8                                             00101000
-         DC    CL8' ',C' STARTED USING DEFAULT PROD ACCOUNT'            00101100
-         DC    CL(60-(*-WTOMSG11))' '                                   00101200
-WTOMSG12 DC    C'RAKF0012 UNDEFINED CLASS '                        @rp2 00101300
-WTMSG12C EQU   *-WTOMSG12,8                                        @rp2 00101400
-         DC    CL8' '                  To contain unknown class    @rp2 00101500
-         DC    CL(60-(*-WTOMSG12))' '                              @rp2 00101600
-WTOMSGE  DC    C'XXXXXXXXX '                                            00101700
-WTOMSGEU EQU   *-WTOMSGE,8                                              00101800
-         DC    CL8' ',C','                                              00101900
-WTOMSGEJ EQU   *-WTOMSGE,8                                              00102000
-         DC    CL8' ',C','                                              00102100
-WTOMSGEC EQU   *-WTOMSGE,8                                              00102200
-         DC    CL8' ',C','                                              00102300
-WTOMSGEE EQU   *-WTOMSGE,20                                             00102400
-         DC    CL20' ',CL(60-(*-WTOMSGE))' '                            00102500
-         DC    CL133' '                                                 00102600
-*                                  spaceholder blanks removed       @02 00102700
-         DC    CL23' '             rest of spaceholder blanks       @02 00102800
-         TITLE 'REGISTERS AND SUCH'                                     00102900
-R0       EQU   0                                                        00103000
-R1       EQU   1                                                        00103100
-R2       EQU   2                                                        00103200
-R3       EQU   3                                                        00103300
-R4       EQU   4                                                        00103400
-R5       EQU   5                                                        00103500
-ENTYREG  EQU   6                                                        00103600
-ACEEREG  EQU   7                                                        00103700
-R8       EQU   8                                                        00103800
-R9       EQU   9                                                        00103900
-R10      EQU   10                                                       00104000
-R11      EQU   11                                                       00104100
-R12      EQU   12                                                       00104200
-R13      EQU   13                                                       00104300
-R14      EQU   14                                                       00104400
-R15      EQU   15                                                       00104500
-         PRINT NOGEN                                                    00104600
-         TITLE 'DSECTS AND SUCH'                                        00104700
-*                                                                       00104800
-*        WORKAREA is the area provided by the caller of                 00104900
-*        RACROUTE (the WORKA paramer). The maximum length = 512 bytes   00105000
-*                                                                       00105100
-WORKAREA DSECT                     159 BYTE AREA                   @rp2 00105200
-WORKSAVE DS    18F                 Our save area                        00105300
-WORKSTAT DS    D                   Parameter for RACSTAT           @rp2 00105400
-*                                  Word 1 = address of class name  @rp2 00105500
-*                                  Word 2 = Max. length of class   @rp2 00105600
-WORKWTO  DS    XL(REALWTOL)        FOR WTO                              00105700
-WORKKEY  DS    X                   RACINIT KEY SAVE                     00105800
-WORKENTY DS    X                   ENTITY RETURN                        00105900
-WORKENTL DS    X                   Entity length                   @rp2 00106000
-WORKFLAG DS    X                   FLAG BYTES                           00106100
-WORKSUPO EQU   X'80'                  WE SET SUPERVISOR STATE           00106200
-WORKNLOG EQU   X'40'                  NO LOG IF FAILURE                 00106300
-WORKOPRB EQU   X'20'                  RPE MATCH ON USERID/CLASS         00106400
-WORKPASS DS    XL9                 RACINIT LEN/PSWD                     00106500
-         ORG   WORKPASS                                                 00106600
-WORKCLAS DS    XL8                 RACHECK/DEF/FRAC CLASS               00106700
-WORKAUTH DS    X                   RACHECK/DEF/FRAC AUTHORITY REQ.      00106800
-         ORG                                                            00106900
-         DS    XL(159-(*-WORKAREA)) MAKE SURE                      @rp2 00107000
-WORKAREL EQU   *-WORKAREA           S.B 159                        @rp2 00107100
-*                                                                       00107200
-*        GETMAIN'd scratch for the RAKFPWH password-hash call           00107300
-HASHWKD  DSECT                                                          00107400
-HWPL     DS    5F                  Parmlist (salt,pw,pwlen,out,work)    00107500
-HWPWLEN  DS    F                   Candidate password length            00107600
-HWR13    DS    F                   Saved caller save-area pointer       00107700
-HWOUT    DS    CL32                Computed SHA-256 hash                00107800
-HWSAVE   DS    18F                 Save area for the RAKFPWH call       00107900
-HWWORK   DS    CL640               RAKFPWH work area (>= RPWWORKL)      00108000
-HASHWKL  EQU   *-HASHWKD           Total length to GETMAIN              00108100
-*                                                                       00108200
-AUTHDS   DSECT                     USED FOR RETURN FROM SUBS(R10)       00108300
-AUTHGOOD DS    F'0'                                                     00108400
-AUTHWARN DS    F'0'                                                     00108500
-AUTHFAIL DS    F'0'                                                     00108600
-*                                                                       00108700
-         COPY  CJYUCBLK            USERID CBLK                          00108800
-*                                                                       00108900
-         COPY  CJYPCBLK            PROFILE CBLK                         00109000
-*                                                                       00109100
-         COPY  CJYRCVTD            RCVT CBLK                            00109200
-*                                                                       00109300
-         CVT     DSECT=YES,LIST=NO                                      00109400
-         ICHACHKL                                                       00109500
-         ICHPRCVT                                                       00109600
-         ICHRDDFL                                                       00109700
-         ICHSAFP                                                        00109800
-         IEFAJCTB                                                       00109900
-         IEZJSCB                                                        00110000
-         IHAASCB DSECT=YES                                              00110100
-         IHAASXB DSECT=YES                                              00110200
-         IHACDE                                                         00110300
-         IHAPSA  DSECT=YES                                              00110400
-         IKJRB   DSECT=YES                                              00110500
-         IKJTCB  DSECT=YES,LIST=NO                                      00110600
-         IHAACEE                                                        00110700
-ACEEL    EQU   *-ACEE                                                   00110800
-         END                                                            00110900
+* Report when hardcoded PROD account is used                            00097500
+*                                                                       00097600
+WTOPROD  MVC   WORKWTO(REALWTOL),REALWTO INIT WTO                       00097700
+         MVC   WORKWTO+4(60),WTOMSG11 MOVE MESSAGE                      00097800
+         ICM   R2,B'1111',PSAAOLD  GET ASCB                             00097900
+         BZ    WTOPROD1            NO ASCB                              00098000
+         ICM   R2,B'1111',ASCBJBNI-ASCB(R2)  Point to jobname           00098100
+         BZ    WTOPROD1            No Jobname                           00098200
+         MVC   WORKWTO+4+WTMSG11J(8),0(R2) Move Jobname                 00098300
+WTOPROD1 WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        00098400
+         BR    R10                 RETURN                               00098500
+*                                                                       00098600
+         TITLE 'CONSTANTS AND SUCH'                                     00098700
+         LTORG                                                          00098800
+*                                                                       00098900
+STCUID   DC    AL4(0),X'03',CL8'STC',X'08',C'STCGROUP'                  00099000
+STCPASS  DC    X'08251C06253A1F362D',C'Y'                               00099100
+STCGROUP DC    AL4(0),AL1(8),CL8'STCGROUP'                              00099200
+PRODUID  DC    AL4(0),X'04',CL8'PROD',X'08',C'PRDGROUP'                 00099300
+PRODPASS DC    X'08251C06253A1F362D',C'N'                               00099400
+PRDGROUP DC    AL4(0),AL1(8),CL8'PRDGROUP'                              00099500
+*                                                                       00099600
+REALWTO  WTO   '1234567 101234567 201234567 301234567 401234567 5012345X00099700
+               67 60',MF=L                                              00099800
+REALWTOL EQU   *-REALWTO           LENGTH                               00099900
+*                                                                       00100000
+WTOMSG1  DC    CL60'RAKF0001 USERID TABLE INVALID OR MISSING'           00100100
+WTOMSG2  DC    C'RAKF0002 STC ACCESS ALLOWED: USER:'                    00100200
+WTOMSG2U EQU   *-WTOMSG2,8                                              00100300
+         DC    CL8' ',CL(60-(*-WTOMSG2))' '                             00100400
+WTOMSG3  DC    C'RAKF0003 RESOURCE TABLE INVALID/MISSING: ALLOWED:'     00100500
+*        DC    C': USER ALLOWED:'                                       00100600
+WTOMSG3U EQU   *-WTOMSG3,8                                              00100700
+         DC    CL8' ',CL(60-(*-WTOMSG3))' '                             00100800
+WTOMSG4  DC    C'RAKF0004 INVALID ATTEMPT TO ACCESS SYSTEM:  USER:'     00100900
+WTOMSG4U EQU   *-WTOMSG4,8                                              00101000
+         DC    CL8' ',CL(60-(*-WTOMSG4))' '                             00101100
+WTOMSG5  DC    CL60'RAKF0005 INVALID ATTEMPT TO ACCESS RESOURCE'        00101200
+WTOMSG7  DC    C'RAKF0007 ACCESS ALLOWED VIA OPERATIONS:  USER:'        00101300
+WTOMSG7U EQU   *-WTOMSG7,8                                              00101400
+         DC    CL8' ',CL(60-(*-WTOMSG7))' '                             00101500
+WTOMSG8  DC    CL60'RAKF0008 UNDEFINED RESOURCE - ACCESS ALLOWED'       00101600
+WTOMSG10 DC    C'RAKF0010I STC '                                        00101700
+WTMSG10P EQU   *-WTOMSG10,8                                             00101800
+         DC    CL8' ',C' STARTED USING DEFAULT STC ACCOUNT'             00101900
+         DC    CL(60-(*-WTOMSG10))' '                                   00102000
+WTOMSG11 DC    C'RAKF0011I JOB '                                        00102100
+WTMSG11J EQU   *-WTOMSG11,8                                             00102200
+         DC    CL8' ',C' STARTED USING DEFAULT PROD ACCOUNT'            00102300
+         DC    CL(60-(*-WTOMSG11))' '                                   00102400
+WTOMSG12 DC    C'RAKF0012 UNDEFINED CLASS '                        @rp2 00102500
+WTMSG12C EQU   *-WTOMSG12,8                                        @rp2 00102600
+         DC    CL8' '                  To contain unknown class    @rp2 00102700
+         DC    CL(60-(*-WTOMSG12))' '                              @rp2 00102800
+WTOMSGE  DC    C'XXXXXXXXX '                                            00102900
+WTOMSGEU EQU   *-WTOMSGE,8                                              00103000
+         DC    CL8' ',C','                                              00103100
+WTOMSGEJ EQU   *-WTOMSGE,8                                              00103200
+         DC    CL8' ',C','                                              00103300
+WTOMSGEC EQU   *-WTOMSGE,8                                              00103400
+         DC    CL8' ',C','                                              00103500
+WTOMSGEE EQU   *-WTOMSGE,20                                             00103600
+         DC    CL20' ',CL(60-(*-WTOMSGE))' '                            00103700
+         DC    CL133' '                                                 00103800
+*                                  spaceholder blanks removed       @02 00103900
+         DC    CL23' '             rest of spaceholder blanks       @02 00104000
+         TITLE 'REGISTERS AND SUCH'                                     00104100
+R0       EQU   0                                                        00104200
+R1       EQU   1                                                        00104300
+R2       EQU   2                                                        00104400
+R3       EQU   3                                                        00104500
+R4       EQU   4                                                        00104600
+R5       EQU   5                                                        00104700
+ENTYREG  EQU   6                                                        00104800
+ACEEREG  EQU   7                                                        00104900
+R8       EQU   8                                                        00105000
+R9       EQU   9                                                        00105100
+R10      EQU   10                                                       00105200
+R11      EQU   11                                                       00105300
+R12      EQU   12                                                       00105400
+R13      EQU   13                                                       00105500
+R14      EQU   14                                                       00105600
+R15      EQU   15                                                       00105700
+         PRINT NOGEN                                                    00105800
+         TITLE 'DSECTS AND SUCH'                                        00105900
+*                                                                       00106000
+*        WORKAREA is the area provided by the caller of                 00106100
+*        RACROUTE (the WORKA paramer). The maximum length = 512 bytes   00106200
+*                                                                       00106300
+WORKAREA DSECT                     159 BYTE AREA                   @rp2 00106400
+WORKSAVE DS    18F                 Our save area                        00106500
+WORKSTAT DS    D                   Parameter for RACSTAT           @rp2 00106600
+*                                  Word 1 = address of class name  @rp2 00106700
+*                                  Word 2 = Max. length of class   @rp2 00106800
+WORKWTO  DS    XL(REALWTOL)        FOR WTO                              00106900
+WORKKEY  DS    X                   RACINIT KEY SAVE                     00107000
+WORKENTY DS    X                   ENTITY RETURN                        00107100
+WORKENTL DS    X                   Entity length                   @rp2 00107200
+WORKFLAG DS    X                   FLAG BYTES                           00107300
+WORKSUPO EQU   X'80'                  WE SET SUPERVISOR STATE           00107400
+WORKNLOG EQU   X'40'                  NO LOG IF FAILURE                 00107500
+WORKOPRB EQU   X'20'                  RPE MATCH ON USERID/CLASS         00107600
+WORKPASS DS    XL9                 RACINIT LEN/PSWD                     00107700
+         ORG   WORKPASS                                                 00107800
+WORKCLAS DS    XL8                 RACHECK/DEF/FRAC CLASS               00107900
+WORKAUTH DS    X                   RACHECK/DEF/FRAC AUTHORITY REQ.      00108000
+         ORG                                                            00108100
+         DS    XL(159-(*-WORKAREA)) MAKE SURE                      @rp2 00108200
+WORKAREL EQU   *-WORKAREA           S.B 159                        @rp2 00108300
+*                                                                       00108400
+*        GETMAIN'd scratch for the RAKFPWH password-hash call           00108500
+HASHWKD  DSECT                                                          00108600
+HWPL     DS    5F                  Parmlist (salt,pw,pwlen,out,work)    00108700
+HWPWLEN  DS    F                   Candidate password length            00108800
+HWR13    DS    F                   Saved caller save-area pointer       00108900
+HWOUT    DS    CL32                Computed SHA-256 hash                00109000
+HWSAVE   DS    18F                 Save area for the RAKFPWH call       00109100
+HWWORK   DS    CL640               RAKFPWH work area (>= RPWWORKL)      00109200
+HASHWKL  EQU   *-HASHWKD           Total length to GETMAIN              00109300
+*                                                                       00109400
+AUTHDS   DSECT                     USED FOR RETURN FROM SUBS(R10)       00109500
+AUTHGOOD DS    F'0'                                                     00109600
+AUTHWARN DS    F'0'                                                     00109700
+AUTHFAIL DS    F'0'                                                     00109800
+*                                                                       00109900
+         COPY  CJYUCBLK            USERID CBLK                          00110000
+*                                                                       00110100
+         COPY  CJYPCBLK            PROFILE CBLK                         00110200
+*                                                                       00110300
+         COPY  CJYRCVTD            RCVT CBLK                            00110400
+*                                                                       00110500
+         CVT     DSECT=YES,LIST=NO                                      00110600
+         ICHACHKL                                                       00110700
+         ICHPRCVT                                                       00110800
+         ICHRDDFL                                                       00110900
+         ICHSAFP                                                        00111000
+         IEFAJCTB                                                       00111100
+         IEZJSCB                                                        00111200
+         IHAASCB DSECT=YES                                              00111300
+         IHAASXB DSECT=YES                                              00111400
+         IHACDE                                                         00111500
+         IHAPSA  DSECT=YES                                              00111600
+         IKJRB   DSECT=YES                                              00111700
+         IKJTCB  DSECT=YES,LIST=NO                                      00111800
+         IHAACEE                                                        00111900
+ACEEL    EQU   *-ACEE                                                   00112000
+         END                                                            00112100
