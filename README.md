@@ -241,7 +241,7 @@ operations as described below:
 |  1 -  8 | USERID                                                    |
 | 10 - 17 | User Group (Installation defined)                         |
 | 18      | Asterisk '*' multiple user groups exist for this userid.  |
-| 19 - 26 | Password                                                  |
+| 19 - 26 | Password (legacy)                                         |
 | 28      | Operations Authority (Y or N). Always allow access¹       |
 | 30      | Special Authority (Y, N, or blank). RAKF admin privileges |
 | 31 - 50 | Comment field (used by "IBM RACF").                       |
