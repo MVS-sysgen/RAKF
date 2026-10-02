@@ -226,11 +226,11 @@ stopped upon the first hit.
 Below is an example `USERS` table:
 
 ```
-HMVS01   ADMIN   *CUL8TR   Y
-HMVS01   RAKFADM  CUL8TR   Y
-HMVS02   USER     PASS4U   N
-IBMUSER  ADMIN   *SYS1     Y
-IBMUSER  RAKFADM *SYS1     Y
+HMVS01   ADMIN   *CUL8TR   Y Y
+HMVS01   RAKFADM  CUL8TR   Y Y
+HMVS02   USER     PASS4U   N N
+IBMUSER  ADMIN   *SYS1     Y Y
+IBMUSER  RAKFADM *SYS1     Y Y
 ```
 
 This controls user access. Each line is a user, group, password, and
@@ -243,6 +243,7 @@ operations as described below:
 | 18      | Asterisk '*' multiple user groups exist for this userid.  |
 | 19 - 26 | Password                                                  |
 | 28      | Operations Authority (Y or N). Always allow access¹       |
+| 30      | Special Authority (Y, N, or blank). RAKF admin privileges |
 | 31 - 50 | Comment field (used by "IBM RACF").                       |
 
 *1* Unless explicitly denied access via a rule
@@ -339,6 +340,8 @@ PASSWORD may be code as PWD, GROUP as GRP and DFLTGRP as DGRP.
 - **ALTUSER** changes an existing user: `PASSWORD` re-hashes with a fresh salt,
   `DFLTGRP` moves the default-group flag, and the flags toggle operations/special.
 - **DELUSER** removes a user from SYS1.SECURE.SHADOW and SYS1.SECURE.CNTL(USERS).
+
+**Note:** To use these TSO commands, the SPECIAL privilege is required.
 
 They run either as a **TSO command** (from a RAKF administrator's session)—
 
@@ -603,6 +606,8 @@ that's what a user gets if no DASDVOL profile is defined.
 - **RDELETE** - Deletes one or more generalized resource records. If a GROUP is specified with ID(group name), 
   all the records of that group are deleted.
   If ID(ALL) is specified, all records of that class are deleted, including the ‘Universal Access’ record.
+
+**Note:** To use these TSO commands, the SPECIAL privilege is required.
 
 More information of these commands can be found by issuing HELP command name.
 
