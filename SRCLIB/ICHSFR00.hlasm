@@ -1024,138 +1024,145 @@ WTOPROD1 WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        00102200
 *                                                                       00102400
          TITLE 'CONSTANTS AND SUCH'                                     00102500
          LTORG                                                          00102600
-*                                                                       00102700
-STCUID   DC    AL4(0),X'03',CL8'STC',X'08',C'STCGROUP'                  00102800
-STCPASS  DC    X'08251C06253A1F362D',C'Y'                               00102900
-STCGROUP DC    AL4(0),AL1(8),CL8'STCGROUP'                              00103000
-*                                                                       00103100
-PRODUID  DC    AL4(0),X'04',CL8'PROD',X'08',C'PRDGROUP'                 00103200
-PRODPASS DC    X'08251C06253A1F362D',C'N'                               00103300
-PRDGROUP DC    AL4(0),AL1(8),CL8'PRDGROUP'                              00103400
-*                                                                       00103500
-REALWTO  WTO   '1234567 101234567 201234567 301234567 401234567 5012345X00103600
-               67 60',MF=L                                              00103700
-REALWTOL EQU   *-REALWTO           LENGTH                               00103800
-*                                                                       00103900
-WTOMSG1  DC    CL60'RAKF0001 USERID TABLE INVALID OR MISSING'           00104000
-WTOMSG2  DC    C'RAKF0002 STC ACCESS ALLOWED: USER:'                    00104100
-WTOMSG2U EQU   *-WTOMSG2,8                                              00104200
-         DC    CL8' ',CL(60-(*-WTOMSG2))' '                             00104300
-WTOMSG3  DC    C'RAKF0003 RESOURCE TABLE INVALID/MISSING: ALLOWED:'     00104400
-*        DC    C': USER ALLOWED:'                                       00104500
-WTOMSG3U EQU   *-WTOMSG3,8                                              00104600
-         DC    CL8' ',CL(60-(*-WTOMSG3))' '                             00104700
-WTOMSG4  DC    C'RAKF0004 INVALID ATTEMPT TO ACCESS SYSTEM:  USER:'     00104800
-WTOMSG4U EQU   *-WTOMSG4,8                                              00104900
-         DC    CL8' ',CL(60-(*-WTOMSG4))' '                             00105000
-WTOMSG5  DC    CL60'RAKF0005 INVALID ATTEMPT TO ACCESS RESOURCE'        00105100
-WTOMSG7  DC    C'RAKF0007 ACCESS ALLOWED VIA OPERATIONS:  USER:'        00105200
-WTOMSG7U EQU   *-WTOMSG7,8                                              00105300
-         DC    CL8' ',CL(60-(*-WTOMSG7))' '                             00105400
-WTOMSG8  DC    CL60'RAKF0008 UNDEFINED RESOURCE - ACCESS ALLOWED'       00105500
-WTOMSG10 DC    C'RAKF0010I STC '                                        00105600
-WTMSG10P EQU   *-WTOMSG10,8                                             00105700
-         DC    CL8' ',C' STARTED USING DEFAULT STC ACCOUNT'             00105800
-         DC    CL(60-(*-WTOMSG10))' '                                   00105900
-WTOMSG11 DC    C'RAKF0011I JOB '                                        00106000
-WTMSG11J EQU   *-WTOMSG11,8                                             00106100
-         DC    CL8' ',C' STARTED USING DEFAULT PROD ACCOUNT'            00106200
-         DC    CL(60-(*-WTOMSG11))' '                                   00106300
-WTOMSG12 DC    C'RAKF0012 UNDEFINED CLASS '                        @rp2 00106400
-WTMSG12C EQU   *-WTOMSG12,8                                        @rp2 00106500
-         DC    CL8' '                  To contain unknown class    @rp2 00106600
-         DC    CL(60-(*-WTOMSG12))' '                              @rp2 00106700
-WTOMSGE  DC    C'XXXXXXXXX '                                            00106800
-WTOMSGEU EQU   *-WTOMSGE,8                                              00106900
-         DC    CL8' ',C','                                              00107000
-WTOMSGEJ EQU   *-WTOMSGE,8                                              00107100
-         DC    CL8' ',C','                                              00107200
-WTOMSGEC EQU   *-WTOMSGE,8                                              00107300
-         DC    CL8' ',C','                                              00107400
-WTOMSGEE EQU   *-WTOMSGE,20                                             00107500
-         DC    CL20' ',CL(60-(*-WTOMSGE))' '                            00107600
-         DC    CL133' '                                                 00107700
-*                                  spaceholder blanks removed       @02 00107800
-         DC    CL23' '             rest of spaceholder blanks       @02 00107900
-         TITLE 'REGISTERS AND SUCH'                                     00108000
-R0       EQU   0                                                        00108100
-R1       EQU   1                                                        00108200
-R2       EQU   2                                                        00108300
-R3       EQU   3                                                        00108400
-R4       EQU   4                                                        00108500
-R5       EQU   5                                                        00108600
-ENTYREG  EQU   6                                                        00108700
-ACEEREG  EQU   7                                                        00108800
-R8       EQU   8                                                        00108900
-R9       EQU   9                                                        00109000
-R10      EQU   10                                                       00109100
-R11      EQU   11                                                       00109200
-R12      EQU   12                                                       00109300
-R13      EQU   13                                                       00109400
-R14      EQU   14                                                       00109500
-R15      EQU   15                                                       00109600
-         PRINT NOGEN                                                    00109700
-         TITLE 'DSECTS AND SUCH'                                        00109800
-*                                                                       00109900
-*        WORKAREA is the area provided by the caller of                 00110000
-*        RACROUTE (the WORKA paramer). The maximum length = 512 bytes   00110100
-*                                                                       00110200
-WORKAREA DSECT                     168 BYTE AREA                   @rp2 00110300
-WORKSAVE DS    18F                 Our save area                        00110400
-WORKSTAT DS    D                   Parameter for RACSTAT           @rp2 00110500
-*                                  Word 1 = address of class name  @rp2 00110600
-*                                  Word 2 = Max. length of class   @rp2 00110700
-WORKWTO  DS    XL(REALWTOL)        FOR WTO                              00110800
-WORKKEY  DS    X                   RACINIT KEY SAVE                     00110900
-WORKENTY DS    X                   ENTITY RETURN                        00111000
-WORKENTL DS    X                   Entity length                   @rp2 00111100
-WORKFLAG DS    X                   FLAG BYTES                           00111200
-WORKSUPO EQU   X'80'                  WE SET SUPERVISOR STATE           00111300
-WORKNLOG EQU   X'40'                  NO LOG IF FAILURE                 00111400
-WORKOPRB EQU   X'20'                  RPE MATCH ON USERID/CLASS         00111500
-WORKPASS DS    XL9                 RACINIT LEN/PSWD                     00111600
-         ORG   WORKPASS                                                 00111700
-WORKSTC  DS    XL9                 To receive L + START=value      @rp2 00111800
-WORKCLAS DS    XL8                 RACHECK/DEF/FRAC CLASS               00111900
-WORKAUTH DS    X                   RACHECK/DEF/FRAC AUTHORITY REQ.      00112000
-         ORG                                                            00112100
-         DS    XL(168-(*-WORKAREA)) MAKE SURE                      @rp2 00112200
-WORKAREL EQU   *-WORKAREA           S.B 168                        @rp2 00112300
-*                                                                       00112400
-*        GETMAIN'd scratch for the RAKFPWH password-hash call           00112500
-HASHWKD  DSECT                                                          00112600
-HWPL     DS    5F                  Parmlist (salt,pw,pwlen,out,work)    00112700
-HWPWLEN  DS    F                   Candidate password length            00112800
-HWR13    DS    F                   Saved caller save-area pointer       00112900
-HWOUT    DS    CL32                Computed SHA-256 hash                00113000
-HWSAVE   DS    18F                 Save area for the RAKFPWH call       00113100
-HWWORK   DS    CL640               RAKFPWH work area (>= RPWWORKL)      00113200
-HASHWKL  EQU   *-HASHWKD           Total length to GETMAIN              00113300
-*                                                                       00113400
-AUTHDS   DSECT                     USED FOR RETURN FROM SUBS(R10)       00113500
-AUTHGOOD DS    F'0'                                                     00113600
-AUTHWARN DS    F'0'                                                     00113700
-AUTHFAIL DS    F'0'                                                     00113800
-*                                                                       00113900
-         COPY  CJYUCBLK            USERID CBLK                          00114000
+*---------------------------------------------------------------------* 00102700
+*        STCUID  is the default for a STC, if no user is specified    * 00102800
+*                in the USERS table.                                  * 00102900
+*        PRODUID is the default for a JOB, if no user is specified    * 00103000
+*                or inherited.                                        * 00103100
+*        Both entries have the same layout as the USER entry in       * 00103200
+*                CJYUCBLK mapped by the CBLK DSECT.                   * 00103300
+*---------------------------------------------------------------------* 00103400
+STCUID   DC    AL4(0),X'03',CL8'STC',X'08',C'STCGROUP'                  00103500
+STCPASS  DC    X'08251C06253A1F362D',C'Y',C'N'                     @rp2 00103600
+STCGROUP DC    AL4(0),AL1(8),CL8'STCGROUP'                              00103700
+*                                                                       00103800
+PRODUID  DC    AL4(0),X'04',CL8'PROD',X'08',C'PRDGROUP'                 00103900
+PRODPASS DC    X'08251C06253A1F362D',C'N',C'N'                     @rp2 00104000
+PRDGROUP DC    AL4(0),AL1(8),CL8'PRDGROUP'                              00104100
+*                                                                       00104200
+REALWTO  WTO   '1234567 101234567 201234567 301234567 401234567 5012345X00104300
+               67 60',MF=L                                              00104400
+REALWTOL EQU   *-REALWTO           LENGTH                               00104500
+*                                                                       00104600
+WTOMSG1  DC    CL60'RAKF0001 USERID TABLE INVALID OR MISSING'           00104700
+WTOMSG2  DC    C'RAKF0002 STC ACCESS ALLOWED: USER:'                    00104800
+WTOMSG2U EQU   *-WTOMSG2,8                                              00104900
+         DC    CL8' ',CL(60-(*-WTOMSG2))' '                             00105000
+WTOMSG3  DC    C'RAKF0003 RESOURCE TABLE INVALID/MISSING: ALLOWED:'     00105100
+*        DC    C': USER ALLOWED:'                                       00105200
+WTOMSG3U EQU   *-WTOMSG3,8                                              00105300
+         DC    CL8' ',CL(60-(*-WTOMSG3))' '                             00105400
+WTOMSG4  DC    C'RAKF0004 INVALID ATTEMPT TO ACCESS SYSTEM:  USER:'     00105500
+WTOMSG4U EQU   *-WTOMSG4,8                                              00105600
+         DC    CL8' ',CL(60-(*-WTOMSG4))' '                             00105700
+WTOMSG5  DC    CL60'RAKF0005 INVALID ATTEMPT TO ACCESS RESOURCE'        00105800
+WTOMSG7  DC    C'RAKF0007 ACCESS ALLOWED VIA OPERATIONS:  USER:'        00105900
+WTOMSG7U EQU   *-WTOMSG7,8                                              00106000
+         DC    CL8' ',CL(60-(*-WTOMSG7))' '                             00106100
+WTOMSG8  DC    CL60'RAKF0008 UNDEFINED RESOURCE - ACCESS ALLOWED'       00106200
+WTOMSG10 DC    C'RAKF0010I STC '                                        00106300
+WTMSG10P EQU   *-WTOMSG10,8                                             00106400
+         DC    CL8' ',C' STARTED USING DEFAULT STC ACCOUNT'             00106500
+         DC    CL(60-(*-WTOMSG10))' '                                   00106600
+WTOMSG11 DC    C'RAKF0011I JOB '                                        00106700
+WTMSG11J EQU   *-WTOMSG11,8                                             00106800
+         DC    CL8' ',C' STARTED USING DEFAULT PROD ACCOUNT'            00106900
+         DC    CL(60-(*-WTOMSG11))' '                                   00107000
+WTOMSG12 DC    C'RAKF0012 UNDEFINED CLASS '                        @rp2 00107100
+WTMSG12C EQU   *-WTOMSG12,8                                        @rp2 00107200
+         DC    CL8' '                  To contain unknown class    @rp2 00107300
+         DC    CL(60-(*-WTOMSG12))' '                              @rp2 00107400
+WTOMSGE  DC    C'XXXXXXXXX '                                            00107500
+WTOMSGEU EQU   *-WTOMSGE,8                                              00107600
+         DC    CL8' ',C','                                              00107700
+WTOMSGEJ EQU   *-WTOMSGE,8                                              00107800
+         DC    CL8' ',C','                                              00107900
+WTOMSGEC EQU   *-WTOMSGE,8                                              00108000
+         DC    CL8' ',C','                                              00108100
+WTOMSGEE EQU   *-WTOMSGE,20                                             00108200
+         DC    CL20' ',CL(60-(*-WTOMSGE))' '                            00108300
+         DC    CL133' '                                                 00108400
+*                                  spaceholder blanks removed       @02 00108500
+         DC    CL23' '             rest of spaceholder blanks       @02 00108600
+         TITLE 'REGISTERS AND SUCH'                                     00108700
+R0       EQU   0                                                        00108800
+R1       EQU   1                                                        00108900
+R2       EQU   2                                                        00109000
+R3       EQU   3                                                        00109100
+R4       EQU   4                                                        00109200
+R5       EQU   5                                                        00109300
+ENTYREG  EQU   6                                                        00109400
+ACEEREG  EQU   7                                                        00109500
+R8       EQU   8                                                        00109600
+R9       EQU   9                                                        00109700
+R10      EQU   10                                                       00109800
+R11      EQU   11                                                       00109900
+R12      EQU   12                                                       00110000
+R13      EQU   13                                                       00110100
+R14      EQU   14                                                       00110200
+R15      EQU   15                                                       00110300
+         PRINT NOGEN                                                    00110400
+         TITLE 'DSECTS AND SUCH'                                        00110500
+*                                                                       00110600
+*        WORKAREA is the area provided by the caller of                 00110700
+*        RACROUTE (the WORKA paramer). The maximum length = 512 bytes   00110800
+*                                                                       00110900
+WORKAREA DSECT                     168 BYTE AREA                   @rp2 00111000
+WORKSAVE DS    18F                 Our save area                        00111100
+WORKSTAT DS    D                   Parameter for RACSTAT           @rp2 00111200
+*                                  Word 1 = address of class name  @rp2 00111300
+*                                  Word 2 = Max. length of class   @rp2 00111400
+WORKWTO  DS    XL(REALWTOL)        FOR WTO                              00111500
+WORKKEY  DS    X                   RACINIT KEY SAVE                     00111600
+WORKENTY DS    X                   ENTITY RETURN                        00111700
+WORKENTL DS    X                   Entity length                   @rp2 00111800
+WORKFLAG DS    X                   FLAG BYTES                           00111900
+WORKSUPO EQU   X'80'                  WE SET SUPERVISOR STATE           00112000
+WORKNLOG EQU   X'40'                  NO LOG IF FAILURE                 00112100
+WORKOPRB EQU   X'20'                  RPE MATCH ON USERID/CLASS         00112200
+WORKPASS DS    XL9                 RACINIT LEN/PSWD                     00112300
+         ORG   WORKPASS                                                 00112400
+WORKSTC  DS    XL9                 To receive L + START=value      @rp2 00112500
+WORKCLAS DS    XL8                 RACHECK/DEF/FRAC CLASS               00112600
+WORKAUTH DS    X                   RACHECK/DEF/FRAC AUTHORITY REQ.      00112700
+         ORG                                                            00112800
+         DS    XL(168-(*-WORKAREA)) MAKE SURE                      @rp2 00112900
+WORKAREL EQU   *-WORKAREA           S.B 168                        @rp2 00113000
+*                                                                       00113100
+*        GETMAIN'd scratch for the RAKFPWH password-hash call           00113200
+HASHWKD  DSECT                                                          00113300
+HWPL     DS    5F                  Parmlist (salt,pw,pwlen,out,work)    00113400
+HWPWLEN  DS    F                   Candidate password length            00113500
+HWR13    DS    F                   Saved caller save-area pointer       00113600
+HWOUT    DS    CL32                Computed SHA-256 hash                00113700
+HWSAVE   DS    18F                 Save area for the RAKFPWH call       00113800
+HWWORK   DS    CL640               RAKFPWH work area (>= RPWWORKL)      00113900
+HASHWKL  EQU   *-HASHWKD           Total length to GETMAIN              00114000
 *                                                                       00114100
-         COPY  CJYPCBLK            PROFILE CBLK                         00114200
-*                                                                       00114300
-         COPY  CJYRCVTD            RCVT CBLK                            00114400
-*                                                                       00114500
-         CVT     DSECT=YES,LIST=NO                                      00114600
-         ICHACHKL                                                       00114700
-         ICHPRCVT                                                       00114800
-         ICHRDDFL                                                       00114900
-         ICHSAFP                                                        00115000
-         IEFAJCTB                                                       00115100
-         IEZJSCB                                                        00115200
-         IHAASCB DSECT=YES                                              00115300
-         IHAASXB DSECT=YES                                              00115400
-         IHACDE                                                         00115500
-         IHAPSA  DSECT=YES                                              00115600
-         IKJRB   DSECT=YES                                              00115700
-         IKJTCB  DSECT=YES,LIST=NO                                      00115800
-         IHAACEE                                                        00115900
-ACEEL    EQU   *-ACEE                                                   00116000
-         END                                                            00116100
+AUTHDS   DSECT                     USED FOR RETURN FROM SUBS(R10)       00114200
+AUTHGOOD DS    F'0'                                                     00114300
+AUTHWARN DS    F'0'                                                     00114400
+AUTHFAIL DS    F'0'                                                     00114500
+*                                                                       00114600
+         COPY  CJYUCBLK            USERID CBLK                          00114700
+*                                                                       00114800
+         COPY  CJYPCBLK            PROFILE CBLK                         00114900
+*                                                                       00115000
+         COPY  CJYRCVTD            RCVT CBLK                            00115100
+*                                                                       00115200
+         CVT     DSECT=YES,LIST=NO                                      00115300
+         ICHACHKL                                                       00115400
+         ICHPRCVT                                                       00115500
+         ICHRDDFL                                                       00115600
+         ICHSAFP                                                        00115700
+         IEFAJCTB                                                       00115800
+         IEZJSCB                                                        00115900
+         IHAASCB DSECT=YES                                              00116000
+         IHAASXB DSECT=YES                                              00116100
+         IHACDE                                                         00116200
+         IHAPSA  DSECT=YES                                              00116300
+         IKJRB   DSECT=YES                                              00116400
+         IKJTCB  DSECT=YES,LIST=NO                                      00116500
+         IHAACEE                                                        00116600
+ACEEL    EQU   *-ACEE                                                   00116700
+         END                                                            00116800
