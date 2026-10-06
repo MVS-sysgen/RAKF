@@ -30,6 +30,14 @@
      0 - The resource is created.                                               
      8 - An error occurs. A suitable message will be given to                   
          the user.                                                              
+                                                                                 
+   SPECIAL REQUIREMENTS:                                                         
+                                                                                 
+      The issuing user should have the SPECIAL authority.                        
+      Update access to the SYS1.SECURE.* dataset is necessary or                 
+      the issuing user should have the OPERATIONS authority along                
+      with the SPECIAL authority.                                                
+                                                                                 
 )O OPERANDS -                                                                   
 ))'resource' - the generalized resource in the specified class. The             
   length can be up to 44 bytes. Generic resources can be created.               
