@@ -644,8 +644,9 @@ group of PRDGROUP by `ICHSFR00`. That situation is true for jobs submitted by RJ
 or by a local (card or internal) reader. The authorities (i.e. Operations or
 not) of the PROD and STC userids are hardcoded in `ICHSFR00`. Upon initial RAKF
 installation, the PROD user has no Operations authority while the STC user has
-Operations authority defined. The specific authorities of the PRDGROUP and
+**OPERATIONS** authority defined. The specific authorities of the PRDGROUP and
 STCGROUP groups are controlled by the profiles table.
+Both STCGROUP and PRODGROUP have the **NOSPECIAL** authority.
 
 Under MVS 3.8j no userid propagation takes place. Without further measure all
 jobs entering the system have no userid and thus get userid PROD and group
