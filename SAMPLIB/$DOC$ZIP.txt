@@ -671,7 +671,7 @@ Considerations about OPERATIONS and SPECIAL
 These authorities give the UserID extra possibilities. 
 
 With the OPERATIONS authority, the user is allowed to access all resources in
-the DATASET, DASDVOL and TAPEVOL class. Despite a rule is create to
+the DATASET, DASDVOL and TAPEVOL class. Despite a rule is created to
 disallow the request.
 
 A user with the SPECIAL authority is allowed to administer RAKF by managing
