@@ -648,6 +648,11 @@ installation, the PROD user has no Operations authority while the STC user has
 STCGROUP groups are controlled by the profiles table.
 Both STCGROUP and PRODGROUP have the **NOSPECIAL** authority.
 
+To avoid the default STC UserID and STCGROUP group, STCs can be defined in
+SYS1.SECURE.CNTL(USERS) and SYS1.SECURE.SHADOW with the ADDUSER command.
+The UserID is same as the STC procedure name.
+So, definition of own authorities for STCs are possible and recommended.
+
 Under MVS 3.8j no userid propagation takes place. Without further measure all
 jobs entering the system have no userid and thus get userid PROD and group
 PRDGROUP assigned by RAKF, be it jobs submitted by already authenticated users
