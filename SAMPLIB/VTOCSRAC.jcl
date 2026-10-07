@@ -81,9 +81,8 @@ DO I = 2 TO INDATA.0
     IF SUBSTR(DATASET,1,1) = "1" THEN                                           
         DATASET = SUBSTR(DATASET,2)                                             
                                                                                 
-    OUTCDSCB.TOTAL = "CDSCB '"||DATASET||"' V("||,                              
-         STRIP(VOLUME)        ||,                                               
-         ") UN(SYSALLDA) SHR" RACF                                              
+    VOL = STRIP(VOLUME)                                                         
+    OUTCDSCB.TOTAL = "CDSCB '"DATASET"' VOL("VOL") UNIT(SYSALLDA) SHR" RACF     
     DROP INDATA.I                                                               
                                                                                 
     TOTAL = TOTAL + 1                                                           
@@ -109,10 +108,87 @@ SAY ''
 //RXLIB    DD   DSN=BREXX.CURRENT.RXLIB,DISP=SHR                                
 //STDIN    DD   DUMMY                                                           
 //INDD     DD   DSN=&&LISTCC,DISP=SHR                                           
-//OUTDD    DD   DSN=&&CDSCB,DISP=(,PASS),UNIT=VIO,SPACE=(TRK,(5,5)),            
-//         DCB=(LRECL=80,BLKSIZE=800,RECFM=FB)                                  
+//OUTDD    DD   DSN=&&CDRAW,DISP=(,PASS),UNIT=VIO,SPACE=(TRK,(5,5)),            
+//         DCB=(LRECL=128,BLKSIZE=1280,RECFM=FB)                                
 //STDOUT   DD   SYSOUT=*,DCB=(RECFM=FB,LRECL=140,BLKSIZE=5600)                  
 //STDERR   DD   SYSOUT=*,DCB=(RECFM=FB,LRECL=140,BLKSIZE=5600)                  
+//* **********************************************************                  
+//*******************************************************************           
+//* FILTER AND COMPACT CDSCB COMMANDS BEFORE BATCH TSO EXECUTES THEM.           
+//*******************************************************************           
+//CDSCBF  EXEC PGM=BREXX,PARM='RXRUN',REGION=8192K                              
+//RXRUN   DD *                                                                  
+/* FILTER/COMPACT VTOCSRAC CDSCB COMMANDS FOR BATCH TSO */                      
+ADDRESS MVS                                                                     
+"EXECIO * DISKR STATDD (STEM ST. FINIS"                                         
+"EXECIO * DISKR CMDIN (STEM CM. FINIS"                                          
+N=0                                                                             
+SKIP=0                                                                          
+BAD=0                                                                           
+DO I=1 TO CM.0                                                                  
+  CMD=STRIP(CM.I)                                                               
+  IF LEFT(CMD,6)<>'CDSCB' THEN ITERATE                                          
+  Q1=POS("'",CMD)                                                               
+  Q2=POS("'",CMD,Q1+1)                                                          
+  VP=POS('VOL(',CMD)                                                            
+  VE=POS(')',CMD,VP+4)                                                          
+  IF Q1=0 | Q2=0 | VP=0 | VE=0 THEN DO                                          
+    SAY '*** BAD CDSCB COMMAND:' CMD                                            
+    BAD=BAD+1                                                                   
+    ITERATE                                                                     
+  END                                                                           
+  DSN=SUBSTR(CMD,Q1+1,Q2-Q1-1)                                                  
+  VOL=SUBSTR(CMD,VP+4,VE-VP-4)                                                  
+  ACTION=TRANSLATE(WORD(CMD,WORDS(CMD)))                                        
+  CUR=''                                                                        
+  DO J=1 TO ST.0                                                                
+    SDSN=STRIP(SUBSTR(ST.J,1,44))                                               
+    SVOL=STRIP(SUBSTR(ST.J,46,6))                                               
+    SIND=STRIP(SUBSTR(ST.J,55,1))                                               
+    IF SDSN=DSN & SVOL=VOL THEN DO                                              
+      IF SIND='Y' | SIND='N' THEN CUR=SIND                                      
+      LEAVE                                                                     
+    END                                                                         
+  END                                                                           
+  IF ACTION='RACF' & CUR='Y' THEN DO                                            
+    SKIP=SKIP+1                                                                 
+    ITERATE                                                                     
+  END                                                                           
+  IF ACTION='NORACF' & CUR='N' THEN DO                                          
+    SKIP=SKIP+1                                                                 
+    ITERATE                                                                     
+  END                                                                           
+  IF ACTION<>'RACF' & ACTION<>'NORACF' THEN DO                                  
+    SAY '*** BAD CDSCB ACTION:' CMD                                             
+    BAD=BAD+1                                                                   
+    ITERATE                                                                     
+  END                                                                           
+  SHORT="CDSCB '"||DSN||"' V("||VOL||") SHR "||ACTION                           
+  IF LENGTH(SHORT)>72 THEN DO                                                   
+    SAY '*** CDSCB COMMAND STILL TOO LONG:' SHORT                               
+    BAD=BAD+1                                                                   
+    ITERATE                                                                     
+  END                                                                           
+  N=N+1                                                                         
+  OUT.N=SHORT                                                                   
+END                                                                             
+OUT.0=N                                                                         
+"EXECIO * DISKW CMDOUT (STEM OUT. FINIS"                                        
+SAY '*** VTOCSRAC:' N 'COMMANDS,' SKIP 'ALREADY CORRECT'                        
+IF BAD>0 THEN DO                                                                
+  SAY '*** VTOCSRAC FILTER ERRORS:' BAD                                         
+  EXIT 8                                                                        
+END                                                                             
+EXIT 0                                                                          
+/*                                                                              
+//RXLIB   DD DSN=BREXX.CURRENT.RXLIB,DISP=SHR                                   
+//STATDD  DD DSN=&&LISTCC,DISP=SHR                                              
+//CMDIN   DD DSN=&&CDRAW,DISP=(OLD,DELETE)                                      
+//CMDOUT  DD DSN=&&CDSCB,DISP=(,PASS),UNIT=VIO,SPACE=(TRK,(5,5)),               
+//            DCB=(LRECL=80,BLKSIZE=800,RECFM=FB)                               
+//STDIN   DD DUMMY                                                              
+//STDOUT  DD SYSOUT=*,DCB=(RECFM=FB,LRECL=140,BLKSIZE=5600)                     
+//STDERR  DD SYSOUT=*,DCB=(RECFM=FB,LRECL=140,BLKSIZE=5600)                     
 //* **********************************************************                  
 //RACINDVT EXEC PGM=IKJEFT01,DYNAMNBR=20                                        
 //SYSTSPRT DD SYSOUT=*                                                          
