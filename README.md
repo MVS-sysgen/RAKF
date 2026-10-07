@@ -179,8 +179,8 @@ be allowed access to them. An easy way to protect them is to define a dataset
 profile `SYS1.SECURE.*` with universal access NONE and selectively allow the
 RAKF administrator user(s)/group(s) `UPDATE` access to this profile. That
 profile also covers `SYS1.SECURE.SHADOW`, which should always be `UACC(NONE)`.
-If the standard setup is used started tasks have operations authority and thus
-don't need to be explicitly allowed.
+If the standard setup is used started tasks have OPERATIONS and the NOSPECIAL
+authority and thus don't need to be explicitly allowed.
 
 ## Users and Profiles Tables
 
@@ -233,8 +233,8 @@ IBMUSER  ADMIN   *SYS1     Y Y
 IBMUSER  RAKFADM *SYS1     Y Y
 ```
 
-This controls user access. Each line is a user, group, password, and
-operations as described below:
+This controls user access. Each line is a user, group, password,
+operations and special as described below:
 
 | Column  | Description                                               |
 |:-------:|:----------------------------------------------------------|
