@@ -687,7 +687,7 @@ The following RACROUTE functions are supported.
 These authorities give the UserID extra possibilities. 
 
 - With the OPERATIONS authority, the user is allowed to access all resources
-  in the DATASET, DASDVOL and TAPEVOL class. Despite a rule is create
+  in the DATASET, DASDVOL and TAPEVOL class. Despite a rule is created
   to disallow the request
 
 - A user with the SPECIAL authority is allowed to administer RAKF by
