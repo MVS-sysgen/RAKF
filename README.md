@@ -673,12 +673,14 @@ available at https://www.prycroft6.com.au/vs2mods/#zp60034.
 
 ## Security Authorization Facility (SAF) Support in MVS 3.8j
 
-RAKF supports security features that are used by MVS 3.8j differently than by
-later MVS versions or are not used at all and thus will not work as expected.
-The “historical” reason for this is that RAKF's predecessor ESG Security System
-is dated 1991 which is 5 to 10 years later than most components of "current"
-MVS 3.8j systems. Some of the issues resulting from this discrepancy are
-discussed here.
+RAKF supports the RACROUTE function since version 2.0.
+The following RACROUTE functions are supported.
+
+- RACROUTE REQUEST=VERIFY,ENVIR=CREATE to define a user (ACEE) in RAKF.
+- RACROUTE REQUEST=VERIFY,ENVIR=DELETE to delete a user (ACEE) in RAKF.
+- RACROUTE REQUEST=AUTH to validate access to a certain resource.
+- RACROUTE REQUEST=FASTAUTH is the same as REQUEST=AUTH, but simplified.
+- RACROUTE REQUEST=DEFINE to define a resource in RAKF.
 
 ## Considerations about OPERATIONS and SPECIAL
 
