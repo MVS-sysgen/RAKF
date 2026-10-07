@@ -115,7 +115,13 @@
          table in the RCVT (pointed to by RCVTCDTP).                            
       8: Class Descriptor Table redefined in module                             
          CJYRCVT.                                                               
- 
+      9: UserIDs in the USERS table are supported to                            
+         override the standard UserID=STC and standard                          
+         group=STCGROUP for started tasks.                                      
+     10: Authority SPECIAL supported. Users with authority                      
+         SPECIAL are the only users to process the                              
+         USERS table and PROFILES table.                                        
+                                                                                
    COMPONENT:                                                    
       Resource Access Control Facility (RACF/RAKF).              
                                                                  
