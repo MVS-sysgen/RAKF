@@ -680,6 +680,21 @@ is dated 1991 which is 5 to 10 years later than most components of "current"
 MVS 3.8j systems. Some of the issues resulting from this discrepancy are
 discussed here.
 
+## Considerations about OPERATIONS and SPECIAL
+
+These authorities give the UserID extra possibilities. 
+
+- With the OPERATIONS authority, the user is allowed to access all resources
+  in the DATASET, DASDVOL and TAPEVOL class. Despite a rule is create
+  to disallow the request
+
+- A user with the SPECIAL authority is allowed to administer RAKF by
+  managing users and profiles and allow to use the TSO commands
+  ADDUSER, ALTUSER, DELUSER, ADDSD, RDEFINE, PERMIT and RDELETE.
+
+- A user with both OPERATIONS and SPECIAL authorities runs in God mode,
+  and is allowed to access all resources and all RAKF administration.
+
 ## General Resource Classes
 
 There are resource classes supported by RAKF but not used by MVS 3.8j. So, if
