@@ -174,8 +174,8 @@ be allowed access to them. An easy way to protect them is to define a dataset
 profile SYS1.SECURE.* with universal access NONE and selectively allow the
 RAKF administrator user(s)/group(s) UPDATE access to this profile. That
 profile also covers SYS1.SECURE.SHADOW, which should always be UACC(NONE).
-If the standard setup is used started tasks have operations authority and thus
-don't need to be explicitly allowed.
+If the standard setup is used started tasks have OPERATIONS and NOSPECIAL
+authority and thus don't need to be explicitly allowed.
 
 Users and Profiles Tables
 -------------------------
@@ -226,8 +226,8 @@ Below is an example USERS table:
     IBMUSER  ADMIN   *SYS1     Y Y
     IBMUSER  RAKFADM *SYS1     Y Y
 
-This controls user access. Each line is a user, group, password, and
-operations as described below:
+This controls user access. Each line is a user, group, password,
+operations and special as described below:
 
 Column  | Description
 --------+---------------------------------------------------------
@@ -622,13 +622,13 @@ Batch Jobs    | PROD   | PRDGROUP
 Started Tasks | STC    | STCGROUP
 
 Any job that has no userid connected to it is assigned a userid of PROD and a
-user
-group of PRDGROUP by ICHSFR00. That situation is true for jobs submitted by RJE
-or by a local (card or internal) reader. The authorities (i.e. Operations or
+user group of PRDGROUP by ICHSFR00. That situation is true for jobs submitted by
+RJE or by a local (card or internal) reader. The authorities (i.e. Operations or
 not) of the PROD and STC userids are hardcoded in ICHSFR00. Upon initial RAKF
 installation, the PROD user has no Operations authority while the STC user has
-Operations authority defined. The specific authorities of the PRDGROUP and
+**OPERATIONS** authority defined. The specific authorities of the PRDGROUP and
 STCGROUP groups are controlled by the profiles table.
+Both STCGROUP and PRODGROUP have the **NOSPECIAL** authority.
 
 Under MVS 3.8j no userid propagation takes place. Without further measure all
 jobs entering the system have no userid and thus get userid PROD and group
