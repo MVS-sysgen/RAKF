@@ -305,7 +305,7 @@ reaches the system, and no chicken-and-egg with the tools below: the initial
 credentials exist before ADDUSER/ALTUSER are ever run. (This means
 users.txt itself contains live credentials (keep it protected off-system.)
 
-Managing Users with ADDUSER, ALTUSER and DELUSER
+Managing Users with ADDUSER, ALTUSER, DELUSER and LISTUSER
 
 Users are created and changed with two RACF-style command processors,
 ADDUSER and ALTUSER, installed in SYS2.CMDLIB. They write the USERS
@@ -320,6 +320,8 @@ procs in SYS1.PROCLIB.
          [SPECIAL|NOSPECIAL]
     An alias of ALTUSER is ALU.
     DELUSER userid
+    LISTUSER userid
+    An alias of LISTUSER is LU
 
     PASSWORD may be code as PWD, GROUP as GRP and DFLTGRP as DGRP.
 
@@ -330,6 +332,7 @@ procs in SYS1.PROCLIB.
   DFLTGRP moves the default-group flag, and the flags toggle operations/special.
 - DELUSER removes a user from SYS1.SECURE.SHADOW and
   SYS1.SECURE.CNTL(USERS).
+- LISTUSER list a UserId from the RAKF in core users table.
 
 Note: To use these TSO commands, the SPECIAL privilege is required.
 
