@@ -14,7 +14,7 @@
                                                                                 
   NOTE - a profile record with UACC (the universal access record)               
          must exist, otherwise the PERMIT fails.                                
-         Universal access records are created by ADDSD and RRDEFINE.            
+         Universal access records are created by ADDSD and RDEFINE.            
                                                                                 
 )X SYNTAX -                                                                     
   PERMIT 'resource' CLASS(clasname) ACCESS(NONE/READ/UPDATE/ALTER) +            
