@@ -116,35 +116,21 @@ python script. The most common arguments are:
   (its plaintext passwords are hashed into the shadow file at generation time —
   see *Password Hashing and the Shadow File*)
 - `--profiles` use a custom profiles file instead of the default `profiles.txt`
-- `--xmit` path to the admin-tool XMIT (default: newest `APPLICATIONS/dist/*.xmit`)
-- `--cmdlib` load library for the tools (default `SYS2.CMDLIB`)
-- `--no-tools` generate the RAKF core only, without `ADDUSER`/`ALTUSER`
 
 The RAKF core (HLASM modules, macros, procs) ships as SMP source that MVS
-assembles and link-edits on-target.
-
-First build the tools (once, on a host with the cc370 toolchain installed):
-
-```
-cd APPLICATIONS && PATH=~/.local/bin:$PATH make package   # -> dist/*.xmit
-```
-
-Then generate the install file:
+assembles and link-edits on-target. Generate the install file with:
 
 ```
 python3 generate_release.py -u users.txt -p profiles.txt -o install_rakf.jcl
 ```
 
-Because the file now contains raw binary, submit it through the **EBCDIC
-pass-through reader** (device `001A`, port `3506`) — **not** the ASCII reader
-`3505`, which would corrupt the binary:
+The password shadow records are embedded as raw binary, so submit the file
+through the **EBCDIC pass-through reader** (device `001A`, port `3506`) —
+**not** the ASCII reader `3505`, which would corrupt the binary:
 
 ```
 cat install_rakf.jcl | ncat --send-only -w1 127.0.0.1 3506
 ```
-
-If you build the RAKF core only (`--no-tools`), the output is plain text again
-and may be submitted to the `3505` reader as before.
 
 To install RAKF only, without usermods, auxiliary tools, users or profiles you can use
 the file `TEMPLATES/makerakf.sh` which generates the JCL to assemble and link RAKF.
@@ -1009,14 +995,12 @@ changed.
   `generate_release.py` blanks the password column and emits the shadow
   records into the install stream, so no clear-text password reaches the
   system and there is no chicken-and-egg with the tools above.
-- `--recv370` unpacks the admin tools with `RECV370` instead of TSO RECEIVE,
-  for installing RAKF during a sysgen before the TSO XMIT facility exists.
 
 ## Appendix A - Generating your own release
 
 Run the script `generate_release.py` (see *Installation* above for the full
-procedure, including building the `ADDUSER`/`ALTUSER` tools with `make package`
-and submitting the binary stream to the EBCDIC reader on port `3506`).
+procedure, including submitting the binary stream to the EBCDIC reader on
+port `3506`).
 
 ## Appendix B - Add users to UADS
 

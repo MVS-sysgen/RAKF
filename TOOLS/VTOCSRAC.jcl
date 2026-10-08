@@ -117,72 +117,72 @@ SAY ''
 //STDERR   DD   SYSOUT=*,DCB=(RECFM=FB,LRECL=140,BLKSIZE=5600)
 //* **********************************************************
 //*******************************************************************
-//* Filter and compact CDSCB commands before batch TSO executes them.
+//* FILTER AND COMPACT CDSCB COMMANDS BEFORE BATCH TSO EXECUTES THEM.
 //*******************************************************************
 //CDSCBF  EXEC PGM=BREXX,PARM='RXRUN',REGION=8192K
 //RXRUN   DD *
-/* Filter/compact VTOCSRAC CDSCB commands for batch TSO */
-address mvs
+/* FILTER/COMPACT VTOCSRAC CDSCB COMMANDS FOR BATCH TSO */
+ADDRESS MVS
 "EXECIO * DISKR STATDD (STEM ST. FINIS"
 "EXECIO * DISKR CMDIN (STEM CM. FINIS"
-n=0
-skip=0
-bad=0
-do i=1 to cm.0
-  cmd=strip(cm.i)
-  if left(cmd,6)<>'CDSCB' then iterate
-  q1=pos("'",cmd)
-  q2=pos("'",cmd,q1+1)
-  vp=pos('VOL(',cmd)
-  ve=pos(')',cmd,vp+4)
-  if q1=0 | q2=0 | vp=0 | ve=0 then do
-    say '*** BAD CDSCB COMMAND:' cmd
-    bad=bad+1
-    iterate
-  end
-  dsn=substr(cmd,q1+1,q2-q1-1)
-  vol=substr(cmd,vp+4,ve-vp-4)
-  action=translate(word(cmd,words(cmd)))
-  cur=''
-  do j=1 to st.0
-    sdsn=strip(substr(st.j,1,44))
-    svol=strip(substr(st.j,46,6))
-    sind=strip(substr(st.j,55,1))
-    if sdsn=dsn & svol=vol then do
-      if sind='Y' | sind='N' then cur=sind
-      leave
-    end
-  end
-  if action='RACF' & cur='Y' then do
-    skip=skip+1
-    iterate
-  end
-  if action='NORACF' & cur='N' then do
-    skip=skip+1
-    iterate
-  end
-  if action<>'RACF' & action<>'NORACF' then do
-    say '*** BAD CDSCB ACTION:' cmd
-    bad=bad+1
-    iterate
-  end
-  short="CDSCB '"||dsn||"' V("||vol||") SHR "||action
-  if length(short)>72 then do
-    say '*** CDSCB COMMAND STILL TOO LONG:' short
-    bad=bad+1
-    iterate
-  end
-  n=n+1
-  out.n=short
-end
-out.0=n
+N=0
+SKIP=0
+BAD=0
+DO I=1 TO CM.0
+  CMD=STRIP(CM.I)
+  IF LEFT(CMD,6)<>'CDSCB' THEN ITERATE
+  Q1=POS("'",CMD)
+  Q2=POS("'",CMD,Q1+1)
+  VP=POS('VOL(',CMD)
+  VE=POS(')',CMD,VP+4)
+  IF Q1=0 | Q2=0 | VP=0 | VE=0 THEN DO
+    SAY '*** BAD CDSCB COMMAND:' CMD
+    BAD=BAD+1
+    ITERATE
+  END
+  DSN=SUBSTR(CMD,Q1+1,Q2-Q1-1)
+  VOL=SUBSTR(CMD,VP+4,VE-VP-4)
+  ACTION=TRANSLATE(WORD(CMD,WORDS(CMD)))
+  CUR=''
+  DO J=1 TO ST.0
+    SDSN=STRIP(SUBSTR(ST.J,1,44))
+    SVOL=STRIP(SUBSTR(ST.J,46,6))
+    SIND=STRIP(SUBSTR(ST.J,55,1))
+    IF SDSN=DSN & SVOL=VOL THEN DO
+      IF SIND='Y' | SIND='N' THEN CUR=SIND
+      LEAVE
+    END
+  END
+  IF ACTION='RACF' & CUR='Y' THEN DO
+    SKIP=SKIP+1
+    ITERATE
+  END
+  IF ACTION='NORACF' & CUR='N' THEN DO
+    SKIP=SKIP+1
+    ITERATE
+  END
+  IF ACTION<>'RACF' & ACTION<>'NORACF' THEN DO
+    SAY '*** BAD CDSCB ACTION:' CMD
+    BAD=BAD+1
+    ITERATE
+  END
+  SHORT="CDSCB '"||DSN||"' V("||VOL||") SHR "||ACTION
+  IF LENGTH(SHORT)>72 THEN DO
+    SAY '*** CDSCB COMMAND STILL TOO LONG:' SHORT
+    BAD=BAD+1
+    ITERATE
+  END
+  N=N+1
+  OUT.N=SHORT
+END
+OUT.0=N
 "EXECIO * DISKW CMDOUT (STEM OUT. FINIS"
-say '*** VTOCSRAC:' n 'COMMANDS,' skip 'ALREADY CORRECT'
-if bad>0 then do
-  say '*** VTOCSRAC FILTER ERRORS:' bad
-  exit 8
-end
-exit 0
+SAY '*** VTOCSRAC:' N 'COMMANDS,' SKIP 'ALREADY CORRECT'
+IF BAD>0 THEN DO
+  SAY '*** VTOCSRAC FILTER ERRORS:' BAD
+  EXIT 8
+END
+EXIT 0
 /*
 //RXLIB   DD DSN=BREXX.CURRENT.RXLIB,DISP=SHR
 //STATDD  DD DSN=&&LISTCC,DISP=SHR
