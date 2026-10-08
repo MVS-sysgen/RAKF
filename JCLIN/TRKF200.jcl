@@ -152,6 +152,12 @@
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
 //SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(DELUSER)                                
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(DELUSER)                               
+//ASMLIST  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
+//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
+//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(LISTUSER)                               
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(LISTUSER)                              
 //ASMDSD   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
@@ -189,6 +195,11 @@
  INCLUDE SYSPUNCH(DELUSER)                                                      
  ENTRY   DELUSER                                                                
  NAME    DELUSER(R)                                                             
+ INCLUDE SYSPUNCH(LISTUSER)                                                     
+ ALIAS   LU                                                                     
+ ENTRY   LISTUSER                                                               
+ SETCODE AC(1)                                                                  
+ NAME    LISTUSER(R)                                                            
  INCLUDE SYSPUNCH(ADDSD)                                                        
  ALIAS AD                                                                       
  ALIAS RDEFINE                                                                  
