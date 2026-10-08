@@ -999,7 +999,7 @@ changed.
   `RAKFSHAD` DD, added to `MSTJCL00` by usermod `ZPY0001`.
 - New `ADDUSER`, `ALTUSER', 'DELUSER', 'LISTUSER', 'ADDSD', 'RDEFINE', PERMIT
   and 'RDELETE' command processors, installed into
-  `SYS2.CMDLIB`, with TSO HELP members in `SYS2.HELP`. They locate the
+  `SYS1.CMDLIB`, with TSO HELP members in `SYS2.HELP`. They locate the
   control datasets with TSO **IKJDAIR** dynamic allocation, so no DD
   statements are required.
 - Support RACROUTE REQUEST=(FAST)AUTH, REQUEST=DEFINE, REQUEST=VERIFY.
