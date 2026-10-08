@@ -9,7 +9,7 @@ name: Build and Release
 
 on:
   push:
-    branches: [no_tools]
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
