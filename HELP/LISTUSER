@@ -1,0 +1,25 @@
+./ ALIAS NAME=LU                                                                
+)F FUNCTION -                                                                   
+  The LISTUSER command lists an existing RAKF user.                             
+  It lists the UserIds from the RAKF users core table with                      
+  their authorities and the connected groups.                                   
+                                                                                
+)X SYNTAX -                                                                     
+  LISTUSER userid                                                               
+                                                                                
+  REQUIRED - userid                                                             
+                                                                                
+  RETURN CODES:                                                                 
+                                                                                
+     0 - The user was listed.                                                   
+     8 - An error occurs. A suitable message will be given to                   
+         the user.                                                              
+                                                                                
+  SPECIAL REQUIREMENTS:                                                         
+                                                                                
+     The issuing user should have the SPECIAL authority.                        
+                                                                                
+)O OPERANDS -                                                                   
+))USERID - the user to list. 1 to 8 characters. Required, and is the            
+  first and only operand. If the user don't exist, a suitable                   
+  message will be displayed.                                                    
