@@ -86,6 +86,7 @@ CONT2    DS    0H                                                       00005300
          LA    R0,L'MSG5               Length                           00008600
          LA    R1,MSG5                 Message                          00008700
          BAL   R14,TPUT                                                 00008800
+         XC    ANSWER,ANSWER           Avoid IKJRLSA                    00008810
          B     RC08                    Return to TMP                    00008900
 PARSEOK  DS    0H                                                       00009000
          L     R8,ANSWER               Pointer to PDL                   00009100
