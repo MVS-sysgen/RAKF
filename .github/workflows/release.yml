@@ -1,7 +1,6 @@
 name: Build and Release
 
-# Builds the RAKF install stream (install_rakf.jcl) — SMP source for the HLASM
-# core plus the cc370-built ADDUSER/ALTUSER tools embedded inline — and
+# Builds the RAKF install stream (install_rakf.jcl) from the HLASM core and
 # publishes it:
 #   * every push to main  -> rolling 'latest' pre-release
 #   * every v* tag         -> versioned release (and stamps the version into
@@ -21,33 +20,10 @@ jobs:
   build-release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (with submodules)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive     # mbt / cc370 / libc370
           fetch-depth: 0            # full history for release notes
-
-      - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y build-essential flex bison
-
-      # cc370 is a GCC fork and slow to build, so cache the installed toolchain
-      # keyed on the pinned cc370/libc370 submodule commits.
-      - name: Toolchain cache key
-        id: tk
-        run: echo "key=$(git rev-parse HEAD:cc370)-$(git rev-parse HEAD:libc370)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache cc370 toolchain
-        id: toolchain
-        uses: actions/cache@v4
-        with:
-          path: ~/.local
-          key: cc370-${{ runner.os }}-${{ steps.tk.outputs.key }}
-
-      - name: Build cc370 toolchain + libc370 sysroot
-        if: steps.toolchain.outputs.cache-hit != 'true'
-        run: |
-          make -C cc370 install-tools install-compiler          # -> ~/.local
-          ( cd libc370 && PATH="$HOME/.local/bin:$PATH" python3 sdk/mklibc.py all )
 
       # On a v* tag, stamp the version into ICHSEC00's banner (v2.0.0 -> V2R0M0).
       # ICHSEC00.hlasm is fixed-column HLASM: the WTO literal must stay within
@@ -82,16 +58,9 @@ jobs:
 
       - name: Build RAKF install stream
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          make -C APPLICATIONS package                          # -> dist/*-load.xmit
-          # Publish the admin-tool XMIT under a stable, version-independent name
-          # so consumers (e.g. sysgen) can fetch it and re-run generate_release.py
-          # with their own user list via --xmit, without building the toolchain.
-          cp "$(ls -t APPLICATIONS/dist/*.xmit | head -1)" rakf-tools.xmit
           python3 generate_release.py -u users.txt -p profiles.txt -o install_rakf.jcl
           test -s install_rakf.jcl
           echo "install_rakf.jcl: $(stat -c%s install_rakf.jcl) bytes"
-          echo "rakf-tools.xmit:  $(stat -c%s rakf-tools.xmit) bytes"
 
       - name: Publish rolling 'latest' (push to main)
         if: github.ref == 'refs/heads/main'
@@ -99,7 +68,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest --cleanup-tag --yes || true
-          gh release create latest install_rakf.jcl rakf-tools.xmit \
+          gh release create latest install_rakf.jcl \
             --target "$GITHUB_SHA" \
             --title "Latest build ($(git rev-parse --short HEAD))" \
             --prerelease \
@@ -110,6 +79,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" install_rakf.jcl rakf-tools.xmit \
+          gh release create "$GITHUB_REF_NAME" install_rakf.jcl \
             --title "RAKF ${{ steps.ver.outputs.rakf_ver }} (${GITHUB_REF_NAME})" \
             --generate-notes

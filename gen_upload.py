@@ -113,11 +113,14 @@ MODULES = [
     Module("ALTUSER",  ["ALTUSER", "RAKFPWH", "RAKFHASH"], ["ASMALT", "ASMPWHB", "ASMHASHB"], "ALTUSER", "SYS1.CMDLIB", "MAP,LIST,LET,NCAL,RENT,REUS",
            aliases=["ALU"]),
     Module("DELUSER",  ["DELUSER"],                        ["ASMDELU"], "DELUSER", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
-    Module("ADDSD",    ["ADDSD"],                          ["ASMADSD"], "ADDSD",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
+    Module("LISTUSER",  ["LISTUSER"],                      ["ASMLSTU"], "LISTUSER", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS,AC=1",
+            aliases=["LU"]),
+    Module("ADDSD",    ["ADDSD"],                          ["ASMADSD"], "ADDSD",  "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS,AC=1",
             aliases=["AD", "RDEFINE"]),
-    Module("PERMIT",   ["PERMIT"],                         ["ASMPERM"], "PERMIT", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
+    Module("PERMIT",   ["PERMIT"],                         ["ASMPERM"], "PERMIT", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS,AC=1",
             aliases=["PE"]),
-    Module("RDELETE",   ["RDELETE"],                       ["ASMRDEL"], "RDELETE", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
+    Module("RDELETE",   ["RDELETE"],                       ["ASMRDEL"], "RDELETE", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS,AC=1")
+
 ]
 
 # ---------------------------------------------------------------------------

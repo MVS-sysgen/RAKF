@@ -3,43 +3,27 @@
 # Generate the RAKF install job stream.
 #
 # The RAKF core (HLASM modules, procs, macros) ships as SMP source that MVS
-# assembles/link-edits on-target -- pure text.  The administration tools
-# ADDUSER/ALTUSER are cc370-built C *load modules* that cannot be assembled
-# on MVS, so they are delivered here as an inline TSO XMIT: the whole stream
-# is emitted as EBCDIC card images and the XMIT's raw bytes are embedded
-# after a `DD DATA,DLM=` card, installed on-target with RECEIVE + IEBCOPY.
+# assembles/link-edits on-target. The password shadow records are raw binary
+# embedded after a `DD DATA,DLM=` card.
 #
-# Because the file now contains raw binary, submit it through the EBCDIC
+# Because the file contains raw binary, submit it through the EBCDIC
 # pass-through reader (device 001A / port 3506), NOT the ASCII reader 3505:
 #     cat install_rakf.jcl | ncat --send-only -w1 127.0.0.1 3506
 #
 import os
 import sys
-import glob
 import hashlib
 import argparse
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument('-u', '--users', help="Custom users file", default=False)
 arg_parser.add_argument('-p', '--profiles', help="Custom profiles file", default=False)
-arg_parser.add_argument('-x', '--xmit', default=None,
-                        help="TSO XMIT of the admin tools (default: newest APPLICATIONS/dist/*.xmit)")
 arg_parser.add_argument('-o', '--output', default=None,
                         help="Output file (binary EBCDIC card images). Default: stdout.")
-arg_parser.add_argument('--cmdlib', default="SYS2.CMDLIB",
-                        help="Target library for the ADDUSER/ALTUSER programs")
 arg_parser.add_argument('--helplib', default="SYS2.HELP",
                         help="Target help library for the ADDUSER/ALTUSER HELP members")
-arg_parser.add_argument('--volume', default="PUB000",
-                        help="DASD volume for the transient staging datasets")
 arg_parser.add_argument('--codepage', default="cp037",
                         help="EBCDIC codepage for card images (cp037 or cp1047)")
-arg_parser.add_argument('--no-tools', action="store_true",
-                        help="Emit the RAKF core only, without the admin tools")
-arg_parser.add_argument('--recv370', action="store_true",
-                        help="Unpack the admin-tool XMIT with RECV370 (SYSC.LINKLIB) "
-                             "instead of TSO RECEIVE. Needed when RAKF is installed "
-                             "during a sysgen, before the TSO XMIT facility exists.")
 arg_parser.add_argument('--shadow-recovery', action='store_true',
                         help="Emit only a standalone EBCDIC job that recreates and "
                              "populates the RAKF password shadow dataset from users.txt")
@@ -587,33 +571,18 @@ def emit_rakfcust(filename, inserts):
             skipping = True
 
 
-# ------------------------------------------------------------------ #
-#  Inline the admin-tool XMIT (raw binary) into the stream.          #
-# ------------------------------------------------------------------ #
-def find_xmit():
-    if args.xmit:
-        return args.xmit
-    cands = sorted(glob.glob(os.path.join(running_folder, "APPLICATIONS", "dist", "*.xmit")),
-                   key=os.path.getmtime)
-    if not cands:
-        cands = sorted(glob.glob(os.path.join(running_folder, "APPLICATIONS", "build", "*.xmit")),
-                       key=os.path.getmtime)
-    return cands[-1] if cands else None
-
-
-def pick_dlm(xmit_bytes):
+def pick_dlm(payload):
     """Choose a 2-char delimiter whose EBCDIC bytes never start an 80-byte
-    record of the XMIT (so DD DATA reads the whole binary intact)."""
+    record (so DD DATA reads the whole binary intact)."""
     for cand in ("$$", "??", "@@", "##", "%%", "&&", "!!", "~~", "^^", "=="):
         b = cand.encode(CP)
-        if not any(xmit_bytes[i:i+2] == b for i in range(0, len(xmit_bytes), 80)):
+        if not any(payload[i:i+2] == b for i in range(0, len(payload), 80)):
             return cand
     raise SystemExit("generate_release.py: could not find a collision-free DD DATA delimiter")
 
 
 # Also a continuation of RAKFINST, for the same reason as SHADOW_LOAD above:
 # separate jobs run on separate initiators and race the install they depend on.
-
 HELP_HEADER = """//* --- TSO HELP members for the admin commands -------------------
 //HELPLOAD EXEC PGM=IEBUPDTE,PARM=NEW
 //SYSPRINT DD SYSOUT=*
@@ -713,7 +682,7 @@ def emit_shadow_recovery(shadow):
     """
     dsn = args.shadow_dsn.upper()
     emit("//RAKFSHAD JOB (RAKF),'RAKF SHADOW RECOVERY',CLASS=A,MSGCLASS=A,")
-    emit("//            MSGLEVEL=(1,1),REGION=4096K,USER=IBMUSER,PASS=SYS1")
+    emit("//         MSGLEVEL=(1,1),REGION=4096K,USER=IBMUSER,PASSWORD=SYS1")
     emit("//* Recreate the RAKF V2 password shadow file")
     emit("//DELETE   EXEC PGM=IDCAMS")
     emit("//SYSPRINT DD SYSOUT=*")
@@ -836,7 +805,7 @@ for jcl in install:
   SET MAXCC=0
 /*""")
         emit_rakfcust(path, [blanked_users, _profiles])
-        # The shadow load and the tools install belong HERE -- after
+        # The shadow load and the HELP install belong HERE -- after
         # RAKFCUST's ALLOC step has created SYS1.SECURE.SHADOW, and before
         # VSAMSRAC's RACIND and VTOCSRAC's RACINDVT steps set the RACF
         # indicator bit on the datasets.
