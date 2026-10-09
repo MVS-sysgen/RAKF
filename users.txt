@@ -1,6 +1,6 @@
 FTPD     USER     FTPDPW   N N
 HERC01   ADMIN   *         Y Y
-HERC01   RAKFADm *         Y Y
+HERC01   RAKFADM *         Y Y
 HTTPD    ADMIN    HTTPPW   N N
 IBMUSER  ADMIN   *SYS1     Y Y
 IBMUSER  RAKFADM *SYS1     Y y
