@@ -15,725 +15,768 @@ ADDUSER  TITLE 'Add RAKF users with encrypted passwords'                00000100
 *                      Add new RAKF users in the USERS table          * 00001500
 *                      and add a salt + hashed output of the          * 00001600
 *                      password into the SHADOW data set.             * 00001700
-*                      Write the USERS table back in the CNTL(USERS). * 00001800
-*                      Free the SYS1.SECURE.* data sets.              * 00001900
-*                                                                     * 00002000
-*        Syntax:       ADDUSER userid PASSWORD(pppppppp) +            * 00002100
-*                      DFLTGRP(group) GROUP(grp1 grp2 ...) +          * 00002200
-*                      OPERATIONS/NOOPERATIONS SPECIAL/NOSPECIAL      * 00002300
-*                                                                     * 00002400
-*                      Default: NOSPECIAL  NOOPERATIONS               * 00002500
+*                      Sort the USERS in the table on alphabetical    * 00001800
+*                      order and write the table back in              * 00001900
+*                      SYS1.SECURE.CNTL(USERS).                       * 00002000
+*                      Free the SYS1.SECURE.* data sets.              * 00002100
+*                                                                     * 00002200
+*        Syntax:       ADDUSER userid PASSWORD(pppppppp) +            * 00002300
+*                      DFLTGRP(group) GROUP(grp1 grp2 ...) +          * 00002400
+*                      OPERATIONS/NOOPERATIONS SPECIAL/NOSPECIAL      * 00002500
 *                                                                     * 00002600
-*                      DFLTGRP may also be coded as DGRP.             * 00002700
-*                      GROUP may also be coded as GRP.                * 00002800
-*                      PASSWORD may also be coded as PWD.             * 00002900
-*                                                                     * 00003000
-*        Return codes: 00 - all good.                                 * 00003100
-*                      08 - an error occurred, user is notified       * 00003200
-*                           with a message                            * 00003300
-*                                                                     * 00003400
-*---------------------------------------------------------------------* 00003500
-ADDUSER  CSECT                                                          00003600
-         SAVE  (14,12)                                                  00003700
-         LR    R12,R15                                                  00003800
-         USING ADDUSER,R12             Base register                    00003900
-         LR    R2,R1                   Save parm (CPPL)                 00004000
-         GETMAIN RU,LV=WORKL           Obtain savearea + working strg.  00004100
-         ST    R1,8(,R13)              Forward pointer                  00004200
-         ST    R13,4(,R1)              Backward pointer                 00004300
-         LR    R13,R1                  This is our save area            00004400
-         USING WORKAREA,R13            Base working storage             00004500
-         ST    R2,MYCPPL               Save our CPPL address            00004600
-         MVC   RAKFSHAD,MDLSHAD        Move ...                         00004700
-         MVC   RAKFUSER,MDLUSER             ... model DCBs              00004800
-         XC    DAIR08,DAIR08           Clear IKJDAIR                    00004900
-         XC    DAIR18,DAIR18                        ... blocks          00005000
-         XC    ANSWER,ANSWER           Clear IKJPARS answer             00005100
-         XC    ADRUSER,ADRUSER         Clear pointer to user table      00005200
-         XC    PPL#LA,PPL#LA           Clear pointer to PPL             00005300
-         MVC   MSG3,MSG3X              Move message to working storage  00005400
-         MVC   MSG4,MSG4X              Move message to working storage  00005500
-         MVC   MSG9,MSG9X              Move message to working storage  00005600
-         MVI   USERREC-1,C' '          To blank USERREC                 00005700
-         MVI   GROUPS,C' '             Blank GROUP fields               00005800
-         MVC   GROUPS+1(L'GROUPS-1),GROUPS                              00005900
-         MVI   SW,0                    Clear flags                      00006000
-         LA    R0,DCBABEND             DCB abend exit                   00006100
-         ST    R0,EXLST                Save JFCB in exit list           00006200
-         MVI   EXLST,X'91'             DCB abend exit is last entry     00006300
-         LA    R0,EXLST                Exit list (DCB abend exit)       00006400
-         STCM  R0,B'0111',RAKFUSER+DCBEXLSA-IHADCB                      00006500
-         STCM  R0,B'0111',RAKFSHAD+DCBEXLSA-IHADCB                      00006600
-         GETMAIN RU,LV=104000      GETMAIN room for 1300 user records   00006700
-         ST    R1,ADRUSER              Save its address                 00006800
-         USING PSA,R0                  Point to CVT                     00006900
-         L     R2,PSAANEW-PSA          Load ASCB                        00007000
-         L     R2,ASCBASXB-ASCB(R2)    Load ASXB                        00007100
-         ICM   R2,15,ASXBSENV-ASXB(R2) Point to ACEE                    00007200
-         BNZ   CONT1                   Yes: found                       00007300
-         LA    R1,MSGY                 Msg: 'No ACEE found'             00007400
-         LA    R0,L'MSGY               Length                           00007500
-         BAL   R14,TPUT                Write the message on screen      00007600
-         B     RC08                    End with RC=-08                  00007700
-CONT1    TM    ACEEFLG1-ACEE(R2),ACEESPEC Do we have the SPECIAL attr   00007800
-         BO    CONT2                                                    00007900
-         LA    R1,MSGZ                 Msg: 'No SPECIAL attribute'      00008000
-         LA    R0,L'MSGZ               Length                           00008100
-         BAL   R14,TPUT                Write the message on screen      00008200
-         B     RC08                    End with RC=-08                  00008300
-CONT2    DS    0H                                                       00008400
-*---------------------------------------------------------------------* 00008500
-*        Parse parameters                                             * 00008600
+*                      Default: NOSPECIAL  NOOPERATIONS               * 00002700
+*                                                                     * 00002800
+*                      DFLTGRP may also be coded as DGRP.             * 00002900
+*                      GROUP may also be coded as GRP.                * 00003000
+*                      PASSWORD may also be coded as PWD.             * 00003100
+*                                                                     * 00003200
+*        Return codes: 00 - all good.                                 * 00003300
+*                      08 - an error occurred, user is notified       * 00003400
+*                           with a message                            * 00003500
+*                                                                     * 00003600
+*---------------------------------------------------------------------* 00003700
+ADDUSER  CSECT                                                          00003800
+         SAVE  (14,12),,*                                               00003900
+         LR    R12,R15                                                  00004000
+         USING ADDUSER,R12             Base register                    00004100
+         LR    R2,R1                   Save parm (CPPL)                 00004200
+         GETMAIN RU,LV=WORKL           Obtain savearea + working strg.  00004300
+         ST    R1,8(,R13)              Forward pointer                  00004400
+         ST    R13,4(,R1)              Backward pointer                 00004500
+         LR    R13,R1                  This is our save area            00004600
+         USING WORKAREA,R13            Base working storage             00004700
+         ST    R2,MYCPPL               Save our CPPL address            00004800
+         MVC   RAKFSHAD,MDLSHAD        Move ...                         00004900
+         MVC   RAKFUSER,MDLUSER             ... model DCBs              00005000
+         XC    DAIR08,DAIR08           Clear IKJDAIR                    00005100
+         XC    DAIR18,DAIR18                        ... blocks          00005200
+         XC    ANSWER,ANSWER           Clear IKJPARS answer             00005300
+         XC    ADRUSER,ADRUSER         Clear pointer to user table      00005400
+         XC    PPL#LA,PPL#LA           Clear pointer to PPL             00005500
+         MVC   MSG3,MSG3X              Move message to working storage  00005600
+         MVC   MSG4,MSG4X              Move message to working storage  00005700
+         MVC   MSG9,MSG9X              Move message to working storage  00005800
+         MVI   USERREC-1,C' '          To blank USERREC                 00005900
+         MVI   GROUPS,C' '             Blank GROUP fields               00006000
+         MVC   GROUPS+1(L'GROUPS-1),GROUPS                              00006100
+         MVI   SW,0                    Clear flags                      00006200
+         LA    R0,DCBABEND             DCB abend exit                   00006300
+         ST    R0,EXLST                Save JFCB in exit list           00006400
+         MVI   EXLST,X'91'             DCB abend exit is last entry     00006500
+         LA    R0,EXLST                Exit list (DCB abend exit)       00006600
+         STCM  R0,B'0111',RAKFUSER+DCBEXLSA-IHADCB                      00006700
+         STCM  R0,B'0111',RAKFSHAD+DCBEXLSA-IHADCB                      00006800
+         GETMAIN RU,LV=104000      GETMAIN room for 1300 user records   00006900
+         ST    R1,ADRUSER              Save its address                 00007000
+         USING PSA,R0                  Point to CVT                     00007100
+         L     R2,PSAANEW              Load ASCB                        00007200
+         L     R2,ASCBASXB-ASCB(R2)    Load ASXB                        00007300
+         ICM   R2,15,ASXBSENV-ASXB(R2) Point to ACEE                    00007400
+         BNZ   CONT1                   Yes: found                       00007500
+         LA    R1,MSGY                 Msg: 'No ACEE found'             00007600
+         LA    R0,L'MSGY               Length                           00007700
+         BAL   R14,TPUT                Write the message on screen      00007800
+         B     RC08                    End with RC=-08                  00007900
+CONT1    TM    ACEEFLG1-ACEE(R2),ACEESPEC Do we have the SPECIAL attr   00008000
+         BO    CONT2                                                    00008100
+         LA    R1,MSGZ                 Msg: 'No SPECIAL attribute'      00008200
+         LA    R0,L'MSGZ               Length                           00008300
+         BAL   R14,TPUT                Write the message on screen      00008400
+         B     RC08                    End with RC=-08                  00008500
+CONT2    DS    0H                                                       00008600
 *---------------------------------------------------------------------* 00008700
-         GETMAIN RU,LV=PPL#L           Obtain a dynamic PPL workarea    00008800
-         STM   R0,R1,PPL#LA            Save length and address of PPL   00008900
-         L     R2,PPL#PTR              Get the address of the PPL       00009000
-         USING PPL,R2                  Adress it                        00009100
-         L     R1,MYCPPL               Get address of CPPL              00009200
-         USING CPPL,R1                 Address it                       00009300
-*---------------------------------------------------------------------* 00009400
-*                                                                       00009500
-*        Populate the Parse Parameter List (PPL) from the CPPL,         00009600
-*        add the IKJPARMD list in the PPL and invoke IKJPARS            00009700
-*                                                                       00009800
-*---------------------------------------------------------------------* 00009900
+*        Parse parameters                                             * 00008800
+*---------------------------------------------------------------------* 00008900
+         GETMAIN RU,LV=PPL#L           Obtain a dynamic PPL workarea    00009000
+         STM   R0,R1,PPL#LA            Save length and address of PPL   00009100
+         L     R2,PPL#PTR              Get the address of the PPL       00009200
+         USING PPL,R2                  Adress it                        00009300
+         L     R1,MYCPPL               Get address of CPPL              00009400
+         USING CPPL,R1                 Address it                       00009500
+*---------------------------------------------------------------------* 00009600
+*                                                                       00009700
+*        Populate the Parse Parameter List (PPL) from the CPPL,         00009800
+*        add the IKJPARMD list in the PPL and invoke IKJPARS            00009900
 *                                                                       00010000
-         MVC   PPLUPT,CPPLUPT          Put in the UPT address from CPPL 00010100
-         MVC   PPLECT,CPPLECT          Put in the ECT address from CPPL 00010200
-         MVC   PPLCBUF,CPPLCBUF        Put in the command buffer addr.  00010300
-*                                      From the CPPL                    00010400
-         XC    ECB,ECB                 Clear Event control block        00010500
-         L     R1,=A(ADDPCL)           Address of PCL                   00010600
-         ST    R1,PPLPCL               Set in PPL                       00010700
-         LA    R1,ANSWER               Answer area                      00010800
-         ST    R1,PPLANS               Pointer into PPL                 00010900
-         LA    R1,ECB                  Event control block              00011000
-         ST    R1,PPLECB               Pointer into PPL                 00011100
-         ST    R13,PPLUWA              User provide workarea            00011200
-         CALLTSSR EP=IKJPARS,MF=(E,PPL)   Invoke parse                  00011300
-         DROP  R1,R2                   CPPL and PPL                     00011400
-         LTR   R15,R15                 Parse successfully processed?    00011500
-         BZ    PARSEOK                 Yes: carry                       00011600
-         LA    R0,L'MSG5               Length                           00011700
-         LA    R1,MSG5                 Message                          00011800
-         BAL   R14,TPUT                                                 00011900
-         B     RC08                    Return to TMP                    00012000
-PARSEOK  DS    0H                                                       00012100
-         L     R8,ANSWER               Pointer to PDL                   00012200
-         USING ADDPRS,R8               mapped with IKJPARM              00012300
-         LA    R3,GROUPPDE             Point to Group PDE               00012400
-         USING GRPRET,R3               Get addressability of GROUPPDE   00012500
-         LA    R4,GROUPS               Point to GROUP table             00012600
-         LA    R5,5                    Limit to max. 5 groups           00012700
-LOOPGRP  TM    GRP1FLG,$G1PRES         Group 1 present?                 00012800
-         BNO   ENDGRP                  No:                              00012900
-         L     R1,GRP1PTR              Point to GROUP 1                 00013000
-         LH    R2,GRP1L                Length of GROUP                  00013100
-         BCTR  R2,0                    -1 for EX                        00013200
-         EX    R2,MVEGRP                                                00013300
-         LA    R4,8(,R4)               Next group in table              00013400
-         ICM   R3,15,NEXTGRP           Next PDE of LIST                 00013500
-         BZ    ENDGRP                  No                               00013600
-         BCT   R5,LOOPGRP              Loop                             00013700
-MVEGRP   MVC   0(0,R4),0(R1)           << Executed >>                   00013800
-ENDGRP   DS    0H                                                       00013900
-         DROP  R3                      Unbase GRPRET                    00014000
-         MVC   USERID,=CL8' '          Initialize UserID                00014100
-         LA    R3,UIDPDE               UserID PDE                       00014200
-         USING UIDRET,R3               Base this PDE                    00014300
-         L     R1,UIDPTR               Pointer to UserID                00014400
-         LH    R2,UIDL                 Length                           00014500
-         BCTR  R2,0                    -1 for EX                        00014600
-         EX    R2,MVEUID               Move UserID                      00014700
-         B     ENDUID                  Branch over EX                   00014800
-MVEUID   MVC   USERID(0),0(R1)         << Executed >>                   00014900
-ENDUID   DS    0H                                                       00015000
-         DROP  R3                      Unbase UIDRET                    00015100
-         MVC   WORKPASS+1(8),=CL8' '   Initialize Password              00015200
-         LA    R3,PASSWPDE             Point to Password PDE            00015300
-         USING PASSRET,R3              Base this PDE                    00015400
-         TM    PASSFLG,$PWPRES         Is Password present?             00015500
-         BNZ   PWD001                  Yes: good                        00015600
-         LA    R1,MSG6            Msg: 'PASSWORD and DFLTGRP required'  00015700
-         LA    R0,L'MSG6               Length                           00015800
-         BAL   R14,TPUT                Write message                    00015900
-         B     RC08                    End with RC = 8                  00016000
-PWD001   DS    0H                                                       00016100
-         LH    R2,PASSL                Length of password               00016200
-         STC   R2,WORKPASS             Save password length             00016300
-         L     R1,PASSPTR              Password itsself                 00016400
-         BCTR  R2,0                    Minus 1 for EX                   00016500
-         EX    R2,MVEPAS               Move password                    00016600
-         B     ENDPAS                  Branch over EX                   00016700
-MVEPAS   MVC   WORKPASS+1(0),0(R1)     << Executed >>                   00016800
-ENDPAS   DS    0H                                                       00016900
-         DROP  R3                      Unbase PASSRET                   00017000
-         MVC   DFLTGRP,=CL8' '         Initialize Default Group         00017100
-         LA    R3,DGRPPDE              Point to Default Group PDE       00017200
-         USING DFTGRET,R3              Base this PDE                    00017300
-         TM    DFTGFLG,$DFPRES         Is Default Group present?        00017400
-         BNZ   DFTG001                 Yes: good                        00017500
-         LA    R1,MSG6            Msg: 'PASSWORD and DFLTGRP required'  00017600
-         LA    R0,L'MSG6               Length                           00017700
-         BAL   R14,TPUT                Write message                    00017800
-         B     RC08                    End with RC = 8                  00017900
-DFTG001  DS    0H                                                       00018000
-         LH    R2,DFTGL                Length of Default Group          00018100
-         L     R1,DFTGPTR              Group name                       00018200
-         BCTR  R2,0                    Minus 1 for EX                   00018300
-         EX    R2,MVEDGRP              Move Group name                  00018400
-         B     ENDDGRP                 Branch over EX                   00018500
-MVEDGRP  MVC   DFLTGRP(0),0(R1)        << Executed >>                   00018600
-ENDDGRP  DS    0H                                                       00018700
-         DROP  R3                      Unbase DFTGRET                   00018800
-         MVI   OPER,C'N'               Default no operations            00018900
-         CLI   OPERKW+1,1              Operations?                      00019000
-         BNE   SPEC01                  No: good, Yes: also good         00019100
-         MVI   OPER,C'Y'               Set operations                   00019200
-SPEC01   DS    0H                                                       00019300
-         MVI   SPECIAL,C'N'            Default no SPECIAL               00019400
-         CLI   SPECKW+1,1              SPECIAL?                         00019500
-         BNE   ENDPARS                 No: good, Yes: also good         00019600
-         MVI   SPECIAL,C'Y'            Set SPECIAL                      00019700
-ENDPARS  DS    0H                                                       00019800
-*---------------------------------------------------------------------* 00019900
-*        Allocate SYS1.SECURE.CNTL(USERS) and SYS1.SECURE.SHADOW      * 00020000
-*---------------------------------------------------------------------* 00020100
-         LA    R3,DAIR08               Allocation request block         00020200
-         USING DAPB08,R3               Base DAPB08                      00020300
-         MVI   DA08CD+1,X'08'          Entry code 08 (allocation)       00020400
-         MVC   DA08DDN,=CL8'RAKFUSER'  DDNAME to allocate               00020500
-         MVC   DA08PDSN,=A(USRDSNL)    Temporary data set name          00020600
-         MVI   DA08DSP1,DA08OLD        DISP=OLD                         00020700
-         MVC   DA08MNM,=CL8'USERS'     Fixed member name                00020800
-         MVI   DA08UNIT,C' '           Clear unit name                  00020900
-         MVC   DA08UNIT+1(L'DA08UNIT-1),DA08UNIT                        00021000
-         MVI   DA08SER,C' '            Clear volume serial              00021100
-         MVC   DA08SER+1(L'DA08SER-1),DA08UNIT                          00021200
-         LR    R1,R3                   Parameter CALLTS                 00021300
-         BAL   R14,CALLTS              IKJDAIR routine                  00021400
-         LTR   R15,R15                 Allocation OK?                   00021500
-         BZ    ADDU001                 Yes: carry on                    00021600
-         LA    R1,MSG1                 Msg: 'allocation error USER'     00021700
-         LA    R0,L'MSG1               Length                           00021800
-         BAL   R14,TPUT                Write the message on screen      00021900
-         B     RC08                    Return code 8                    00022000
-ADDU001  DS    0H                                                       00022100
-         MVC   DA08DDN,=CL8'RAKFSHAD'  DDNAME to allocate               00022200
-         MVC   DA08PDSN,=A(SHDDSNL)    Temporary data set name          00022300
-         MVI   DA08MNM,C' '            Clear member name                00022400
-         MVC   DA08MNM(L'DA08MNM-1),DA08MNM                             00022500
-         LR    R1,R3                   Parameter CALLTS                 00022600
-         BAL   R14,CALLTS              IKJDAIR routine                  00022700
-         LTR   R15,R15                 Allocation OK?                   00022800
-         BZ    ADDU003                 Yes: carry on                    00022900
-         LA    R1,MSG2                 Msg: 'allocation error SHADOW'   00023000
-         LA    R0,L'MSG2               Length                           00023100
-         BAL   R14,TPUT                Write the message on screen      00023200
-         BAL   R14,FREE                Free the data sets               00023300
-         B     RC08                    Return code 8                    00023400
-         DROP  R3                      Unbase DABP08                    00023500
-ADDU003  DS    0H                                                       00023600
-*---------------------------------------------------------------------* 00023700
-*        Open SYS1.SECURE.CNTL(USERS) with DDNAME RAKUSER             * 00023800
-*---------------------------------------------------------------------* 00023900
-         MVI   OPEND,X'80'             First and only DCB               00024000
-         OPEN  RAKFUSER,MF=(E,OPEND)                                    00024100
-         TM    SW,$913                 Access denied?                   00024200
-         BNO   ADDU005                 No: assumed, that open is succes 00024300
-         MVC   MSG3+9(8),=CL8'RAKFUSER'  DD-name                        00024400
-         LA    R1,MSG3                 Msg: 'xxxxxxxx access denied'    00024500
-         LA    R0,L'MSG3               Length                           00024600
-         BAL   R14,TPUT                Write the message on screen      00024700
-         BAL   R14,FREE                Free the data sets               00024800
-         B     RC08                    Return code 8                    00024900
-ADDU005  DS    0H                                                       00025000
-*---------------------------------------------------------------------* 00025100
-*        Open SYS1.SECURE.SHADOW with DDNAME RAKFSHAD                 * 00025200
-*---------------------------------------------------------------------* 00025300
-         MVI   OPEND,X'80'             First and only DCB               00025400
-         OPEN  RAKFSHAD,MF=(E,OPEND)                                    00025500
-         TM    SW,$913                 Access denied?                   00025600
-         BNO   ADDU007                 No: assumed, that open is succes 00025700
-         MVC   MSG3+9(8),=CL8'RAKFSHAD'  DD-name                        00025800
-         LA    R1,MSG3                 Msg: 'xxxxxxxx access denied'    00025900
-         LA    R0,L'MSG3               Length                           00026000
-         BAL   R14,TPUT                Write the message on screen      00026100
-         BAL   R14,CLOSE                                                00026200
-         BAL   R14,FREE                Free the data sets               00026300
-         B     RC08                    Return code 8                    00026400
-ADDU007  DS    0H                                                       00026500
-*---------------------------------------------------------------------* 00026600
-*        Read the USERS records and check if UserID is already        * 00026700
-*        added.                                                       * 00026800
-*        And populate the table with User records.                    * 00026900
-*---------------------------------------------------------------------* 00027000
-         XR    R5,R5                   Clear record counter             00027100
-         L     R6,ADRUSER              Start of user table              00027200
-ADDU009  DS    0H                                                       00027300
-         GET   RAKFUSER,USERREC        Read a record                    00027400
-         LA    R5,1(,R5)               Count record                     00027500
-         C     R5,=F'1295'             Already 1295 records in table?   00027600
-         BL    ADDU010                 No: room enough                  00027700
-         LA    R1,MSG7                 Msg: 'table full'                00027800
-         LA    R0,L'MSG7               Length                           00027900
-         BAL   R14,TPUT                Write the message on screen      00028000
-         BAL   R14,CLOSE               Close RAKFUSER and RAKFSHAD      00028100
-         BAL   R14,FREE                Free the data sets               00028200
-         B     RC08                    Return code 8                    00028300
-ADDU010  CLC   USERUID,USERID          Match found of UserID?           00028400
-         BNE   ADDU011                 No: good                         00028500
-         MVC   MSG4+14(8),USERID       Involved UserID                  00028600
-         LA    R1,MSG4                 Msg: 'UserID already defined'    00028700
-         LA    R0,L'MSG4               Length                           00028800
-         BAL   R14,TPUT                Write the message on screen      00028900
-         BAL   R14,CLOSE               Close the data sets              00029000
-         BAL   R14,FREE                Free the data sets               00029100
-         B     RC08                    Return code 8                    00029200
-ADDU011  DS    0H                                                       00029300
-         MVC   0(80,R6),USERREC        Record into table                00029400
-         LA    R6,80(,R6)              Next entry in table              00029500
-         B     ADDU009                 Read next record                 00029600
-USEREOF  DS    0H                      EOF RACFUSER                     00029700
-ADDU013  DS    0H                                                       00029800
-*---------------------------------------------------------------------* 00029900
-*        Read the SHADOW record and check if UserID is already        * 00030000
-*        added.                                                       * 00030100
-*---------------------------------------------------------------------* 00030200
-         GET   RAKFSHAD,SHADOW         Read a shadow record             00030300
-         CLC   SHDUID(8),USERID        Match found of UserID?           00030400
-         BNE   ADDU013                 No: read next record             00030500
-         MVC   MSG4+7(7),USERID        Involved UserID                  00030600
-         LA    R1,MSG4                 Msg: 'Userid already defined'    00030700
-         LA    R0,L'MSG4               Length                           00030800
-         BAL   R14,TPUT                Write the message on screen      00030900
-         BAL   R14,CLOSE               Close the data sets              00031000
-         BAL   R14,FREE                Free the data sets               00031100
-         B     RC08                    Return code 8                    00031200
-SHADEOF  DS    0H                      EOF RACFSHAD                     00031300
-*---------------------------------------------------------------------* 00031400
-*        Write the User records in the User table.                    * 00031500
-*---------------------------------------------------------------------* 00031600
-         MVC   USERREC,USERREC-1       Clear user record                00031700
-         MVC   USERUID(8),USERID       Move UserID                      00031800
-         MVI   USERDFT,C'*'            Default group                    00031900
-         MVC   USERGRP,DFLTGRP         Default GROUP name               00032000
-         MVC   USERSPE,SPECIAL         Special / Nospecial              00032100
-         MVC   USEROPR,OPER            Operations / Nooperations        00032200
-         MVC   0(80,R6),USERREC        Move record in table             00032300
-         LA    R5,1(,R5)               Count record                     00032400
-         LA    R1,GROUPS               Group table                      00032500
-         LA    R0,5                    Max 5 groups                     00032600
-GROUP01  DS    0H                                                       00032700
-         CLC   =CL8' ',0(R1)           No groups anymore?               00032800
-         BE    GROUP09                 Yes: skip                        00032900
-         CLC   DFLTGRP,0(R1)           Group is already the DFLTGRP?    00033000
-         BE    GROUP02                 Yes: skip                        00033100
-         MVC   USERGRP,0(R1)           Move Group name                  00033200
-         MVI   USERDFT,C' '            Is not the Default GROUP         00033300
-         LA    R6,80(,R6)              Next entry in User tablew        00033400
-         MVC   0(80,R6),USERREC        Move record in table             00033500
-         LA    R5,1(,R5)               Count record                     00033600
-GROUP02  LA    R1,8(,R1)               Point to next group              00033700
-         BCT   R0,GROUP01              Loop until all done              00033800
-GROUP09  DS    0H                                                       00033900
-*---------------------------------------------------------------------* 00034000
-*        Initialize the Salt with the TOD clock and call RAKFPWH      * 00034100
-*---------------------------------------------------------------------* 00034200
-         STCK  SALT                    Salt = the TOD clock             00034300
-         LA    R0,SALT                 Salt                             00034400
-         ST    R0,HWPL+0               In parmlist                      00034500
-         LA    R0,WORKPASS+1                                            00034600
-         ST    R0,HWPL+4               In parmlist                      00034700
-         XR    R1,R1                   Clear register                   00034800
-         IC    R1,WORKPASS             Gotten password length           00034900
-         ST    R1,HWPWLEN              Save in RAKFPWH list             00035000
-         LA    R0,HWPWLEN                                               00035100
-         ST    R0,HWPL+8               In parmlist                      00035200
-         LA    R0,OUTPUT               Output field                     00035300
-         ST    R0,HWPL+12              In parmlist                      00035400
-         LA    R0,HWWORK               Work area                        00035500
-         ST    R0,HWPL+16              In parmlist                      00035600
-         LA    R1,HWPL                 Parmlist                         00035700
-         ST    R13,HWR13               Save our area address            00035800
-         LR    R4,R13                  Save our area address            00035900
-         LA    R13,HWSAVE                                               00036000
-         L     R15,=V(RAKFPWH)         Hashing routine                  00036100
-         BALR  R14,R15                 Encrypt                          00036200
-         LR    R13,R4                  Restore our area address         00036300
-         BAL   R14,CLOSE               Close RAKFUSER and RAKFSHAD      00036400
-*---------------------------------------------------------------------* 00036500
-*        Add the salt + hashed password in the SHADOW data set.       * 00036600
-*---------------------------------------------------------------------* 00036700
-         MVI   OPEND,X'80'             First and only DCB               00036800
-         OPEN  (RAKFSHAD,(EXTEND)),MF=(E,OPEND)                         00036900
-         TM    SW,$913                 Access denied?                   00037000
-         BNO   ADDU015                 No: assumed, that open is succes 00037100
-         MVC   MSG3+9(8),=CL8'RAKFSHAD'  DD-name                        00037200
-         B     ADDU016                 Write message                    00037300
-ADDU015  MVC   SHDUID,USERID                                            00037400
-         MVC   SHDSALT,SALT            Salt                             00037500
-         MVC   SHDHASH,OUTPUT          Hash                             00037600
-         PUT   RAKFSHAD,SHADOW                                          00037700
-         MVI   OPEND,X'80'             First and only DCB               00037800
-         OPEN  (RAKFUSER,(OUTPUT)),MF=(E,OPEND)                         00037900
-         TM    SW,$913                 Access denied?                   00038000
-         BNO   ADDU017                 No: assumed, that open is succes 00038100
-         MVC   MSG3+9(8),=CL8'RAKFUSER'  DD-name                        00038200
-ADDU016  LA    R1,MSG3                 Msg: 'xxxxxxxx access denied'    00038300
-         LA    R0,L'MSG3               Length                           00038400
-         BAL   R14,TPUT                Write the message on screen      00038500
-         BAL   R14,CLOSE               Close the DCBs                   00038600
-         BAL   R14,FREE                Free the data sets               00038700
-         B     RC08                    Return code 8                    00038800
-ADDU017  L     R6,ADRUSER              Max 1000 user entries            00038900
-*---------------------------------------------------------------------* 00039000
-*        Write the RAKF Users back in the USERS member.               * 00039100
-*---------------------------------------------------------------------* 00039200
-ADDU019  DS    0H                                                       00039300
-         PUT   RAKFUSER,0(R6)          Write ...                        00039400
-         LA    R6,80(,R6)                    User ...                   00039500
-         BCT   R5,ADDU019                         table back            00039600
-         MVC   MSG9+14(8),USERID       UserID in success message        00039700
-         LA    R1,MSG9                 Success message                  00039800
-         LA    R0,L'MSG9               Length                           00039900
-         BAL   R14,TPUT                Write the message on screen      00040000
-         LA    R1,MSGA                 Msg: Run RAKFUSER ...            00040100
-         LA    R0,L'MSGA               Length                           00040200
-         BAL   R14,TPUT                Write the message on screen      00040300
-         BAL   R14,CLOSE               Close the data sets              00040400
-         BAL   R14,FREE                And unallocate                   00040500
-         LA    R15,0                   RC = 0                           00040600
-         B     RETURN                                                   00040700
-*---------------------------------------------------------------------* 00040800
-*        Return to TSO TMP.                                           * 00040900
-*---------------------------------------------------------------------* 00041000
-RC08     DS    0H                                                       00041100
-         LA    R15,8                   RC = 8                           00041200
-RETURN   DS    0H                                                       00041300
-         LR    R4,R15                  Save return code                 00041400
-         ICM   R2,15,PPL#LA            Filled in?                       00041500
-         BZ    RETURN1                 No: do not free                  00041600
-         LM    R2,R3,PPL#LA            Load length and address of PPL   00041700
-         FREEMAIN RU,LV=(2),A=(3)      Free the PPL                     00041800
-RETURN1  ICM   R8,15,ANSWER            Pointer to PDE's (the PDL)       00041900
-         BZ    RETURN2                 No: skip                         00042000
-         IKJRLSA (R8)                  Release PARSE storage            00042100
-RETURN2  L     R2,ADRUSER              Point to USER core table         00042200
-         FREEMAIN RU,LV=104000,A=(2)                                    00042300
-         LR    R3,R13                  Load working storage to free     00042400
-         L     R13,4(,R13)             Load caller's save area          00042500
-         FREEMAIN RU,LV=WORKL,A=(3)    Release working storage          00042600
-         LR    R15,R4                  Restore return code              00042700
-         RETURN (14,12),RC=(15)        Return                           00042800
-*                                                                       00042900
-         TITLE 'Invoke IKJDAIR, A(Parm block) in R1'                    00043000
-*---------------------------------------------------------------------* 00043100
-*        Routine:   CALLTS                                            * 00043200
-*        Function:  Invoke IKJDAIR to allocate or unallocate data sets* 00043300
-*                   Register 1 contains the address of the allocation * 00043400
-*                   or unallocation DAIR parameter blocks.            * 00043500
-*---------------------------------------------------------------------* 00043600
-CALLTS   DS    0H                                                       00043700
-         ST    R14,R14TS               Save register 14                 00043800
-         LR    R14,R1                  Save A(IKJDAIR parm block)       00043900
-         XC    ECB,ECB                 Clear ECB                        00044000
-         LA    R1,DAIRDAPL                                              00044100
-         L     R2,MYCPPL               Pickup our CPPL                  00044200
-         USING CPPL,R2                 Base CPPL                        00044300
-         USING DAPL,R1                 Base IKJDAPL                     00044400
-         MVC   DAPLUPT(4),CPPLUPT                                       00044500
-         MVC   DAPLECT(4),CPPLECT                                       00044600
-         XC    ECB,ECB                 Clear Event control block        00044700
-         LA    R0,ECB                  Address of our ECB               00044800
-         ST    R0,DAPLECB              Set A(ECB) in DAPL               00044900
-         MVC   DAPLPSCB(4),CPPLPSCB                                     00045000
-         ST    R14,DAPLDAPB            Set A(parm block) in DAPL        00045100
-         CALLTSSR EP=IKJDAIR,MF=(E,DAIRDAPL)                            00045200
-         L     R14,R14TS               Restore register 14              00045300
-         BR    R14                                                      00045400
-         DROP  R1,R2                   Unbase DAPL and CPPL             00045500
-         TITLE 'Write message on screen'                                00045600
-*---------------------------------------------------------------------* 00045700
-*        Write the message on the terminal with a PUTLINE.            * 00045800
-*        Register 0 = the length of the message.                      * 00045900
-*        Register 1 = adress of the message.                          * 00046000
-*---------------------------------------------------------------------* 00046100
-TPUT     DS    0H                                                       00046200
-         ST    R14,R14TPUT             Save register 14                 00046300
-         L     R3,MYCPPL               Pickup CPPL of this command      00046400
-         USING CPPL,R3                 Base IKJCPPL                     00046500
-         MVI   PUTLINE+4,C' '          Clear output line                00046600
-         MVC   PUTLINE+5(79),PUTLINE+4         ,,                       00046700
-         LR    R2,R0                   Length of message                00046800
-         BCTR  R2,0                    Minus 1 for EX                   00046900
-         EX    R2,MVEMSG               Move the message                 00047000
-         LA    R2,5(,R2)               Length in including length field 00047100
-         XC    PUTLINE+2(2),PUTLINE+2  Byte 2 and 3, reserved           00047200
-         STCM  R2,B'0011',PUTLINE      Save length in byte 0 and 1      00047300
-         L     R2,CPPLUPT              User Profile Table               00047400
-         L     R3,CPPLECT              Environment Control Table        00047500
-         XC    ECB,ECB                 Force PUTLINE to wait            00047600
-         LA    R0,PUTLINE              Data line address                00047700
-         PUTLINE PARM=PUTBLOK,,MF=(E,PUTIOPL),                         *00047800
-               OUTPUT=((0),TERM,SINGLE,DATA),ECB=ECB,UPT=(2),ECT=(3),  *00047900
-               TERMPUT=(EDIT,WAIT,NOHOLD,NOBREAK)                       00048000
-         L     R14,R14TPUT             Restore register 14              00048100
-         BR    R14                                                      00048200
-MVEMSG   MVC   PUTLINE+4(0),0(R1)      << executed >>                   00048300
-         DROP  R3                      Unbase CPPL                      00048400
-         TITLE 'Free SYS1.SECURE.CNTL and SYS1.SECURE.SHADOW'           00048500
-FREE     DS    0H                                                       00048600
-         ST    R14,R14FREE             Save register 14                 00048700
-         LA    R3,DAIR18               Point to unallocation parm block 00048800
-         XC    DAIR18,DAIR18           Clear unallocation parm block    00048900
-         USING DAPB18,R3               IKJDAP18                         00049000
-         MVI   DA18CD+1,X'18'          Entry code 0018 (unallocate)     00049100
-         MVI   DA18MNM,C' '            Provide no ...                   00049200
-         MVC   DA18MNM+1(7),DA18MNM               member name           00049300
-         MVC   DA18DDN,=CL8'RAKFUSER'  DDNAME to unallocate             00049400
-         LR    R1,R3                   Parameter CALLTS                 00049500
-         BAL   R14,CALLTS              IKJDAIR routine                  00049600
-         MVC   DA18DDN,=CL8'RAKFSHAD'  DDNAME to unallocate             00049700
-         LR    R1,R3                   Parameter CALLTS                 00049800
-         BAL   R14,CALLTS              IKJDAIR routine                  00049900
-         L     R14,R14FREE             Restore register 14              00050000
-         BR    R14                     Return                           00050100
-         DROP  R3                      Unbase DAPB18                    00050200
-         TITLE 'Close RAKFUSER and RAKFSHAD'                            00050300
-CLOSE    ST    R14,R14CLOSE            Save register 14                 00050400
-         MVI   CLOSED,X'80'            First and only DCB               00050500
-         CLOSE RAKFUSER,MF=(E,CLOSED)                                   00050600
-         MVI   CLOSED,X'80'            First and only DCB               00050700
-         CLOSE RAKFSHAD,MF=(E,CLOSED)                                   00050800
-         L     R14,R14CLOSE            Restore register 14              00050900
-         BR    R14                     Return                           00051000
-         TITLE 'DCB abend exit'                                         00051100
-DCBABEND DS    0H                                                       00051200
-         TM    3(R1),B'00001110'       Processing allowed?              00051300
-         BZR   R14                     No: continue with abend          00051400
-         TM    3(R1),4                 Ignore bit on?                   00051500
-         MVI   3(R1),0                 Prepare for NO                   00051600
-         BZR   R14                                                      00051700
-         MVC   DCBCOMP,0(R1)           Move completion code             00051800
-         NC    DCBCOMP,=X'FFF0'        Clear last nibble                00051900
-         CLC   DCBCOMP,=X'9130'        Do we have an RACF/ACF2 abend?   00052000
-         BNER  R14                     No: continue with abend          00052100
-         MVI   3(R1),4                 Yes: ignore abend                00052200
-         OI    SW,$913                 Indicate 913 abend               00052300
-         BR    R14                     Return to Access Method          00052400
-PCLSTART DS    0H                                                       00052500
-ADDPCL   IKJPARM DSECT=ADDPRS          PDE's                            00052600
-UIDPDE   IKJPOSIT JOBNAME,PROMPT='RAKF UserID',                        *00052700
-               HELP=('a valid UserID')                                  00052800
-PASSWKW  IKJKEYWD                                                       00052900
-         IKJNAME 'PASSWORD',SUBFLD=PASSWSF,ALIAS='PWD'                  00053000
-DFTGRPKW IKJKEYWD                                                       00053100
-         IKJNAME 'DFLTGRP',SUBFLD=DGRPSF,ALIAS='DGRP'                   00053200
-GROUPKW  IKJKEYWD                                                       00053300
-         IKJNAME 'GROUP',SUBFLD=GROUPSF,ALIAS='GRP'                     00053400
-OPERKW   IKJKEYWD  DEFAULT='NOOPERATIONS'                               00053500
-         IKJNAME 'OPERATIONS'                                           00053600
-         IKJNAME 'NOOPERATIONS'                                         00053700
-SPECKW   IKJKEYWD DEFAULT='NOSPECIAL'                                   00053800
-         IKJNAME 'SPECIAL'                                              00053900
-         IKJNAME 'NOSPECIAL'                                            00054000
-PASSWSF  IKJSUBF                                                        00054100
-PASSWPDE IKJIDENT 'Password',                                          *00054200
-               FIRST=ALPHANUM,OTHER=ALPHANUM,MAXLNTH=8,                *00054300
-               PROMPT='Enter a valid password',VALIDCK=PWCHK,          *00054400
-               HELP='a password with at least 4 characters'             00054500
-DGRPSF   IKJSUBF                                                        00054600
-DGRPPDE  IKJIDENT 'Default group',                                     *00054700
-               FIRST=ALPHA,OTHER=ALPHANUM,MAXLNTH=8,                   *00054800
-               PROMPT='Default RAKF group'                              00054900
-GROUPSF  IKJSUBF                                                        00055000
-GROUPPDE IKJIDENT 'Group',LIST,                                        *00055100
-               FIRST=ALPHA,OTHER=ALPHANUM,MAXLNTH=8,                   *00055200
-               PROMPT='One or more RAKF groups'                         00055300
-         IKJENDP                                                        00055400
-PCL#L    EQU   *-PCLSTART                                               00055500
-         TITLE 'CONSTANTS'                                              00055600
-MDLSHAD  DCB   DSORG=PS,LRECL=48,DDNAME=RAKFSHAD,EODAD=SHADEOF,        *00055700
-               MACRF=(GM,PM)                                            00055800
-MDLSLEN  EQU   *-MDLSHAD                                                00055900
-MDLUSER  DCB   DSORG=PS,LRECL=80,DDNAME=RAKFUSER,EODAD=USEREOF,        *00056000
-               MACRF=(GM,PM)                                            00056100
-MDLULEN  EQU   *-MDLUSER                                                00056200
-*                                                                       00056300
-USRDSNL  DC    AL2(L'USRDSN)                                            00056400
-USRDSN   DC    C'SYS1.SECURE.CNTL'     RAKF control data set            00056500
-SHDDSNL  DC    AL2(L'SHDDSN)                                            00056600
-SHDDSN   DC    C'SYS1.SECURE.SHADOW'   RAKF data set with encrypted psw 00056700
-*                                                                       00056800
-MSG1     DC    C'SYS1.SECURE.CNTL(USERS) could not be allocated'        00056900
-MSG2     DC    C'SYS1.SECURE.SHADOW could not be allocated'             00057000
-MSG3X    DC    C'ADDUSER: xxxxxxxx access denied'  +9                   00057100
-MSG4X    DC    C'ADDUSER: User xxxxxxxx already defined'                00057200
-MSG5     DC    C'ADDUSER: Parse error'                                  00057300
-MSG6     DC    C'ADDUSER: PASSWORD(pppp) and DFLTGRP(gggg) are required*00057400
-               '                                                        00057500
-MSG7     DC    C'ADDUSER: User table full, too many users'              00057600
-MSG9X    DC    C'ADDUSER: User xxxxxxxx successfully defined'           00057700
-MSGA     DC    C'ADDUSER: Run RAKFUSER to activate the changes'         00057800
-MSGY     DC    C'ADDUSER: No ACEE found'                                00057900
-MSGZ     DC    C'ADDUSER: Not authorized, no SPECIAL attribute'         00058000
-         LTORG ,                                                        00058100
-         DROP                                                           00058200
-*---------------------------------------------------------------------* 00058300
-*        Validate Presence of the Password                            * 00058400
-*---------------------------------------------------------------------* 00058500
-PWCHK    DS    0H                                                       00058600
-         STM   R14,R12,12(R13)         Save registers                   00058700
-         LR    R12,R15                 Load base register               00058800
-         USING PWCHK,R12                                                00058900
-         L     R3,0(,R1)               Point to PASSWORD PDE            00059000
-         USING PASSRET,R3              Address it                       00059100
-         SR    R15,R15                 Default return code 0            00059200
-         TM    PASSFLG,$PWPRES         Was keyword present?             00059300
-         BNZ   PW02                    Yes: good                        00059400
-         LA    R15,4                   Return code 4                    00059500
-PW02     DS    0H                                                       00059600
-         LH    R1,PASSL                Length                           00059700
-         CH    R1,=H'3'                At least 4 bytes long            00059800
-         BH    PWEXIT                  Yes: good                        00059900
-         LA    R15,4                   Return code 4                    00060000
-PWEXIT   L     R14,12(,R13)            Restore register 14              00060100
-         LM    R0,R12,20(R13)          Restore other registers          00060200
-         BR    R14                     Return to caller                 00060300
-         DROP  R3,R12                  Unbase PASSRET and PWCHK         00060400
-         LTORG ,                                                        00060500
-*                                                                       00060600
-GRPRET   DSECT                         LIST PDE of GROUP                00060700
-GRP1PTR  DS    F                       Pointer to GROUP                 00060800
-GRP1L    DS    H                       Length of GROUP                  00060900
-GRP1FLG  DS    C                                                        00061000
-$G1PRES  EQU   128                     Group(s) are present             00061100
-         DS    C                       Reserved                         00061200
-NEXTGRP  DS    F                       Next PDE                         00061300
-*                                                                       00061400
-UIDRET   DSECT                         PDE of UserID                    00061500
-UIDPTR   DS    F                       Pointer to UserID                00061600
-UIDL     DS    H                       Length of UserID                 00061700
-UIDFLG   DS    C                                                        00061800
-$UPRES   EQU   128                     Group(s) are present             00061900
-         DS    C                       Reserved                         00062000
-*                                                                       00062100
-PASSRET  DSECT                         PDE of Password                  00062200
-PASSPTR  DS    F                       Pointer to Password              00062300
-PASSL    DS    H                       Length of Password               00062400
-PASSFLG  DS    C                                                        00062500
-$PWPRES  EQU   128                     Password is present              00062600
-         DS    C                       Reserved                         00062700
-*                                                                       00062800
-DFTGRET  DSECT                         PDE of Default GROUP             00062900
-DFTGPTR  DS    F                       Pointer to default group         00063000
-DFTGL    DS    H                       Length of group                  00063100
-DFTGFLG  DS    C                                                        00063200
-$DFPRES  EQU   128                     Default group is present         00063300
-         DS    C                       Reserved                         00063400
-*                                                                       00063500
-WORKAREA DSECT                         Working storage                  00063600
-         DS    18F                     Our save area                    00063700
-MYCPPL   DS    F                                                        00063800
-DAIRDAPL DS    5F                      DAIR parameter list              00063900
-ECB      DS    F                       For IKJDAIR                      00064000
-R14CLOSE DS    F                       Register 14 CLOSE                00064100
-R14FREE  DS    F                       Register 14 FREE                 00064200
-R14TPUT  DS    F                       Register 14 TPUT                 00064300
-R14TS    DS    F                       Register 14 CALLTS               00064400
-EXLST    DS    F                       DCB abend exit                   00064500
-OPEND    DS    F                       OPEN MF=L                        00064600
-CLOSED   DS    F                       CLOSE MF=L                       00064700
-ADRUSER  DS    F                       Address of 1000 user entries     00064800
-ANSWER   DS    F                       Parse answer area                00064900
-PUTIOPL  DS    4F                      IKJIOPL                          00065000
-PUTBLOK  PUTLINE MF=L                  PUTLINE PTPB                     00065100
-PUTLINE  DS    CL84                    Output of PUTLINE                00065200
-SALT     DS    CL8                     SALT is equal to TOD clock       00065300
-USERID   DS    CL8                     To receive UserID                00065400
-DFLTGRP  DS    CL8                     To receive default Group name    00065500
-*                                                                       00065600
-GROUPS   DS    CL40                    To receive max. 5 groups         00065700
-*                                                                       00065800
-DCBCOMP  DS    H                       Completion code in DCBABEND      00065900
-*                                                                       00066000
-HASHWKD  DS    0CL772                  Area for RAKFPWH                 00066100
-HWPL     DS    5F                    parmlist (salt,pw,pwlen,out,work)  00066200
-HWPWLEN  DS    F                       Candidate password length        00066300
-HWR13    DS    F                       saved caller save-area pointer   00066400
-HWOUT    DS    CL32                    computed SHA-256 hash            00066500
-HWSAVE   DS    18F                     save area for the RAKFPWH call   00066600
-HWWORK   DS    CL640                   RAKFPWH work area (>= RPWWORKL)  00066700
-*                                                                       00066800
-OUTPUT   DS    CL32                    Hashed output field              00066900
-RAKFSHAD DS    CL(MDLSLEN)                                              00067000
-RAKFUSER DS    CL(MDLULEN)                                              00067100
-*                                                                       00067200
-SHADOW   DS    0CL48                   Shadow record                    00067300
-SHDUID   DS    CL8                     UserID (key)                     00067400
-SHDSALT  DS    CL8                     SALT                             00067500
-SHDHASH  DS    CL32                    HASH                             00067600
-*                                                                       00067700
-         DS    C                       -1                               00067800
-USERREC  DS    0CL80                   User record                      00067900
-USERUID  DS    CL8                     Contains UserID                  00068000
-         DS    C                                                        00068100
-USERGRP  DS    CL8                     Group                            00068200
-USERDFT  DS    C                       * for default group              00068300
-USERPWD  DS    CL8                     Password is blanked out          00068400
-         DS    C                                                        00068500
-USEROPR  DS    C                       Operations / Nooperations        00068600
-         DS    C                                                        00068700
-USERSPE  DS    C                       Special / Nospecial              00068800
-         DS    CL50                    Filler                           00068900
-*                                                                       00069000
-PPL#LA   DS    F                       \___ Length + address PPL ____/  00069100
-PPL#PTR  DS    F                       /                             \  00069200
-*                                                                       00069300
-DAIR08   DS    CL84                    Allocation parm block            00069400
-DAIR18   DS    CL40                    Unallocation parm block          00069500
-*                                                                       00069600
-MSG3     DS    CL(L'MSG3X)                                              00069700
-MSG4     DS    CL(L'MSG4X)                                              00069800
-MSG9     DS    CL(L'MSG9X)                                              00069900
-SW       DS    X                       Flags                            00070000
-$913     EQU   128                     913 abend occurred               00070100
-*                                                                       00070200
-SPECIAL  DS    C                       Y or N for SPECIAL               00070300
-OPER     DS    C                       Y or N for OPERATIONS            00070400
-WORKPASS DS    CL9                     1 byte length + password         00070500
-WORKL    EQU   *-WORKAREA              Length of working storage        00070600
-*                                                                       00070700
-         CVT   DSECT=YES,LIST=NO                                        00070800
-         IKJCPPL                                                        00070900
-         IKJUPT                                                         00071000
-         IKJPPL                        Parse parameter list             00071100
-PPL#L    EQU   *-PPL                                                    00071200
-         IKJDAPL                                                        00071300
-         IKJDAP08                      IKJDAIR allocation parm block    00071400
-         IKJDAP18                      IKJDAIR unallocation parm block  00071500
-         IHAPSA                                                         00071600
-         IHAASCB                                                        00071700
-         IHAASXB                                                        00071800
-         IHAACEE                                                        00071900
-         PRINT NOGEN                                                    00072000
-         DCBD  DSORG=PS,DEVD=DA                                         00072100
-*                                                                       00072200
-R0       EQU   0                                                        00072300
-R1       EQU   1                                                        00072400
-R2       EQU   2                                                        00072500
-R3       EQU   3                                                        00072600
-R4       EQU   4                                                        00072700
-R5       EQU   5                       Counter number of USER records   00072800
-R6       EQU   6                       Address of USER entry in table   00072900
-R7       EQU   7                                                        00073000
-R8       EQU   8                       Address of IKJPARS PDL           00073100
-R9       EQU   9                                                        00073200
-R10      EQU   10                                                       00073300
-R11      EQU   11                                                       00073400
-R12      EQU   12                      Base register                    00073500
-R13      EQU   13                      Address of working storage       00073600
-R14      EQU   14                                                       00073700
-R15      EQU   15                                                       00073800
-         END                                                            00073900
+*---------------------------------------------------------------------* 00010100
+*                                                                       00010200
+         MVC   PPLUPT,CPPLUPT          Put in the UPT address from CPPL 00010300
+         MVC   PPLECT,CPPLECT          Put in the ECT address from CPPL 00010400
+         MVC   PPLCBUF,CPPLCBUF        Put in the command buffer addr.  00010500
+*                                      From the CPPL                    00010600
+         XC    ECB,ECB                 Clear Event control block        00010700
+         L     R1,=A(ADDPCL)           Address of PCL                   00010800
+         ST    R1,PPLPCL               Set in PPL                       00010900
+         LA    R1,ANSWER               Answer area                      00011000
+         ST    R1,PPLANS               Pointer into PPL                 00011100
+         LA    R1,ECB                  Event control block              00011200
+         ST    R1,PPLECB               Pointer into PPL                 00011300
+         ST    R13,PPLUWA              User provide workarea            00011400
+         CALLTSSR EP=IKJPARS,MF=(E,PPL)   Invoke parse                  00011500
+         DROP  R1,R2                   CPPL and PPL                     00011600
+         LTR   R15,R15                 Parse successfully processed?    00011700
+         BZ    PARSEOK                 Yes: carry                       00011800
+         LA    R0,L'MSG5               Length                           00011900
+         LA    R1,MSG5                 Message                          00012000
+         BAL   R14,TPUT                                                 00012100
+         XC    ANSWER,ANSWER           Avoid IKJRLSA                    00012200
+         B     RC08                    Return to TMP                    00012300
+PARSEOK  DS    0H                                                       00012400
+         L     R8,ANSWER               Pointer to PDL                   00012500
+         USING ADDPRS,R8               mapped with IKJPARM              00012600
+         LA    R3,GROUPPDE             Point to Group PDE               00012700
+         USING GRPRET,R3               Get addressability of GROUPPDE   00012800
+         LA    R4,GROUPS               Point to GROUP table             00012900
+         LA    R5,5                    Limit to max. 5 groups           00013000
+LOOPGRP  TM    GRP1FLG,$G1PRES         Group 1 present?                 00013100
+         BNO   ENDGRP                  No:                              00013200
+         L     R1,GRP1PTR              Point to GROUP 1                 00013300
+         LH    R2,GRP1L                Length of GROUP                  00013400
+         BCTR  R2,0                    -1 for EX                        00013500
+         EX    R2,MVEGRP                                                00013600
+         LA    R4,8(,R4)               Next group in table              00013700
+         ICM   R3,15,NEXTGRP           Next PDE of LIST                 00013800
+         BZ    ENDGRP                  No                               00013900
+         BCT   R5,LOOPGRP              Loop                             00014000
+MVEGRP   MVC   0(0,R4),0(R1)           << Executed >>                   00014100
+ENDGRP   DS    0H                                                       00014200
+         DROP  R3                      Unbase GRPRET                    00014300
+         MVC   USERID,=CL8' '          Initialize UserID                00014400
+         LA    R3,UIDPDE               UserID PDE                       00014500
+         USING UIDRET,R3               Base this PDE                    00014600
+         L     R1,UIDPTR               Pointer to UserID                00014700
+         LH    R2,UIDL                 Length                           00014800
+         BCTR  R2,0                    -1 for EX                        00014900
+         EX    R2,MVEUID               Move UserID                      00015000
+         B     ENDUID                  Branch over EX                   00015100
+MVEUID   MVC   USERID(0),0(R1)         << Executed >>                   00015200
+ENDUID   DS    0H                                                       00015300
+         DROP  R3                      Unbase UIDRET                    00015400
+         MVC   WORKPASS+1(8),=CL8' '   Initialize Password              00015500
+         LA    R3,PASSWPDE             Point to Password PDE            00015600
+         USING PASSRET,R3              Base this PDE                    00015700
+         TM    PASSFLG,$PWPRES         Is Password present?             00015800
+         BNZ   PWD001                  Yes: good                        00015900
+         LA    R1,MSG6            Msg: 'PASSWORD and DFLTGRP required'  00016000
+         LA    R0,L'MSG6               Length                           00016100
+         BAL   R14,TPUT                Write message                    00016200
+         B     RC08                    End with RC = 8                  00016300
+PWD001   DS    0H                                                       00016400
+         LH    R2,PASSL                Length of password               00016500
+         STC   R2,WORKPASS             Save password length             00016600
+         L     R1,PASSPTR              Password itsself                 00016700
+         BCTR  R2,0                    Minus 1 for EX                   00016800
+         EX    R2,MVEPAS               Move password                    00016900
+         B     ENDPAS                  Branch over EX                   00017000
+MVEPAS   MVC   WORKPASS+1(0),0(R1)     << Executed >>                   00017100
+ENDPAS   DS    0H                                                       00017200
+         DROP  R3                      Unbase PASSRET                   00017300
+         MVC   DFLTGRP,=CL8' '         Initialize Default Group         00017400
+         LA    R3,DGRPPDE              Point to Default Group PDE       00017500
+         USING DFTGRET,R3              Base this PDE                    00017600
+         TM    DFTGFLG,$DFPRES         Is Default Group present?        00017700
+         BNZ   DFTG001                 Yes: good                        00017800
+         LA    R1,MSG6            Msg: 'PASSWORD and DFLTGRP required'  00017900
+         LA    R0,L'MSG6               Length                           00018000
+         BAL   R14,TPUT                Write message                    00018100
+         B     RC08                    End with RC = 8                  00018200
+DFTG001  DS    0H                                                       00018300
+         LH    R2,DFTGL                Length of Default Group          00018400
+         L     R1,DFTGPTR              Group name                       00018500
+         BCTR  R2,0                    Minus 1 for EX                   00018600
+         EX    R2,MVEDGRP              Move Group name                  00018700
+         B     ENDDGRP                 Branch over EX                   00018800
+MVEDGRP  MVC   DFLTGRP(0),0(R1)        << Executed >>                   00018900
+ENDDGRP  DS    0H                                                       00019000
+         DROP  R3                      Unbase DFTGRET                   00019100
+         MVI   OPER,C'N'               Default no operations            00019200
+         CLI   OPERKW+1,1              Operations?                      00019300
+         BNE   SPEC01                  No: good, Yes: also good         00019400
+         MVI   OPER,C'Y'               Set operations                   00019500
+SPEC01   DS    0H                                                       00019600
+         MVI   SPECIAL,C'N'            Default no SPECIAL               00019700
+         CLI   SPECKW+1,1              SPECIAL?                         00019800
+         BNE   ENDPARS                 No: good, Yes: also good         00019900
+         MVI   SPECIAL,C'Y'            Set SPECIAL                      00020000
+ENDPARS  DS    0H                                                       00020100
+*---------------------------------------------------------------------* 00020200
+*        Allocate SYS1.SECURE.CNTL(USERS) and SYS1.SECURE.SHADOW      * 00020300
+*---------------------------------------------------------------------* 00020400
+         LA    R3,DAIR08               Allocation request block         00020500
+         USING DAPB08,R3               Base DAPB08                      00020600
+         MVI   DA08CD+1,X'08'          Entry code 08 (allocation)       00020700
+         MVC   DA08DDN,=CL8'RAKFUSER'  DDNAME to allocate               00020800
+         MVC   DA08PDSN,=A(USRDSNL)    Temporary data set name          00020900
+         MVI   DA08DSP1,DA08OLD        DISP=OLD                         00021000
+         MVC   DA08MNM,=CL8'USERS'     Fixed member name                00021100
+         MVI   DA08UNIT,C' '           Clear unit name                  00021200
+         MVC   DA08UNIT+1(L'DA08UNIT-1),DA08UNIT                        00021300
+         MVI   DA08SER,C' '            Clear volume serial              00021400
+         MVC   DA08SER+1(L'DA08SER-1),DA08UNIT                          00021500
+         LR    R1,R3                   Parameter CALLTS                 00021600
+         BAL   R14,CALLTS              IKJDAIR routine                  00021700
+         LTR   R15,R15                 Allocation OK?                   00021800
+         BZ    ADDU001                 Yes: carry on                    00021900
+         LA    R1,MSG1                 Msg: 'allocation error USER'     00022000
+         LA    R0,L'MSG1               Length                           00022100
+         BAL   R14,TPUT                Write the message on screen      00022200
+         B     RC08                    Return code 8                    00022300
+ADDU001  DS    0H                                                       00022400
+         MVC   DA08DDN,=CL8'RAKFSHAD'  DDNAME to allocate               00022500
+         MVC   DA08PDSN,=A(SHDDSNL)    Temporary data set name          00022600
+         MVI   DA08MNM,C' '            Clear member name                00022700
+         MVC   DA08MNM(L'DA08MNM-1),DA08MNM                             00022800
+         LR    R1,R3                   Parameter CALLTS                 00022900
+         BAL   R14,CALLTS              IKJDAIR routine                  00023000
+         LTR   R15,R15                 Allocation OK?                   00023100
+         BZ    ADDU003                 Yes: carry on                    00023200
+         LA    R1,MSG2                 Msg: 'allocation error SHADOW'   00023300
+         LA    R0,L'MSG2               Length                           00023400
+         BAL   R14,TPUT                Write the message on screen      00023500
+         BAL   R14,FREE                Free the data sets               00023600
+         B     RC08                    Return code 8                    00023700
+         DROP  R3                      Unbase DABP08                    00023800
+ADDU003  DS    0H                                                       00023900
+*---------------------------------------------------------------------* 00024000
+*        Open SYS1.SECURE.CNTL(USERS) with DDNAME RAKUSER             * 00024100
+*---------------------------------------------------------------------* 00024200
+         MVI   OPEND,X'80'             First and only DCB               00024300
+         OPEN  RAKFUSER,MF=(E,OPEND)                                    00024400
+         TM    SW,$913                 Access denied?                   00024500
+         BNO   ADDU005                 No: assumed, that open is succes 00024600
+         MVC   MSG3+9(8),=CL8'RAKFUSER'  DD-name                        00024700
+         LA    R1,MSG3                 Msg: 'xxxxxxxx access denied'    00024800
+         LA    R0,L'MSG3               Length                           00024900
+         BAL   R14,TPUT                Write the message on screen      00025000
+         BAL   R14,FREE                Free the data sets               00025100
+         B     RC08                    Return code 8                    00025200
+ADDU005  DS    0H                                                       00025300
+*---------------------------------------------------------------------* 00025400
+*        Open SYS1.SECURE.SHADOW with DDNAME RAKFSHAD                 * 00025500
+*---------------------------------------------------------------------* 00025600
+         MVI   OPEND,X'80'             First and only DCB               00025700
+         OPEN  RAKFSHAD,MF=(E,OPEND)                                    00025800
+         TM    SW,$913                 Access denied?                   00025900
+         BNO   ADDU007                 No: assumed, that open is succes 00026000
+         MVC   MSG3+9(8),=CL8'RAKFSHAD'  DD-name                        00026100
+         LA    R1,MSG3                 Msg: 'xxxxxxxx access denied'    00026200
+         LA    R0,L'MSG3               Length                           00026300
+         BAL   R14,TPUT                Write the message on screen      00026400
+         BAL   R14,CLOSE                                                00026500
+         BAL   R14,FREE                Free the data sets               00026600
+         B     RC08                    Return code 8                    00026700
+ADDU007  DS    0H                                                       00026800
+*---------------------------------------------------------------------* 00026900
+*        Read the USERS records and check if UserID is already        * 00027000
+*        added.                                                       * 00027100
+*        And populate the table with User records.                    * 00027200
+*---------------------------------------------------------------------* 00027300
+         XR    R5,R5                   Clear record counter             00027400
+         L     R6,ADRUSER              Start of user table              00027500
+ADDU009  DS    0H                                                       00027600
+         GET   RAKFUSER,USERREC        Read a record                    00027700
+         CLI   USERREC,C'*'            Comment record?                  00027800
+         BE    ADDU009                 Skip the record                  00027900
+         CLI   USERSPE,C' '            SPECIAL filled in?               00028000
+         BNE   *+8                     Yes: good                        00028100
+         MVI   USERSPE,C'N'            NOSPECIAL                        00028200
+         LA    R5,1(,R5)               Count record                     00028300
+         C     R5,=F'1295'             Already 1295 records in table?   00028400
+         BL    ADDU010                 No: room enough                  00028500
+         LA    R1,MSG7                 Msg: 'table full'                00028600
+         LA    R0,L'MSG7               Length                           00028700
+         BAL   R14,TPUT                Write the message on screen      00028800
+         BAL   R14,CLOSE               Close RAKFUSER and RAKFSHAD      00028900
+         BAL   R14,FREE                Free the data sets               00029000
+         B     RC08                    Return code 8                    00029100
+ADDU010  CLC   USERUID,USERID          Match found of UserID?           00029200
+         BNE   ADDU011                 No: good                         00029300
+         MVC   MSG4+14(8),USERID       Involved UserID                  00029400
+         LA    R1,MSG4                 Msg: 'UserID already defined'    00029500
+         LA    R0,L'MSG4               Length                           00029600
+         BAL   R14,TPUT                Write the message on screen      00029700
+         BAL   R14,CLOSE               Close the data sets              00029800
+         BAL   R14,FREE                Free the data sets               00029900
+         B     RC08                    Return code 8                    00030000
+ADDU011  DS    0H                                                       00030100
+         MVC   0(80,R6),USERREC        Record into table                00030200
+         LA    R6,80(,R6)              Next entry in table              00030300
+         B     ADDU009                 Read next record                 00030400
+USEREOF  DS    0H                      EOF RACFUSER                     00030500
+ADDU013  DS    0H                                                       00030600
+*---------------------------------------------------------------------* 00030700
+*        Read the SHADOW record and check if UserID is already        * 00030800
+*        added.                                                       * 00030900
+*---------------------------------------------------------------------* 00031000
+         GET   RAKFSHAD,SHADOW         Read a shadow record             00031100
+         CLC   SHDUID(8),USERID        Match found of UserID?           00031200
+         BNE   ADDU013                 No: read next record             00031300
+         MVC   MSG4+7(7),USERID        Involved UserID                  00031400
+         LA    R1,MSG4                 Msg: 'Userid already defined'    00031500
+         LA    R0,L'MSG4               Length                           00031600
+         BAL   R14,TPUT                Write the message on screen      00031700
+         BAL   R14,CLOSE               Close the data sets              00031800
+         BAL   R14,FREE                Free the data sets               00031900
+         B     RC08                    Return code 8                    00032000
+SHADEOF  DS    0H                      EOF RACFSHAD                     00032100
+*---------------------------------------------------------------------* 00032200
+*        Write the User records in the User table.                    * 00032300
+*---------------------------------------------------------------------* 00032400
+         MVC   USERREC,USERREC-1       Clear user record                00032500
+         MVC   USERUID(8),USERID       Move UserID                      00032600
+         MVI   USERDFT,C'*'            Default group                    00032700
+         MVC   USERGRP,DFLTGRP         Default GROUP name               00032800
+         MVC   USERSPE,SPECIAL         Special / Nospecial              00032900
+         MVC   USEROPR,OPER            Operations / Nooperations        00033000
+         MVC   0(80,R6),USERREC        Move record in table             00033100
+         LA    R5,1(,R5)               Count record                     00033200
+         LA    R1,GROUPS               Group table                      00033300
+         LA    R0,5                    Max 5 groups                     00033400
+GROUP01  DS    0H                                                       00033500
+         CLC   =CL8' ',0(R1)           No groups anymore?               00033600
+         BE    GROUP09                 Yes: skip                        00033700
+         CLC   DFLTGRP,0(R1)           Group is already the DFLTGRP?    00033800
+         BE    GROUP02                 Yes: skip                        00033900
+         MVC   USERGRP,0(R1)           Move Group name                  00034000
+         MVI   USERDFT,C' '            Is not the Default GROUP         00034100
+         LA    R6,80(,R6)              Next entry in User tablew        00034200
+         MVC   0(80,R6),USERREC        Move record in table             00034300
+         LA    R5,1(,R5)               Count record                     00034400
+GROUP02  LA    R1,8(,R1)               Point to next group              00034500
+         BCT   R0,GROUP01              Loop until all done              00034600
+GROUP09  DS    0H                                                       00034700
+*---------------------------------------------------------------------* 00034800
+*        Initialize the Salt with the TOD clock and call RAKFPWH      * 00034900
+*---------------------------------------------------------------------* 00035000
+         STCK  SALT                    Salt = the TOD clock             00035100
+         LA    R0,SALT                 Salt                             00035200
+         ST    R0,HWPL+0               In parmlist                      00035300
+         LA    R0,WORKPASS+1                                            00035400
+         ST    R0,HWPL+4               In parmlist                      00035500
+         XR    R1,R1                   Clear register                   00035600
+         IC    R1,WORKPASS             Gotten password length           00035700
+         ST    R1,HWPWLEN              Save in RAKFPWH list             00035800
+         LA    R0,HWPWLEN                                               00035900
+         ST    R0,HWPL+8               In parmlist                      00036000
+         LA    R0,OUTPUT               Output field                     00036100
+         ST    R0,HWPL+12              In parmlist                      00036200
+         LA    R0,HWWORK               Work area                        00036300
+         ST    R0,HWPL+16              In parmlist                      00036400
+         LA    R1,HWPL                 Parmlist                         00036500
+         ST    R13,HWR13               Save our area address            00036600
+         LR    R4,R13                  Save our area address            00036700
+         LA    R13,HWSAVE                                               00036800
+         L     R15,=V(RAKFPWH)         Hashing routine                  00036900
+         BALR  R14,R15                 Encrypt                          00037000
+         LR    R13,R4                  Restore our area address         00037100
+         BAL   R14,CLOSE               Close RAKFUSER and RAKFSHAD      00037200
+*---------------------------------------------------------------------* 00037300
+*        Add the salt + hashed password in the SHADOW data set.       * 00037400
+*---------------------------------------------------------------------* 00037500
+         MVI   OPEND,X'80'             First and only DCB               00037600
+         OPEN  (RAKFSHAD,(EXTEND)),MF=(E,OPEND)                         00037700
+         TM    SW,$913                 Access denied?                   00037800
+         BNO   ADDU015                 No: assumed, that open is succes 00037900
+         MVC   MSG3+9(8),=CL8'RAKFSHAD'  DD-name                        00038000
+         B     ADDU016                 Write message                    00038100
+ADDU015  MVC   SHDUID,USERID                                            00038200
+         MVC   SHDSALT,SALT            Salt                             00038300
+         MVC   SHDHASH,OUTPUT          Hash                             00038400
+         PUT   RAKFSHAD,SHADOW                                          00038500
+         MVI   OPEND,X'80'             First and only DCB               00038600
+         OPEN  (RAKFUSER,(OUTPUT)),MF=(E,OPEND)                         00038700
+         TM    SW,$913                 Access denied?                   00038800
+         BNO   ADDU019                 No: assumed, that open is succes 00038900
+         MVC   MSG3+9(8),=CL8'RAKFUSER'  DD-name                        00039000
+ADDU016  LA    R1,MSG3                 Msg: 'xxxxxxxx access denied'    00039100
+         LA    R0,L'MSG3               Length                           00039200
+         BAL   R14,TPUT                Write the message on screen      00039300
+         BAL   R14,CLOSE               Close the DCBs                   00039400
+         BAL   R14,FREE                Free the data sets               00039500
+         B     RC08                    Return code 8                    00039600
+*---------------------------------------------------------------------* 00039700
+*        Sort the USERS records alphabetically and    .               * 00039800
+*        write the RAKF Users back in the USERS member.               * 00039900
+*---------------------------------------------------------------------* 00040000
+ADDU019  DS    0H                                                       00040100
+SORT     STM   R4,R8,SAVESORT                                           00040200
+         LR    R7,R5                   Copy record counter              00040300
+         L     R2,ADRUSER              Point to first entry in table    00040400
+         CH    R7,=H'2'                Less than 2 records?             00040500
+         BL    ENDSORT                 Do not sort                      00040600
+         BCTR  R7,0                    Minus 1                          00040700
+         MH    R7,=H'80'               ** Record length                 00040800
+         LA    R7,0(R2,R7)             Point to last record             00040900
+*                                                                       00041000
+SORT01   DS    0H                      Start sort                       00041100
+         ST    R7,SWAPLAST             Last record swapped              00041200
+         L     R4,ADRUSER              Point to first entry in table    00041300
+         LR    R5,R4                   Next                             00041400
+         LA    R5,80(,R4)                   Record                      00041500
+SORT03   DS    0H                                                       00041600
+         CL    R4,SWAPLAST             Last record reached?             00041700
+         BNL   SORT07                  Yes: loop complete               00041800
+         CLC   0(72,R4),0(R5)          Compare (skip sequence numbers)  00041900
+         BNH   SORT05                  High: swap these records         00042000
+         XC    0(80,R4),0(R5)          Swap                             00042100
+         XC    0(80,R5),0(R4)              the                          00042200
+         XC    0(80,R4),0(R5)                   records                 00042300
+         LR    R7,R4                   Last record swapped in R7        00042400
+SORT05   DS    0H                      Load next entry                  00042500
+         LA    R4,80(,R4)              Next recodd                      00042600
+         LA    R5,80(,R5)              Next record                      00042700
+         B     SORT03                  Compare next record              00042800
+SORT07   DS    0H                      All records done                 00042900
+         CL    R7,SWAPLAST             Are these swaps executed?        00043000
+         BL    SORT01                  No: sort them again              00043100
+*                                      Else end of sort                 00043200
+ENDSORT  LM    R4,R8,SAVESORT          Restore registers                00043300
+         L     R6,ADRUSER              Max 1300 user entries            00043400
+ADDU021  PUT   RAKFUSER,0(R6)          Write ...                        00043500
+         LA    R6,80(,R6)                    User ...                   00043600
+         BCT   R5,ADDU021                         table back            00043700
+         MVC   MSG9+14(8),USERID       UserID in success message        00043800
+         LA    R1,MSG9                 Success message                  00043900
+         LA    R0,L'MSG9               Length                           00044000
+         BAL   R14,TPUT                Write the message on screen      00044100
+         LA    R1,MSGA                 Msg: Run RAKFUSER ...            00044200
+         LA    R0,L'MSGA               Length                           00044300
+         BAL   R14,TPUT                Write the message on screen      00044400
+         BAL   R14,CLOSE               Close the data sets              00044500
+         BAL   R14,FREE                And unallocate                   00044600
+         LA    R15,0                   RC = 0                           00044700
+         B     RETURN                                                   00044800
+*---------------------------------------------------------------------* 00044900
+*        Return to TSO TMP.                                           * 00045000
+*---------------------------------------------------------------------* 00045100
+RC08     DS    0H                                                       00045200
+         LA    R15,8                   RC = 8                           00045300
+RETURN   DS    0H                                                       00045400
+         LR    R4,R15                  Save return code                 00045500
+         ICM   R2,15,PPL#LA            Filled in?                       00045600
+         BZ    RETURN1                 No: do not free                  00045700
+         LM    R2,R3,PPL#LA            Load length and address of PPL   00045800
+         FREEMAIN RU,LV=(2),A=(3)      Free the PPL                     00045900
+RETURN1  ICM   R8,15,ANSWER            Pointer to PDE's (the PDL)       00046000
+         BZ    RETURN2                 No: skip                         00046100
+         IKJRLSA (R8)                  Release PARSE storage            00046200
+RETURN2  L     R2,ADRUSER              Point to USER core table         00046300
+         FREEMAIN RU,LV=104000,A=(2)                                    00046400
+         LR    R3,R13                  Load working storage to free     00046500
+         L     R13,4(,R13)             Load caller's save area          00046600
+         FREEMAIN RU,LV=WORKL,A=(3)    Release working storage          00046700
+         LR    R15,R4                  Restore return code              00046800
+         RETURN (14,12),RC=(15)        Return                           00046900
+*                                                                       00047000
+         TITLE 'Invoke IKJDAIR, A(Parm block) in R1'                    00047100
+*---------------------------------------------------------------------* 00047200
+*        Routine:   CALLTS                                            * 00047300
+*        Function:  Invoke IKJDAIR to allocate or unallocate data sets* 00047400
+*                   Register 1 contains the address of the allocation * 00047500
+*                   or unallocation DAIR parameter blocks.            * 00047600
+*---------------------------------------------------------------------* 00047700
+CALLTS   DS    0H                                                       00047800
+         ST    R14,R14TS               Save register 14                 00047900
+         LR    R14,R1                  Save A(IKJDAIR parm block)       00048000
+         XC    ECB,ECB                 Clear ECB                        00048100
+         LA    R1,DAIRDAPL                                              00048200
+         L     R2,MYCPPL               Pickup our CPPL                  00048300
+         USING CPPL,R2                 Base CPPL                        00048400
+         USING DAPL,R1                 Base IKJDAPL                     00048500
+         MVC   DAPLUPT(4),CPPLUPT                                       00048600
+         MVC   DAPLECT(4),CPPLECT                                       00048700
+         XC    ECB,ECB                 Clear Event control block        00048800
+         LA    R0,ECB                  Address of our ECB               00048900
+         ST    R0,DAPLECB              Set A(ECB) in DAPL               00049000
+         MVC   DAPLPSCB(4),CPPLPSCB                                     00049100
+         ST    R14,DAPLDAPB            Set A(parm block) in DAPL        00049200
+         CALLTSSR EP=IKJDAIR,MF=(E,DAIRDAPL)                            00049300
+         L     R14,R14TS               Restore register 14              00049400
+         BR    R14                                                      00049500
+         DROP  R1,R2                   Unbase DAPL and CPPL             00049600
+         TITLE 'Write message on screen'                                00049700
+*---------------------------------------------------------------------* 00049800
+*        Write the message on the terminal with a PUTLINE.            * 00049900
+*        Register 0 = the length of the message.                      * 00050000
+*        Register 1 = adress of the message.                          * 00050100
+*---------------------------------------------------------------------* 00050200
+TPUT     DS    0H                                                       00050300
+         ST    R14,R14TPUT             Save register 14                 00050400
+         L     R3,MYCPPL               Pickup CPPL of this command      00050500
+         USING CPPL,R3                 Base IKJCPPL                     00050600
+         MVI   PUTLINE+4,C' '          Clear output line                00050700
+         MVC   PUTLINE+5(79),PUTLINE+4         ,,                       00050800
+         LR    R2,R0                   Length of message                00050900
+         BCTR  R2,0                    Minus 1 for EX                   00051000
+         EX    R2,MVEMSG               Move the message                 00051100
+         LA    R2,5(,R2)               Length in including length field 00051200
+         XC    PUTLINE+2(2),PUTLINE+2  Byte 2 and 3, reserved           00051300
+         STCM  R2,B'0011',PUTLINE      Save length in byte 0 and 1      00051400
+         L     R2,CPPLUPT              User Profile Table               00051500
+         L     R3,CPPLECT              Environment Control Table        00051600
+         XC    ECB,ECB                 Force PUTLINE to wait            00051700
+         LA    R0,PUTLINE              Data line address                00051800
+         PUTLINE PARM=PUTBLOK,,MF=(E,PUTIOPL),                         *00051900
+               OUTPUT=((0),TERM,SINGLE,DATA),ECB=ECB,UPT=(2),ECT=(3),  *00052000
+               TERMPUT=(EDIT,WAIT,NOHOLD,NOBREAK)                       00052100
+         L     R14,R14TPUT             Restore register 14              00052200
+         BR    R14                                                      00052300
+MVEMSG   MVC   PUTLINE+4(0),0(R1)      << executed >>                   00052400
+         DROP  R3                      Unbase CPPL                      00052500
+         TITLE 'Free SYS1.SECURE.CNTL and SYS1.SECURE.SHADOW'           00052600
+FREE     DS    0H                                                       00052700
+         ST    R14,R14FREE             Save register 14                 00052800
+         LA    R3,DAIR18               Point to unallocation parm block 00052900
+         XC    DAIR18,DAIR18           Clear unallocation parm block    00053000
+         USING DAPB18,R3               IKJDAP18                         00053100
+         MVI   DA18CD+1,X'18'          Entry code 0018 (unallocate)     00053200
+         MVI   DA18MNM,C' '            Provide no ...                   00053300
+         MVC   DA18MNM+1(7),DA18MNM               member name           00053400
+         MVC   DA18DDN,=CL8'RAKFUSER'  DDNAME to unallocate             00053500
+         LR    R1,R3                   Parameter CALLTS                 00053600
+         BAL   R14,CALLTS              IKJDAIR routine                  00053700
+         MVC   DA18DDN,=CL8'RAKFSHAD'  DDNAME to unallocate             00053800
+         LR    R1,R3                   Parameter CALLTS                 00053900
+         BAL   R14,CALLTS              IKJDAIR routine                  00054000
+         L     R14,R14FREE             Restore register 14              00054100
+         BR    R14                     Return                           00054200
+         DROP  R3                      Unbase DAPB18                    00054300
+         TITLE 'Close RAKFUSER and RAKFSHAD'                            00054400
+CLOSE    ST    R14,R14CLOSE            Save register 14                 00054500
+         MVI   CLOSED,X'80'            First and only DCB               00054600
+         CLOSE RAKFUSER,MF=(E,CLOSED)                                   00054700
+         MVI   CLOSED,X'80'            First and only DCB               00054800
+         CLOSE RAKFSHAD,MF=(E,CLOSED)                                   00054900
+         L     R14,R14CLOSE            Restore register 14              00055000
+         BR    R14                     Return                           00055100
+         TITLE 'DCB abend exit'                                         00055200
+DCBABEND DS    0H                                                       00055300
+         TM    3(R1),B'00001110'       Processing allowed?              00055400
+         BZR   R14                     No: continue with abend          00055500
+         TM    3(R1),4                 Ignore bit on?                   00055600
+         MVI   3(R1),0                 Prepare for NO                   00055700
+         BZR   R14                                                      00055800
+         MVC   DCBCOMP,0(R1)           Move completion code             00055900
+         NC    DCBCOMP,=X'FFF0'        Clear last nibble                00056000
+         CLC   DCBCOMP,=X'9130'        Do we have an RACF/ACF2 abend?   00056100
+         BNER  R14                     No: continue with abend          00056200
+         MVI   3(R1),4                 Yes: ignore abend                00056300
+         OI    SW,$913                 Indicate 913 abend               00056400
+         BR    R14                     Return to Access Method          00056500
+PCLSTART DS    0H                                                       00056600
+ADDPCL   IKJPARM DSECT=ADDPRS          PDE's                            00056700
+UIDPDE   IKJPOSIT JOBNAME,PROMPT='RAKF UserID',                        *00056800
+               HELP=('a valid UserID')                                  00056900
+PASSWKW  IKJKEYWD                                                       00057000
+         IKJNAME 'PASSWORD',SUBFLD=PASSWSF,ALIAS='PWD'                  00057100
+DFTGRPKW IKJKEYWD                                                       00057200
+         IKJNAME 'DFLTGRP',SUBFLD=DGRPSF,ALIAS='DGRP'                   00057300
+GROUPKW  IKJKEYWD                                                       00057400
+         IKJNAME 'GROUP',SUBFLD=GROUPSF,ALIAS='GRP'                     00057500
+OPERKW   IKJKEYWD  DEFAULT='NOOPERATIONS'                               00057600
+         IKJNAME 'OPERATIONS'                                           00057700
+         IKJNAME 'NOOPERATIONS'                                         00057800
+SPECKW   IKJKEYWD DEFAULT='NOSPECIAL'                                   00057900
+         IKJNAME 'SPECIAL'                                              00058000
+         IKJNAME 'NOSPECIAL'                                            00058100
+PASSWSF  IKJSUBF                                                        00058200
+PASSWPDE IKJIDENT 'Password',                                          *00058300
+               FIRST=ALPHANUM,OTHER=ALPHANUM,MAXLNTH=8,                *00058400
+               PROMPT='Enter a valid password',VALIDCK=PWCHK,          *00058500
+               HELP='a password with at least 4 characters'             00058600
+DGRPSF   IKJSUBF                                                        00058700
+DGRPPDE  IKJIDENT 'Default group',                                     *00058800
+               FIRST=ALPHA,OTHER=ALPHANUM,MAXLNTH=8,                   *00058900
+               PROMPT='Default RAKF group'                              00059000
+GROUPSF  IKJSUBF                                                        00059100
+GROUPPDE IKJIDENT 'Group',LIST,                                        *00059200
+               FIRST=ALPHA,OTHER=ALPHANUM,MAXLNTH=8,                   *00059300
+               PROMPT='One or more RAKF groups'                         00059400
+         IKJENDP                                                        00059500
+PCL#L    EQU   *-PCLSTART                                               00059600
+         TITLE 'CONSTANTS'                                              00059700
+MDLSHAD  DCB   DSORG=PS,LRECL=48,DDNAME=RAKFSHAD,EODAD=SHADEOF,        *00059800
+               MACRF=(GM,PM)                                            00059900
+MDLSLEN  EQU   *-MDLSHAD                                                00060000
+MDLUSER  DCB   DSORG=PS,LRECL=80,DDNAME=RAKFUSER,EODAD=USEREOF,        *00060100
+               MACRF=(GM,PM)                                            00060200
+MDLULEN  EQU   *-MDLUSER                                                00060300
+*                                                                       00060400
+USRDSNL  DC    AL2(L'USRDSN)                                            00060500
+USRDSN   DC    C'SYS1.SECURE.CNTL'     RAKF control data set            00060600
+SHDDSNL  DC    AL2(L'SHDDSN)                                            00060700
+SHDDSN   DC    C'SYS1.SECURE.SHADOW'   RAKF data set with encrypted psw 00060800
+*                                                                       00060900
+MSG1     DC    C'SYS1.SECURE.CNTL(USERS) could not be allocated'        00061000
+MSG2     DC    C'SYS1.SECURE.SHADOW could not be allocated'             00061100
+MSG3X    DC    C'ADDUSER: xxxxxxxx access denied'  +9                   00061200
+MSG4X    DC    C'ADDUSER: User xxxxxxxx already defined'                00061300
+MSG5     DC    C'ADDUSER: Parse error'                                  00061400
+MSG6     DC    C'ADDUSER: PASSWORD(pppp) and DFLTGRP(gggg) are required*00061500
+               '                                                        00061600
+MSG7     DC    C'ADDUSER: User table full, too many users'              00061700
+MSG9X    DC    C'ADDUSER: User xxxxxxxx successfully defined'           00061800
+MSGA     DC    C'ADDUSER: Run RAKFUSER to activate the changes'         00061900
+MSGY     DC    C'ADDUSER: No ACEE found'                                00062000
+MSGZ     DC    C'ADDUSER: Not authorized, no SPECIAL attribute'         00062100
+         LTORG ,                                                        00062200
+         DROP                                                           00062300
+*---------------------------------------------------------------------* 00062400
+*        Validate Presence of the Password                            * 00062500
+*---------------------------------------------------------------------* 00062600
+PWCHK    DS    0H                                                       00062700
+         STM   R14,R12,12(R13)         Save registers                   00062800
+         LR    R12,R15                 Load base register               00062900
+         USING PWCHK,R12                                                00063000
+         L     R3,0(,R1)               Point to PASSWORD PDE            00063100
+         USING PASSRET,R3              Address it                       00063200
+         SR    R15,R15                 Default return code 0            00063300
+         TM    PASSFLG,$PWPRES         Was keyword present?             00063400
+         BNZ   PW02                    Yes: good                        00063500
+         LA    R15,4                   Return code 4                    00063600
+PW02     DS    0H                                                       00063700
+         LH    R1,PASSL                Length                           00063800
+         CH    R1,=H'3'                At least 4 bytes long            00063900
+         BH    PWEXIT                  Yes: good                        00064000
+         LA    R15,4                   Return code 4                    00064100
+PWEXIT   L     R14,12(,R13)            Restore register 14              00064200
+         LM    R0,R12,20(R13)          Restore other registers          00064300
+         BR    R14                     Return to caller                 00064400
+         DROP  R3,R12                  Unbase PASSRET and PWCHK         00064500
+         LTORG ,                                                        00064600
+*                                                                       00064700
+GRPRET   DSECT                         LIST PDE of GROUP                00064800
+GRP1PTR  DS    F                       Pointer to GROUP                 00064900
+GRP1L    DS    H                       Length of GROUP                  00065000
+GRP1FLG  DS    C                                                        00065100
+$G1PRES  EQU   128                     Group(s) are present             00065200
+         DS    C                       Reserved                         00065300
+NEXTGRP  DS    F                       Next PDE                         00065400
+*                                                                       00065500
+UIDRET   DSECT                         PDE of UserID                    00065600
+UIDPTR   DS    F                       Pointer to UserID                00065700
+UIDL     DS    H                       Length of UserID                 00065800
+UIDFLG   DS    C                                                        00065900
+$UPRES   EQU   128                     Group(s) are present             00066000
+         DS    C                       Reserved                         00066100
+*                                                                       00066200
+PASSRET  DSECT                         PDE of Password                  00066300
+PASSPTR  DS    F                       Pointer to Password              00066400
+PASSL    DS    H                       Length of Password               00066500
+PASSFLG  DS    C                                                        00066600
+$PWPRES  EQU   128                     Password is present              00066700
+         DS    C                       Reserved                         00066800
+*                                                                       00066900
+DFTGRET  DSECT                         PDE of Default GROUP             00067000
+DFTGPTR  DS    F                       Pointer to default group         00067100
+DFTGL    DS    H                       Length of group                  00067200
+DFTGFLG  DS    C                                                        00067300
+$DFPRES  EQU   128                     Default group is present         00067400
+         DS    C                       Reserved                         00067500
+*                                                                       00067600
+WORKAREA DSECT                         Working storage                  00067700
+         DS    18F                     Our save area                    00067800
+MYCPPL   DS    F                                                        00067900
+DAIRDAPL DS    5F                      DAIR parameter list              00068000
+ECB      DS    F                       For IKJDAIR                      00068100
+R14CLOSE DS    F                       Register 14 CLOSE                00068200
+R14FREE  DS    F                       Register 14 FREE                 00068300
+R14TPUT  DS    F                       Register 14 TPUT                 00068400
+R14TS    DS    F                       Register 14 CALLTS               00068500
+EXLST    DS    F                       DCB abend exit                   00068600
+OPEND    DS    F                       OPEN MF=L                        00068700
+CLOSED   DS    F                       CLOSE MF=L                       00068800
+ADRUSER  DS    F                       Address of 1000 user entries     00068900
+ANSWER   DS    F                       Parse answer area                00069000
+SWAPLAST DS    F                       Workfield SORT                   00069100
+SAVESORT DS    5F                      Workfields SORT                  00069200
+PUTIOPL  DS    4F                      IKJIOPL                          00069300
+PUTBLOK  PUTLINE MF=L                  PUTLINE PTPB                     00069400
+PUTLINE  DS    CL84                    Output of PUTLINE                00069500
+SALT     DS    CL8                     SALT is equal to TOD clock       00069600
+USERID   DS    CL8                     To receive UserID                00069700
+DFLTGRP  DS    CL8                     To receive default Group name    00069800
+*                                                                       00069900
+GROUPS   DS    CL40                    To receive max. 5 groups         00070000
+*                                                                       00070100
+DCBCOMP  DS    H                       Completion code in DCBABEND      00070200
+*                                                                       00070300
+HASHWKD  DS    0CL772                  Area for RAKFPWH                 00070400
+HWPL     DS    5F                    parmlist (salt,pw,pwlen,out,work)  00070500
+HWPWLEN  DS    F                       Candidate password length        00070600
+HWR13    DS    F                       saved caller save-area pointer   00070700
+HWOUT    DS    CL32                    computed SHA-256 hash            00070800
+HWSAVE   DS    18F                     save area for the RAKFPWH call   00070900
+HWWORK   DS    CL640                   RAKFPWH work area (>= RPWWORKL)  00071000
+*                                                                       00071100
+OUTPUT   DS    CL32                    Hashed output field              00071200
+RAKFSHAD DS    CL(MDLSLEN)                                              00071300
+RAKFUSER DS    CL(MDLULEN)                                              00071400
+*                                                                       00071500
+SHADOW   DS    0CL48                   Shadow record                    00071600
+SHDUID   DS    CL8                     UserID (key)                     00071700
+SHDSALT  DS    CL8                     SALT                             00071800
+SHDHASH  DS    CL32                    HASH                             00071900
+*                                                                       00072000
+         DS    C                       -1                               00072100
+USERREC  DS    0CL80                   User record                      00072200
+USERUID  DS    CL8                     Contains UserID                  00072300
+         DS    C                                                        00072400
+USERGRP  DS    CL8                     Group                            00072500
+USERDFT  DS    C                       * for default group              00072600
+USERPWD  DS    CL8                     Password is blanked out          00072700
+         DS    C                                                        00072800
+USEROPR  DS    C                       Operations / Nooperations        00072900
+         DS    C                                                        00073000
+USERSPE  DS    C                       Special / Nospecial              00073100
+         DS    CL50                    Filler                           00073200
+*                                                                       00073300
+PPL#LA   DS    F                       \___ Length + address PPL ____/  00073400
+PPL#PTR  DS    F                       /                             \  00073500
+*                                                                       00073600
+DAIR08   DS    CL84                    Allocation parm block            00073700
+DAIR18   DS    CL40                    Unallocation parm block          00073800
+*                                                                       00073900
+MSG3     DS    CL(L'MSG3X)                                              00074000
+MSG4     DS    CL(L'MSG4X)                                              00074100
+MSG9     DS    CL(L'MSG9X)                                              00074200
+SW       DS    X                       Flags                            00074300
+$913     EQU   128                     913 abend occurred               00074400
+*                                                                       00074500
+SPECIAL  DS    C                       Y or N for SPECIAL               00074600
+OPER     DS    C                       Y or N for OPERATIONS            00074700
+WORKPASS DS    CL9                     1 byte length + password         00074800
+WORKL    EQU   *-WORKAREA              Length of working storage        00074900
+*                                                                       00075000
+         CVT   DSECT=YES,LIST=NO                                        00075100
+         IKJCPPL                                                        00075200
+         IKJUPT                                                         00075300
+         IKJPPL                        Parse parameter list             00075400
+PPL#L    EQU   *-PPL                                                    00075500
+         IKJDAPL                                                        00075600
+         IKJDAP08                      IKJDAIR allocation parm block    00075700
+         IKJDAP18                      IKJDAIR unallocation parm block  00075800
+         IHAPSA                                                         00075900
+         IHAASCB                                                        00076000
+         IHAASXB                                                        00076100
+         IHAACEE                                                        00076200
+         PRINT NOGEN                                                    00076300
+         DCBD  DSORG=PS,DEVD=DA                                         00076400
+*                                                                       00076500
+R0       EQU   0                                                        00076600
+R1       EQU   1                                                        00076700
+R2       EQU   2                                                        00076800
+R3       EQU   3                                                        00076900
+R4       EQU   4                                                        00077000
+R5       EQU   5                       Counter number of USER records   00077100
+R6       EQU   6                       Address of USER entry in table   00077200
+R7       EQU   7                                                        00077300
+R8       EQU   8                       Address of IKJPARS PDL           00077400
+R9       EQU   9                                                        00077500
+R10      EQU   10                                                       00077600
+R11      EQU   11                                                       00077700
+R12      EQU   12                      Base register                    00077800
+R13      EQU   13                      Address of working storage       00077900
+R14      EQU   14                                                       00078000
+R15      EQU   15                                                       00078100
+         END                                                            00078200
