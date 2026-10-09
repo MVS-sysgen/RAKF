@@ -682,7 +682,7 @@ def emit_shadow_recovery(shadow):
     """
     dsn = args.shadow_dsn.upper()
     emit("//RAKFSHAD JOB (RAKF),'RAKF SHADOW RECOVERY',CLASS=A,MSGCLASS=A,")
-    emit("//            MSGLEVEL=(1,1),REGION=4096K,USER=IBMUSER,PASS=SYS1")
+    emit("//         MSGLEVEL=(1,1),REGION=4096K,USER=IBMUSER,PASSWORD=SYS1")
     emit("//* Recreate the RAKF V2 password shadow file")
     emit("//DELETE   EXEC PGM=IDCAMS")
     emit("//SYSPRINT DD SYSOUT=*")
