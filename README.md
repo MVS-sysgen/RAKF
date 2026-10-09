@@ -229,7 +229,7 @@ operations and special as described below:
 | 18      | Asterisk '*' multiple user groups exist for this userid.  |
 | 19 - 26 | Password (legacy)                                         |
 | 28      | Operations Authority (Y or N). Always allow access¹       |
-| 30      | Special Authority (Y, N, or blank). RAKF admin privileges |
+| 30      | Special Authority (Y, N, or blank). RAKF admin authorities|
 | 31 - 50 | Comment field (used by "IBM RACF").                       |
 
 *1* Unless explicitly denied access via a rule
@@ -330,7 +330,7 @@ PASSWORD may be coded as PWD, GROUP as GRP and DFLTGRP as DGRP.
 - **DELUSER** removes a user from SYS1.SECURE.SHADOW and SYS1.SECURE.CNTL(USERS).
 - **LISTUSER** list a UserId from the RAKF in core users table.
 
-**Note:** To use these TSO commands, the SPECIAL privilege is required.
+**Note:** To use these TSO commands, the SPECIAL authority is required.
 
 They run either as a **TSO command** (from a RAKF administrator's session)—
 
@@ -596,7 +596,7 @@ that's what a user gets if no DASDVOL profile is defined.
   all the records of that group are deleted.
   If ID(ALL) is specified, all records of that class are deleted, including the ‘Universal Access’ record.
 
-**Note:** To use these TSO commands, the SPECIAL privilege is required.
+**Note:** To use these TSO commands, the SPECIAL authority is required.
 
 More information of these commands can be found by issuing HELP command name.
 
@@ -681,7 +681,7 @@ These authorities give the UserID extra possibilities.
 
 - A user with the SPECIAL authority is allowed to administer RAKF by
   managing users and profiles and allow to use the TSO commands
-  ADDUSER, ALTUSER, DELUSER, ADDSD, RDEFINE, PERMIT and RDELETE.
+  ADDUSER, ALTUSER, DELUSER, LISTUSER, ADDSD, RDEFINE, PERMIT and RDELETE.
 
 - A user with both OPERATIONS and SPECIAL authorities runs in God mode,
   and is allowed to access all resources and all RAKF administration.
