@@ -1,7 +1,17 @@
 )F FUNCTION -                                                                   
-  The DELUSER command deletes an existing RAKF user.                            
+  The DELUSER command deletes an existing RAKF user or disconnect               
+  the user from a group if GROUP is specified.                                  
+                                                                                
   It deletes all records of the user in SYS1.SECURE.CNTL(USERS)                 
-  and the user record in SYS1.SECURE.SHADOW.                                    
+  and the user record in SYS1.SECURE.SHADOW if GROUP is omitted.                
+                                                                                
+  It deletes the record with the specified GROUP from                           
+  SYS1.SECURE.CNTL(USERS), except the DFLTGRP, if GROUP is                      
+  specified.                                                                    
+                                                                                
+  DELUSER updates the control data sets on disk only. Reload the in             
+  core tables afterwards with 'S RAKFUSER' from the console, or by              
+  running the RAKFUSER procedure in batch.                                      
                                                                                 
   DELUSER updates the control data sets on disk only. Reload the in             
   core tables afterwards with 'S RAKFUSER' from the console, or by              
@@ -29,8 +39,9 @@
       with the SPECIAL authority.                                                
                                                                                  
 )O OPERANDS -                                                                   
-))USERID - the user to delete. 1 to 8 characters. Required, and is the          
-  first and only operand. If the user don't exist, nothing will                 
-  happen and the user will be notified.                                         
+))USERID - the user to delete or disconnect from.                               
+  1 to 8 characters. Required, and is the                                       
+  first operand. If the user don't exist, nothing will happe and                
+  the user will be notified.                                                    
 ))GROUP - the group name from which the user will be disconnected.            
   If the GROUP operand is omitted, the entire user will be deleted.           
