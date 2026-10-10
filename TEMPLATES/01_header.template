@@ -105,9 +105,9 @@
       2: The shadow data set is introduced to encrypt and store  
          the passwords.                                          
       3: The passwords in the table USERS are spaced out.                          
-      4: TSO commands ADDUSER, ALTUSER, DELUSER and LISTUSER                    
-         developed to process the USERS member, SHADOW                          
-         data set and in core users table.                                      
+      4: TSO commands ADDUSER, ALTUSER, DELUSER, CONNECT and                    
+         LISTUSER developed to process the USERS member,                        
+         SHADOW data set and in core users table.                               
       5: TSO commands ADDSD, RDEFINE, PERMIT and RDELETE                        
          to process the PROFILES member.               
       6: RACROUTE REQUEST=AUTH, DEFINE and VERIFY fully                         
