@@ -69,9 +69,9 @@ TERMINAL*                                                   READ
 /*
 //* ******************************************************************
 //ALLOC   EXEC PGM=IEFBR14
-//PWUP     DD  DISP=(,CATLG),DSN=SYS1.SECURE.PWUP,VOL=SER=MVS000,
-//             UNIT=SYSDA,DCB=(RECFM=F,LRECL=18,BLKSIZE=18),
-//             SPACE=(TRK,(1,1))
+//PWUP    DD DISP=(,CATLG),DSN=SYS1.SECURE.PWUP,VOL=SER=MVS000,
+//           UNIT=SYSDA,DCB=(RECFM=F,LRECL=18,BLKSIZE=18),
+//           SPACE=(TRK,(1,1))
 //RAKF    DD DISP=(,CATLG),DSN=SYS1.SECURE.CNTL,VOL=SER=MVS000,
 //           UNIT=SYSDA,DCB=(RECFM=FB,LRECL=80,BLKSIZE=19040),
 //           SPACE=(TRK,(10,3,3))
