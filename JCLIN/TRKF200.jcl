@@ -158,6 +158,12 @@
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
 //SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(LISTUSER)                               
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(LISTUSER)                              
+//ASMCON   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
+//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
+//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(CONNECT)                                
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(CONNECT)                               
 //ASMDSD   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
@@ -200,6 +206,9 @@
  ENTRY   LISTUSER                                                               
  SETCODE AC(1)                                                                  
  NAME    LISTUSER(R)                                                            
+ INCLUDE SYSPUNCH(CONNECT)                                                      
+ ENTRY   CONNECT                                                                
+ NAME    CONNECT(R)                                                             
  INCLUDE SYSPUNCH(ADDSD)                                                        
  ALIAS AD                                                                       
  ALIAS RDEFINE                                                                  
