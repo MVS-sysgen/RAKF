@@ -302,7 +302,7 @@ reaches the system, and no chicken-and-egg with the tools below: the initial
 credentials exist before `ADDUSER`/`ALTUSER` are ever run. (This means
 `users.txt` itself contains live credentials — keep it protected off-system.)
 
-### Managing Users with ADDUSER, ALTUSER, DELUSER and LISTUSER
+### Managing Users with ADDUSER, ALTUSER, DELUSER, CONNECT and LISTUSER
 
 Users are created and changed with two RACF-style command processors,
 `ADDUSER` and `ALTUSER`, installed in `SYS2.CMDLIB`. They write the `USERS`
@@ -315,7 +315,8 @@ ADDUSER userid PASSWORD(pw) DFLTGRP(group) [GROUP(g2 g3 ...)] [OPERATIONS] [SPEC
 An alias of ADDUSER is AU.
 ALTUSER userid [PASSWORD(pw)] [DFLTGRP(group)] [OPERATIONS|NOOPERATIONS] [SPECIAL|NOSPECIAL]
 An alias of ALTUSER is ALU.
-DELUSER userid
+DELUSER userid GROUP(group) /* GROUP is optional */ 
+CONNECT userid GROUP(group)
 LISTUSER userid
 An alias of LISTUSER is LU
 
@@ -328,6 +329,8 @@ PASSWORD may be coded as PWD, GROUP as GRP and DFLTGRP as DGRP.
 - **ALTUSER** changes an existing user: `PASSWORD` re-hashes with a fresh salt,
   `DFLTGRP` moves the default-group flag, and the flags toggle operations/special.
 - **DELUSER** removes a user from SYS1.SECURE.SHADOW and SYS1.SECURE.CNTL(USERS).
+  if GROUP is omitted. If GROUP is specified only the GROUP will be deleted (disconnect).
+- **CONNECT** connects a UserId to a group.
 - **LISTUSER** list a UserId from the RAKF in core users table.
 
 **Note:** To use these TSO commands, the SPECIAL authority is required.
