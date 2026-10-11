@@ -322,6 +322,14 @@ DELUSER userid GROUP(group) /* GROUP is optional */
 CONNECT userid GROUP(group)
 LISTUSER userid
 An alias of LISTUSER is LU
+Example output:
+listuser herc01
+LISTUSER: UserID=HERC01
+          Authority=  OPERATONS,  SPECIAL
+          Connected GROUPS:
+          ADMIN    (DFLTGRP)
+          RAKFADM                         
+
 
 PASSWORD may be coded as PWD, GROUP as GRP and DFLTGRP as DGRP.
 ```
@@ -586,7 +594,7 @@ there is no DASDVOL profile defined: ALTER access to a DASDVOL allows
 scratching of any file on it regardless of the file's protection and exactly
 that's what a user gets if no DASDVOL profile is defined.
 
-### Managing Profiles with ADDSD, RDEFINE, PERMIT and RDELETE
+### Managing Profiles with ADDSD, RDEFINE, PERMIT, RDELETE and LISTP
  
 - **ADDSD** – Adds profile entries of the DATASET class. It defines the record without a group,
   also called the ‘Universal Access’ record. An alias of **ADDSD** is **AD**.
@@ -601,6 +609,7 @@ that's what a user gets if no DASDVOL profile is defined.
 - **RDELETE** - Deletes one or more generalized resource records. If a GROUP is specified with ID(group name), 
   all the records of that group are deleted.
   If ID(ALL) is specified, all records of that class are deleted, including the ‘Universal Access’ record.
+- **LISTP** Lists one or more profiles and their access list.
 
 **Note:** To use these TSO commands, the SPECIAL authority is required.
 
@@ -622,6 +631,24 @@ RDELETE profile CLASS(class) ID(group)
 Required: 'profile', CLASS, ID.
 If ID(ALL) is specified, all records of 'profile' are deleted
 including the Universal Access record.
+
+LISTP profile or the beginning part of the profile
+Example output:
+listp rakf                                                         
+LISTP: Class=FACILITY Resource=RAKFADM                  UACC=NONE 
+       Access list:                                               
+       ADMIN    NONE                                              
+       RAKFADM  READ                                              
+       STCGROUP READ                                              
+LISTP: Class=DATASET  Resource=RAKF.*                   UACC=NONE 
+       Access list:                                               
+       ADMIN    ALTER                                             
+       RAKFADM  ALTER                                             
+
+ 
+
+
+
 ```
 
 
