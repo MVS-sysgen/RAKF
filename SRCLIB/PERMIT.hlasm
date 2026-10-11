@@ -35,7 +35,7 @@ PERMIT   TITLE 'Permit access to a certain resource'                    00000100
 *                                                                     * 00003500
 *---------------------------------------------------------------------* 00003600
 PERMIT   CSECT                                                          00003700
-         SAVE  (14,12)                                                  00003800
+         SAVE  (14,12),,*                                               00003800
          LR    R12,R15                                                  00003900
          USING PERMIT,R12              Base register                    00004000
          LR    R2,R1                   Save parm (CPPL)                 00004100
@@ -63,7 +63,7 @@ PERMIT   CSECT                                                          00003700
          GETMAIN RU,LV=120000      GETMAIN room for 1500 profiles       00006300
          ST    R1,ADRPROF              Save its address                 00006400
          USING PSA,R0                  Point to CVT                     00006500
-         L     R2,PSAANEW-PSA          Load ASCB                        00006600
+         L     R2,PSAANEW              Load ASCB                        00006600
          L     R2,ASCBASXB-ASCB(R2)    Load ASXB                        00006700
          ICM   R2,15,ASXBSENV-ASXB(R2) Point to ACEE                    00006800
          BNZ   CONT1                   Yes: found                       00006900
@@ -113,6 +113,7 @@ CONT2    DS    0H                                                       00008000
          LA    R0,L'MSG5               Length                           00011300
          LA    R1,MSG5                 Message                          00011400
          BAL   R14,TPUT                                                 00011500
+         XC    ANSWER,ANSWER           Avoid IKJRLSA                    00011510
          B     RC08                    Return to TMP                    00011600
 PARSEOK  DS    0H                                                       00011700
          L     R8,ANSWER               Pointer to PDL                   00011800
