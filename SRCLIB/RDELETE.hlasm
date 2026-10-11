@@ -37,7 +37,7 @@ RDELETE  TITLE 'Permit access to a certain resource'                    00000100
 *                                                                     * 00003700
 *---------------------------------------------------------------------* 00003800
 RDELETE  CSECT                                                          00003900
-         SAVE  (14,12)                                                  00004000
+         SAVE  (14,12),,*                                               00004000
          LR    R12,R15                                                  00004100
          USING RDELETE,R12             Base register                    00004200
          LR    R2,R1                   Save parm (CPPL)                 00004300
@@ -65,7 +65,7 @@ RDELETE  CSECT                                                          00003900
          GETMAIN RU,LV=120000      GETMAIN room for 1500 profiles       00006500
          ST    R1,ADRPROF              Save its address                 00006600
          USING PSA,R0                  Point to CVT                     00006700
-         L     R2,PSAANEW-PSA          Load ASCB                        00006800
+         L     R2,PSAANEW              Load ASCB                        00006800
          L     R2,ASCBASXB-ASCB(R2)    Load ASXB                        00006900
          ICM   R2,15,ASXBSENV-ASXB(R2) Point to ACEE                    00007000
          BNZ   CONT1                   Yes: found                       00007100
@@ -115,6 +115,7 @@ CONT2    DS    0H                                                       00008200
          LA    R0,L'MSG5               Length                           00011500
          LA    R1,MSG5                 Msg: Parse error                 00011600
          BAL   R14,TPUT                                                 00011700
+         XC    ANSWER,ANSWER           Avoid IKJRLSA                    00011710
          B     RC08                    Return to TMP                    00011800
 PARSEOK  DS    0H                                                       00011900
          L     R8,ANSWER               Pointer to PDL                   00012000
