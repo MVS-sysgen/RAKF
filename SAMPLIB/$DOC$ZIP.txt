@@ -316,6 +316,13 @@ LISTUSER lists the UserId in the Users core table.
     CONNECT userid GROUP(group)
     LISTUSER userid
     An alias of LISTUSER is LU
+    Example output:
+    listuser herc01
+    LISTUSER: UserID=HERC01
+              Authority=  OPERATONS,  SPECIAL
+              Connected GROUPS:
+              ADMIN    (DFLTGRP)
+              RAKFADM                         
 
     PASSWORD may be code as PWD, GROUP as GRP and DFLTGRP as DGRP.
 
