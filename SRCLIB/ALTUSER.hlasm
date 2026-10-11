@@ -33,7 +33,7 @@ ALTUSER  TITLE 'Change RAKF users with encrypted passwords'             00000100
 *                                                                     * 00003300
 *---------------------------------------------------------------------* 00003400
 ALTUSER  CSECT                                                          00003500
-         SAVE  (14,12)                                                  00003600
+         SAVE  (14,12),,*                                               00003600
          LR    R12,R15                                                  00003700
          USING ALTUSER,R12             Base register                    00003800
          LR    R2,R1                   Save parm (CPPL)                 00003900
@@ -60,7 +60,7 @@ ALTUSER  CSECT                                                          00003500
          STCM  R0,B'0111',RAKFUSER+DCBEXLSA-IHADCB                      00006000
          STCM  R0,B'0111',RAKFSHAD+DCBEXLSA-IHADCB                      00006100
          USING PSA,R0                  Point to CVT                     00006200
-         L     R2,PSAANEW-PSA          Load ASCB                        00006300
+         L     R2,PSAANEW              Load ASCB                        00006300
          L     R2,ASCBASXB-ASCB(R2)    Load ASXB                        00006400
          ICM   R2,15,ASXBSENV-ASXB(R2) Point to ACEE                    00006500
          BNZ   CONT1                   Yes: found                       00006600
@@ -110,6 +110,7 @@ CONT2    DS    0H                                                       00007700
          LA    R0,L'MSG5               Length                           00011000
          LA    R1,MSG5                 Message                          00011100
          BAL   R14,TPUT                                                 00011200
+         XC    ANSWER,ANSWER           Avoid IKJRLSA                    00011201
          B     RC08                    Return to TMP                    00011300
 PARSEOK  DS    0H                                                       00011400
          L     R8,ANSWER               Pointer to PDL                   00011500
