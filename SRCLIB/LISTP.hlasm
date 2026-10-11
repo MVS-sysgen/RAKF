@@ -1,0 +1,355 @@
+LISTP    TITLE 'Display RAKF generalized resources'                     00000100
+*---------------------------------------------------------------------* 00000200
+*                                                                     * 00000300
+*        Module:       LISTP                                          * 00000400
+*                                                                     * 00000500
+*        Author:       Rob Prins                                      * 00000600
+*                                                                     * 00000700
+*        Attributes:   RENT, REUS, AC=1.                              * 00000800
+*                                                                     * 00000900
+*        Function:     Obtain the RAKF RCVT, point to the profiles    * 00001000
+*                      table and list the specified profile(s)        * 00001100
+*                      on the TSO terminal.                           * 00001200
+*                      The RAKF profiles table is in fetch protected  * 00001300
+*                      storage. So, a MODESET is used.                * 00001400
+*                                                                     * 00001500
+*        Syntax:       LISTP resource                                 * 00001600
+*                      Resource can be a part of the resource.        * 00001700
+*                      E.g.: LISTP SYS displays all resources/profiles* 00001800
+*                      starting with 'SYS' of all classes.            * 00001900
+*                                                                     * 00002000
+*        Return codes: 00 - all good.                                 * 00002100
+*                      08 - an error occurred, user is notified       * 00002200
+*                           with a message                            * 00002300
+*                                                                     * 00002400
+*---------------------------------------------------------------------* 00002500
+LISTP    CSECT                                                          00002600
+         SAVE  (14,12),,*                                               00002700
+         LR    R12,R15                                                  00002800
+         USING LISTP,R12               Base register                    00002900
+         LR    R2,R1                   Save parm (CPPL)                 00003000
+         GETMAIN RU,LV=WORKL           Obtain savearea + working strg.  00003100
+         ST    R1,8(,R13)              Forward pointer                  00003200
+         ST    R13,4(,R1)              Backward pointer                 00003300
+         LR    R13,R1                  This is our save area            00003400
+         USING WORKAREA,R13            Base working storage             00003500
+         ST    R2,MYCPPL               Save our CPPL address            00003600
+         MVI   SW,0                    Initialize flags                 00003700
+         XC    ANSWER,ANSWER           Clear IKJPARS answer             00003800
+         XC    PPL#LA,PPL#LA           Clear pointer to PPL             00003900
+         MVC   MSG4,MSG4X              Move message to working storage  00004000
+         USING PSA,R0                  Point to CVT                     00004100
+         L     R2,PSAANEW              Load ASCB                        00004200
+         L     R2,ASCBASXB-ASCB(R2)    Load ASXB                        00004300
+         ICM   R2,15,ASXBSENV-ASXB(R2) Point to ACEE                    00004400
+         BNZ   CONT1                   Yes: found                       00004500
+         LA    R1,MSGY                 Msg: 'No ACEE found'             00004600
+         LA    R0,L'MSGY               Length                           00004700
+         BAL   R14,TPUT                Write the message on screen      00004800
+         B     RC08                    End with RC=-08                  00004900
+CONT1    TM    ACEEFLG1-ACEE(R2),ACEESPEC Do we have the SPECIAL attr   00005000
+         BO    CONT2                                                    00005100
+         LA    R1,MSGZ                 Msg: 'No SPECIAL attribute'      00005200
+         LA    R0,L'MSGZ               Length                           00005300
+         BAL   R14,TPUT                Write the message on screen      00005400
+         B     RC08                    End with RC=-08                  00005500
+CONT2    DS    0H                                                       00005600
+*---------------------------------------------------------------------* 00005700
+*        Parse parameters                                             * 00005800
+*---------------------------------------------------------------------* 00005900
+         GETMAIN RU,LV=PPL#L           Obtain a dynamic PPL workarea    00006000
+         STM   R0,R1,PPL#LA            Save length and address of PPL   00006100
+         L     R2,PPL#PTR              Get the address of the PPL       00006200
+         USING PPL,R2                  Adress it                        00006300
+         L     R1,MYCPPL               Get address of CPPL              00006400
+         USING CPPL,R1                 Address it                       00006500
+*---------------------------------------------------------------------* 00006600
+*                                                                       00006700
+*        Populate the Parse Parameter List (PPL) from the CPPL,         00006800
+*        add the IKJPARMD list in the PPL and invoke IKJPARS            00006900
+*                                                                       00007000
+*---------------------------------------------------------------------* 00007100
+*                                                                       00007200
+         MVC   PPLUPT,CPPLUPT          Put in the UPT address from CPPL 00007300
+         MVC   PPLECT,CPPLECT          Put in the ECT address from CPPL 00007400
+         MVC   PPLCBUF,CPPLCBUF        Put in the command buffer addr.  00007500
+*                                      From the CPPL                    00007600
+         XC    ECB,ECB                 Clear Event control block        00007700
+         L     R1,=A(ADDPCL)           Address of PCL                   00007800
+         ST    R1,PPLPCL               Set in PPL                       00007900
+         LA    R1,ANSWER               Answer area                      00008000
+         ST    R1,PPLANS               Pointer into PPL                 00008100
+         LA    R1,ECB                  Event control block              00008200
+         ST    R1,PPLECB               Pointer into PPL                 00008300
+         ST    R13,PPLUWA              User provide workarea            00008400
+         CALLTSSR EP=IKJPARS,MF=(E,PPL)   Invoke parse                  00008500
+         DROP  R1,R2                   CPPL and PPL                     00008600
+         LTR   R15,R15                 Parse successfully processed?    00008700
+         BZ    PARSEOK                 Yes: carry                       00008800
+         LA    R0,L'MSG5               Length                           00008900
+         LA    R1,MSG5                 Message                          00009000
+         BAL   R14,TPUT                                                 00009100
+         XC    ANSWER,ANSWER           Avoid IKJRLSA                    00009200
+         B     RC08                    Return to TMP                    00009300
+PARSEOK  DS    0H                                                       00009400
+         L     R8,ANSWER               Pointer to PDL                   00009500
+         USING ADDPRS,R8               mapped with IKJPARM              00009600
+         MVI   PROFILE,C' '                                             00009700
+         MVC   PROFILE+1(L'PROFILE-1),PROFILE initialize profile        00009800
+         LA    R3,PROFPDE              Profile PDE                      00009900
+         USING PROFRET,R3              Base this PDE                    00010000
+         L     R1,PROFPTR              Pointer to Profile name          00010100
+         MVC   PROFILEL,PROFL          Save length field                00010200
+         LH    R2,PROFL                Length                           00010300
+         LTR   R2,R2                   0?                               00010400
+         BNZ   *+8                     No: good                         00010500
+         LA    R2,1                    Set to 1.                        00010600
+         BCTR  R2,0                    -1 for EX                        00010700
+         EX    R2,MVEPROF              Move Profile                     00010800
+         B     ENDPARS                 Branch over EX                   00010900
+MVEPROF  MVC   PROFILE(0),0(R1)        << Executed >>                   00011000
+ENDPARS  DS    0H                                                       00011100
+         DROP  R3,R8                   Unbase UIDRET, ADDPRS            00011200
+         L     R4,CVTPTR               Load CVT                         00011300
+         ICM   R4,B'1111',CVTRAC-CVTMAP(R4) Check RCVT                  00011400
+         BNZ   LISTP001                Yes: RAKF is active              00011500
+         LA    R1,MSG1                 No: RAKF is not active           00011600
+         LA    R0,L'MSG1               Length                           00011700
+         BAL   R14,TPUT                Inform user                      00011800
+         B     RC08                    Return to TMP                    00011900
+LISTP001 DS    0H                                                       00012000
+*---------------------------------------------------------------------* 00012100
+*        CJYRCVT contains 2 pointers. 1 = address of users table      * 00012200
+*                                     2 = address of profiles table   * 00012300
+*---------------------------------------------------------------------* 00012400
+         ICM   R4,B'1111',RCVTISTL-RCVT(R4) CJYRCVTD present?           00012500
+         BZ    LISTP003                No: error                        00012600
+         ICM   R4,B'1111',CJYPROFS-CJYRCVTD(R4) Point to profile table  00012700
+         BNZ   LISTP005                Yes: found                       00012800
+LISTP003 DS    0H                                                       00012900
+         LA    R1,MSG2                 Msg: Profiles table not present  00013000
+         LA    R0,L'MSG2               Length                           00013100
+         BAL   R14,TPUT                Inform user                      00013200
+         B     RC08                    Return to TMP                    00013300
+LISTP005 DS    0H                                                       00013400
+         USING RPECBLK,R4              Base CJYPCBLK                    00013500
+         MODESET KEY=ZERO,MODE=SUP  Profiles table is in protected core 00013600
+LISTP007 DS    0H                                                       00013700
+         MVI   MSG3,C' '               Blank message                    00013800
+         MVC   MSG3+1(L'MSG3-1),MSG3                                    00013900
+         MVC   MSG3(07),=C'LISTP: '                                     00014000
+         MVC   MSG3+07(6),=C'Class='                                    00014100
+         MVC   MSG3+22(9),=C'Resource='                                 00014200
+         LH    R2,PROFILEL             Length                           00014300
+         BCTR  R2,0                    Minus 1                          00014400
+         EX    R2,CMPPRF               Compare given profile            00014500
+         BE    LISTP009                Yes: display                     00014600
+         ICM   R4,B'1111',RPENEXT      Next entry                       00014700
+         BNZ   LISTP007                Test again                       00014800
+         TM    SW,$LISTED              Already an entry listed?         00014900
+         BO    READY                   Do not issue MSG4                00015000
+         MVC   MSG4+28(24),PROFILE     Resource in message              00015100
+         LA    R1,MSG4                 Msg: Profile xxxxx not defined   00015200
+         LA    R0,L'MSG4               Length                           00015300
+         BAL   R14,TPUT                Inform user                      00015400
+         BAL   R14,PROB                Back to problem state            00015500
+         B     RC08                    Return                           00015600
+LISTP009 DS    0H                                                       00015700
+         LA    R1,MSG3+13              Point to CLASS in msg            00015800
+         MVC   MSG3+13(8),RPECLASN     Move class name                  00015900
+         MVC   MSG3+31(24),RPEENTYN    Move the profile                 00016000
+         MVC   MSG3+56(5),=C'UACC='                                     00016100
+         LA    R2,MSG3+61              Point after UACC=                00016200
+         LA    R1,RPEUACC              UACC value                       00016300
+         BAL   R14,ACCESS              Translate into readable form     00016400
+         LA    R1,MSG3                 For TPUT                         00016500
+         LA    R0,L'MSG3               Length                           00016600
+         BAL   R14,TPUT                Inform user                      00016700
+         OI    SW,$LISTED              Entry is listed                  00016800
+         MVI   MSG3,C' '               Blank message                    00016900
+         MVC   MSG3+1(L'MSG3-1),MSG3                                    00017000
+         MVC   MSG3+07(12),=C'Access list:' 2nd line                    00017100
+         LA    R1,MSG3                                                  00017200
+         LA    R0,L'MSG3               Length                           00017300
+         BAL   R14,TPUT                Inform user                      00017400
+         USING RPEACCLE,R5             Access list                      00017500
+LISTP011 ICM   R5,15,RPEACCPT          Point to access list             00017600
+         BZ    LISTP017                No access list                   00017700
+LISTP013 MVI   MSG3,C' '               Blank message                    00017800
+         MVC   MSG3+1(L'MSG3-1),MSG3                                    00017900
+         MVC   MSG3+7(8),RPEAUSR       Id                               00018000
+         LA    R1,RPEACS               Access byte                      00018100
+         LA    R2,MSG3+16              Place to receive access word     00018200
+         BAL   R14,ACCESS              Xlate ACCESS byte to word        00018300
+         LA    R1,MSG3                                                  00018400
+         LA    R0,L'MSG3               Length                           00018500
+         BAL   R14,TPUT                Inform user                      00018600
+         B     LISTP015                Next entry in access list        00018700
+CMPPRF   CLC   RPEENTYN(0),PROFILE     Does profile match               00018800
+LISTP015 ICM   R5,15,RPEANEXT          Next access entry                00018900
+         BNZ   LISTP013                If there, display                00019000
+LISTP017 ICM   R4,B'1111',RPENEXT      Next entry                       00019100
+         BNZ   LISTP007                Test again                       00019200
+READY    BAL   R14,PROB                Back to problem state            00019300
+         XR    R15,R15                 Return code 0                    00019400
+         B     RETURN                  Return                           00019500
+*---------------------------------------------------------------------* 00019600
+*        Return to TSO TMP.                                           * 00019700
+*---------------------------------------------------------------------* 00019800
+RC08     DS    0H                                                       00019900
+         LA    R15,8                   RC = 8                           00020000
+RETURN   DS    0H                                                       00020100
+         LR    R4,R15                  Save return code                 00020200
+         ICM   R2,15,PPL#LA            Filled in?                       00020300
+         BZ    RETURN1                 No: do not free                  00020400
+         LM    R2,R3,PPL#LA            Load length and address of PPL   00020500
+         FREEMAIN RU,LV=(2),A=(3)      Free the PPL                     00020600
+RETURN1  ICM   R8,15,ANSWER            Pointer to PDE's (the PDL)       00020700
+         BZ    RETURN2                 No: skip                         00020800
+         IKJRLSA (R8)                  Release PARSE storage            00020900
+RETURN2  LR    R3,R13                  Load working storage to free     00021000
+         L     R13,4(,R13)             Load caller's save area          00021100
+         FREEMAIN RU,LV=WORKL,A=(3)    Release working storage          00021200
+         LR    R15,R4                  Restore return code              00021300
+         RETURN (14,12),RC=(15)        Return                           00021400
+*                                                                       00021500
+         TITLE 'Back to problem state'                                  00021600
+PROB     ST    R14,R14PROB             Save register 14                 00021700
+         MODESET KEY=NZERO,MODE=PROB   Back to problem state            00021800
+         L     R14,R14PROB             Restore register 14              00021900
+         BR    R14                     Return                           00022000
+         TITLE 'Parse ACCESS'                                           00022100
+ACCESS   DS    0H                                                       00022200
+*---------------------------------------------------------------------* 00022300
+*        Translate the ACCESS byte into a readable word.              * 00022400
+*        R1 points to the access byte, R2 points to the output word   * 00022500
+*---------------------------------------------------------------------* 00022600
+         TM    0(R1),RACFALTR          Do we have ALTER access?         00022700
+         BNO   ACC01                   No: test other values            00022800
+         MVC   0(8,R2),=CL8'ALTER'                                      00022900
+         B     ACC99                   Ready                            00023000
+ACC01    TM    0(R1),RACFCNTL          Do we have CONTROL access?       00023100
+         BNO   ACC02                   No: test other values            00023200
+         MVC   0(8,R2),=CL8'CONTROL'                                    00023300
+         B     ACC99                   Ready                            00023400
+ACC02    TM    0(R1),RACFUPDT          Do we have UPDATE access?        00023500
+         BNO   ACC03                   No: test other values            00023600
+         MVC   0(8,R2),=CL8'UPDATE'                                     00023700
+         B     ACC99                   Ready                            00023800
+ACC03    TM    0(R1),RACFREAD          Do we have READ access?          00023900
+         BNO   ACC04                   No: test other values            00024000
+         MVC   0(8,R2),=CL8'READ'                                       00024100
+         B     ACC99                   Ready                            00024200
+ACC04    TM    0(R1),RACFEXEC          Do we have EXEC access?          00024300
+         BNO   ACC05                   No: test other values            00024400
+         MVC   0(8,R2),=CL8'EXEC'                                       00024500
+         B     ACC99                   Ready                            00024600
+ACC05    MVC   0(8,R2),=CL8'NONE'      No access                        00024700
+ACC99    BR    R14                     Return                           00024800
+         TITLE 'Write message on screen'                                00024900
+*---------------------------------------------------------------------* 00025000
+*        Write the message on the terminal with a PUTLINE.            * 00025100
+*        Register 0 = the length of the message.                      * 00025200
+*        Register 1 = adress of the message.                          * 00025300
+*---------------------------------------------------------------------* 00025400
+TPUT     DS    0H                                                       00025500
+         ST    R14,R14TPUT             Save register 14                 00025600
+         L     R3,MYCPPL               Pickup CPPL of this command      00025700
+         USING CPPL,R3                 Base IKJCPPL                     00025800
+         MVI   PUTLINE+4,C' '          Clear output line                00025900
+         MVC   PUTLINE+5(79),PUTLINE+4         ,,                       00026000
+         LR    R2,R0                   Length of message                00026100
+         BCTR  R2,0                    Minus 1 for EX                   00026200
+         EX    R2,MVEMSG               Move the message                 00026300
+         LA    R2,5(,R2)               Length in including length field 00026400
+         XC    PUTLINE+2(2),PUTLINE+2  Byte 2 and 3, reserved           00026500
+         STCM  R2,B'0011',PUTLINE      Save length in byte 0 and 1      00026600
+         L     R2,CPPLUPT              User Profile Table               00026700
+         L     R3,CPPLECT              Environment Control Table        00026800
+         XC    ECB,ECB                 Force PUTLINE to wait            00026900
+         LA    R0,PUTLINE              Data line address                00027000
+         PUTLINE PARM=PUTBLOK,,MF=(E,PUTIOPL),                         *00027100
+               OUTPUT=((0),TERM,SINGLE,DATA),ECB=ECB,UPT=(2),ECT=(3),  *00027200
+               TERMPUT=(EDIT,WAIT,NOHOLD,NOBREAK)                       00027300
+         L     R14,R14TPUT             Restore register 14              00027400
+         BR    R14                                                      00027500
+MVEMSG   MVC   PUTLINE+4(0),0(R1)      << executed >>                   00027600
+         DROP  R3                      Unbase CPPL                      00027700
+PCLSTART DS    0H                                                       00027800
+ADDPCL   IKJPARM DSECT=ADDPRS          PDE's                            00027900
+PROFPDE  IKJPOSIT DSTHING,PROMPT='RAKF Profile name',                  *00028000
+               HELP=('a valid (part) of a profile e.g. SYS1.*')         00028100
+         IKJENDP                                                        00028200
+PCL#L    EQU   *-PCLSTART                                               00028300
+         TITLE 'CONSTANTS'                                              00028400
+*                                                                       00028500
+MSG1     DC    C'LISTP: RAKF is not active'                             00028600
+MSG2     DC    C'LISTP: No profile table present'                       00028700
+MSG4X    DC    C'LISTP: Not defined in RAKF: xxxxxxxxxxxxxxxxxxxxxxxx'  00028800
+*                                      +28                              00028900
+MSG5     DC    C'LISTP: Parse error'                                    00029000
+MSGY     DC    C'LISTP: No ACEE found'                                  00029100
+MSGZ     DC    C'LISTP: Not authorized, no SPECIAL attribute'           00029200
+         LTORG ,                                                        00029300
+         DROP                                                           00029400
+*                                                                       00029500
+PROFRET  DSECT                         PDE of Profile name              00029600
+PROFPTR  DS    F                       Pointer to Profile               00029700
+PROFL    DS    H                       Length of Profile                00029800
+PROFFLG  DS    C                                                        00029900
+$PPRES   EQU   128                     Profile is present               00030000
+         DS    C                       Reserved                         00030100
+*                                                                       00030200
+WORKAREA DSECT                         Working storage                  00030300
+         DS    18F                     Our save area                    00030400
+MYCPPL   DS    F                                                        00030500
+ECB      DS    F                       For IKJDAIR                      00030600
+R14TPUT  DS    F                       Register 14 TPUT                 00030700
+R14PROB  DS    F                       Register 14 PROB                 00030800
+R14ACC   DS    F                       Register 14 ACCESS               00030900
+ANSWER   DS    F                       Parse answer area                00031000
+PUTIOPL  DS    4F                      IKJIOPL                          00031100
+PUTBLOK  PUTLINE MF=L                  PUTLINE PTPB                     00031200
+PUTLINE  DS    CL84                    Output of PUTLINE                00031300
+PROFILEL DS    H                       Length of profile                00031400
+PROFILE  DS    CL44                    To receive Profile               00031500
+*                                                                       00031600
+PPL#LA   DS    F                       \___ Length + address PPL ____/  00031700
+PPL#PTR  DS    F                       /                             \  00031800
+*                                                                       00031900
+MSG3     DS    CL80                                                     00032000
+MSG4     DS    CL(L'MSG4X)                                              00032100
+SW       DS    X                                                        00032200
+$LISTED  EQU   128                     Already an entry listed          00032300
+WORKL    EQU   *-WORKAREA              Length of working storage        00032400
+*                                                                       00032500
+         COPY  CJYPCBLK                Profiles table entry             00032600
+         COPY  CJYRCVTD                RCVT CBLK                        00032700
+         ICHPRCVT                      RACF CVT                         00032800
+         CVT   DSECT=YES,LIST=NO                                        00032900
+         IKJCPPL                                                        00033000
+         IKJUPT                                                         00033100
+         IKJPPL                        Parse parameter list             00033200
+PPL#L    EQU   *-PPL                                                    00033300
+         IHAPSA                                                         00033400
+         IHAASCB                                                        00033500
+         IHAASXB                                                        00033600
+         IHAACEE                                                        00033700
+*                                                                       00033800
+R0       EQU   0                                                        00033900
+R1       EQU   1                                                        00034000
+R2       EQU   2                                                        00034100
+R3       EQU   3                                                        00034200
+R4       EQU   4                       Base register CBLK               00034300
+R5       EQU   5                       Base register CONNGRUP           00034400
+R6       EQU   6                                                        00034500
+R7       EQU   7                                                        00034600
+R8       EQU   8                       Address of IKJPARS PDL           00034700
+R9       EQU   9                                                        00034800
+R10      EQU   10                                                       00034900
+R11      EQU   11                                                       00035000
+R12      EQU   12                      Base register                    00035100
+R13      EQU   13                      Address of working storage       00035200
+R14      EQU   14                                                       00035300
+R15      EQU   15                                                       00035400
+         END                                                            00035500
