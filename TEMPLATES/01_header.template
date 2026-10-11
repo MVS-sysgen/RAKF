@@ -108,8 +108,9 @@
       4: TSO commands ADDUSER, ALTUSER, DELUSER, CONNECT and                    
          LISTUSER developed to process the USERS member,                        
          SHADOW data set and in core users table.                               
-      5: TSO commands ADDSD, RDEFINE, PERMIT and RDELETE                        
-         to process the PROFILES member.               
+      5: TSO commands ADDSD, RDEFINE, PERMIT, RDELETE and                       
+         LISTP developed to process the PROFILES member                         
+         and the in core profiles table.                                        
       6: RACROUTE REQUEST=AUTH, DEFINE and VERIFY fully                         
          supported.                                                             
       7: All classes tested against the Class Descriptor                        
