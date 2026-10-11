@@ -1,0 +1,28 @@
+)F FUNCTION -
+   The LISTP command lists one or more RAKF profiles.                            
+   It lists the profiles and the classes and their access                        
+   list.                                                                         
+                                                                                 
+ )X SYNTAX -                                                                     
+   LISTP profile                                                                 
+                                                                                 
+   REQUIRED - profile, this can be a single profile or a list of                 
+              profiles if a beginning part is specified.                         
+              Example: LISTP SYS, lists all profiles starting with               
+                       'SYS'.                                                    
+                                                                                 
+   RETURN CODES:                                                                 
+                                                                                 
+      0 - The profile(s) were listed.                                            
+      8 - An error occurs. A suitable message will be given to                   
+          the user.                                                              
+                                                                                 
+   SPECIAL REQUIREMENTS:                                                         
+                                                                                 
+      The issuing user should have the SPECIAL authority.                        
+                                                                                 
+ )O OPERANDS -                                                                   
+ ))PROFILE - the profile(s) to list. 1 to 44 characters. Required,               
+   and is the first and only operand. If the profile don't exist, a              
+   suitable message will be displayed.                                           
+                                                                                                                                                              
