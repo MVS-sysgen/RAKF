@@ -152,18 +152,18 @@
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
 //SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(DELUSER)                                
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(DELUSER)                               
-//ASMLIST  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
-//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
-//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
-//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
-//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(LISTUSER)                               
-//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(LISTUSER)                              
 //ASMCON   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
 //SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(CONNECT)                                
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(CONNECT)                               
+//ASMLIST  EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
+//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
+//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(LISTUSER)                               
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(LISTUSER)                              
 //ASMDSD   EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
 //SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
 //         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
@@ -182,6 +182,12 @@
 //         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
 //SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(RDELETE)                                
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(RDELETE)                               
+//ASMLISTP EXEC PGM=IFOX00,PARM=(NOOBJ,DECK)                                    
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.MACLIB                                         
+//         DD  DISP=SHR,DSN=SYS1.AMODGEN                                        
+//         DD  DISP=SHR,DSN=RAKF.MACLIB                                         
+//SYSIN    DD  DISP=SHR,DSN=RAKF.SRCLIB(LISTP)                                  
+//SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ(LISTP)                                 
 //TSOCMDS  EXEC  PGM=IEWL,PARM='MAP,LIST,NCAL,LET,RENT,REUS'                    
 //SYSLMOD  DD  DISP=SHR,DSN=SYS1.CMDLIB                                         
 //SYSPUNCH DD  DISP=(OLD,PASS),DSN=&&OBJ                                        
@@ -210,15 +216,19 @@
  ENTRY   CONNECT                                                                
  NAME    CONNECT(R)                                                             
  INCLUDE SYSPUNCH(ADDSD)                                                        
- ALIAS AD                                                                       
- ALIAS RDEFINE                                                                  
- NAME ADDSD(R)                                                                  
+ ALIAS   AD                                                                     
+ ALIAS   RDEFINE                                                                
+ NAME    ADDSD(R)                                                               
  INCLUDE SYSPUNCH(PERMIT)                                                       
- ALIAS PE                                                                       
- NAME PERMIT(R)                                                                 
+ ALIAS   PE                                                                     
+ NAME    PERMIT(R)                                                              
  INCLUDE SYSPUNCH(RDELETE)                                                      
- ENTRY RDELETE                                                                  
- NAME RDELETE(R)                                                                
+ ENTRY   RDELETE                                                                
+ NAME    RDELETE(R)                                                             
+ INCLUDE SYSPUNCH(LISTP)                                                        
+ ENTRY   LISTP                                                                  
+ SETCODE AC(1)                                                                  
+ NAME    LISTP(R)                                                               
 /*                                                                              
 //ICHRIN00 EXEC  PGM=IEWL,PARM='MAP,LIST,NCAL,LET,RENT,REFR,REUS,AC=1'          
 //SYSLMOD  DD  DISP=SHR,DSN=SYS1.LPALIB                                         
