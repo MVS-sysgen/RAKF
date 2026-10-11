@@ -37,7 +37,7 @@ ADDSD    TITLE 'Add RAKF profile records'                               00000100
 *                                                                     * 00003700
 *---------------------------------------------------------------------* 00003800
 ADDSD    CSECT                                                          00003900
-         SAVE  (14,12)                                                  00004000
+         SAVE  (14,12),,*                                               00004000
          LR    R12,R15                                                  00004100
          USING ADDSD,R12               Base register                    00004200
          LR    R2,R1                   Save parm (CPPL)                 00004300
@@ -83,7 +83,7 @@ START1   MVI   PROFREC-1,C' '          To blank Profile record          00007500
          GETMAIN RU,LV=120000      GETMAIN room for 1500 profiles       00008300
          ST    R1,ADRPROF              Save its address                 00008400
          USING PSA,R0                  Point to CVT                     00008500
-         L     R2,PSAANEW-PSA          Load ASCB                        00008600
+         L     R2,PSAANEW              Load ASCB                        00008600
          L     R2,ASCBASXB-ASCB(R2)    Load ASXB                        00008700
          ICM   R2,15,ASXBSENV-ASXB(R2) Point to ACEE                    00008800
          BNZ   CONT1                   Yes: found                       00008900
@@ -133,6 +133,7 @@ CONT2    DS    0H                                                       00010000
          LA    R0,L'MSG5               Length                           00013300
          LA    R1,MSG5                 Message                          00013400
          BAL   R14,TPUT                                                 00013500
+         XC    ANSWER,ANSWER           Avoid IKJRLSA                    00013510
          B     RC08                    Return to TMP                    00013600
 PARSEOK  DS    0H                                                       00013700
          L     R8,ANSWER               Pointer to PDL                   00013800
