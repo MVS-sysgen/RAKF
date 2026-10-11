@@ -120,7 +120,9 @@ MODULES = [
             aliases=["AD", "RDEFINE"]),
     Module("PERMIT",   ["PERMIT"],                         ["ASMPERM"], "PERMIT", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS",
             aliases=["PE"]),
-    Module("RDELETE",   ["RDELETE"],                       ["ASMRDEL"], "RDELETE", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS")
+    Module("RDELETE",   ["RDELETE"],                       ["ASMRDEL"], "RDELETE", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS"),
+    Module("LISTP",    ["LISTP"],                          ["ASMLISTP"], "LISTP", "SYS1.CMDLIB",  "MAP,LIST,LET,NCAL,RENT,REUS,AC=1")
+
 
 ]
 
