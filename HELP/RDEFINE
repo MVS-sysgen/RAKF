@@ -13,7 +13,8 @@
   that enforces this, not APF authorization.                                    
                                                                                 
 )X SYNTAX -                                                                     
-  RDEFINE 'resource' CLASS(clasname) UACC(NONE/READ/UPDATE/ALTER)               
+  RDEFINE 'resource' CLASS(clasname) UACC(NONE/READ/UPDATE/CONTROL  
+                                     ALTER)
                                                                                 
   REQUIRED - 'resource'                                                         
            - CLASS(classname)                                                   
@@ -44,6 +45,7 @@
 ))CLASS - Specify the name of the generalized resource class. The               
   class name is alphabetic value with a length up to 8 characters.              
 ))UACC - Specify the universal access of the resource.                          
-  possible values are: NONE (no access), READ, UPDATE and                       
+  possible values are: NONE (no access), READ, UPDATE, CONTROL                  
+  (for VSAM data sets, for non-VSAM same as UPDATE),                            
   ALTER (delete and create).                                                    
                                                                                 
