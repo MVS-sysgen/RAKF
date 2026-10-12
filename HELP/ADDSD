@@ -13,7 +13,7 @@
   that enforces this, not APF authorization.                                    
                                                                                 
 )X SYNTAX -                                                                     
-  ADDSD 'data set profile' UACC(NONE/READ/UPDATE/ALTER)                         
+  ADDSD 'data set profile' UACC(NONE/READ/UPDATE/CONTROL/ALTER)                         
                                                                                 
   ALIAS - AD                                                                    
                                                                                 
@@ -42,6 +42,6 @@
 ))'data set profile' - the profile in the DATASET class. The                    
   length can be up to 44 bytes. Generic profiles can be created.                
 ))UACC - Specify the universal access of the profile.                           
-  possible values are: NONE (no access), READ, UPDATE and                       
-  ALTER (delete and create).                                                    
-                                                                                
+  possible values are: NONE (no access), READ, UPDATE, CONTROL                  
+  (for VSAM data sets, for non-VSAM same as UPDATE),                            
+  ALTER (delete and create).                                                                                                                                    
