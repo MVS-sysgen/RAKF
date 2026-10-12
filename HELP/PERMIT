@@ -17,7 +17,8 @@
          Universal access records are created by ADDSD and RDEFINE.            
                                                                                 
 )X SYNTAX -                                                                     
-  PERMIT 'resource' CLASS(clasname) ACCESS(NONE/READ/UPDATE/ALTER) +            
+  PERMIT 'resource' CLASS(clasname) ACCESS(NONE/READ/UPDATE/CONTROL
+                                           ALTER) +
          ID(group)                                                              
                                                                                 
   ALIAS: PE                                                                     
@@ -58,5 +59,6 @@
 ))ID    - Specify the name of the group that grants access. The                 
   group name is alphabetic value with a length up to 8 characters.              
 ))ACCESS - Specify the to be granted access of the resource.                    
-  possible values are: NONE (no access), READ, UPDATE and                       
-  ALTER (delete and create). Default = NONE.                                    
+  possible values are: NONE (no access), READ, UPDATE, CONTROL                    
+  (for VSAM data sets, for non-VSAM same as UPDATE),                              
+  ALTER (delete and create).                                                      
