@@ -1,4 +1,3 @@
-./ ADD NAME=RDEFINE                                                             
 ./ ALIAS NAME=RDEF
 )F FUNCTION -                                                                   
   The RDEFINE command defines a resource in a certain class.                    
