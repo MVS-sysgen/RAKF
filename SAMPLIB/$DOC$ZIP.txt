@@ -134,6 +134,14 @@ RAKF.
 Customization
 -------------
 
+Adding modules LISTUSER, LU and LISTP into IKJEFTE2
+
+The TSO commands LISTUSER with alias LU and LISTP needs APF authorization.
+Therefore module IKJEFTE2 (the authorized command table) needs to be update
+to add these entries. This can be arranged by applying usermod ZUM0001. 
+
+Members USERS and PROFILES
+
 The RAKF security configuration is defined by the RAKF users table and the RAKF
 profiles table, which are text files maintained by the security administrator
 to define the system's users, groups, resources and their protection. These
