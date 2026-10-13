@@ -1124,7 +1124,7 @@ This usermod installs an updated SVC244 that uses RAKF for authorization.
   *        requested and the JSCBAUTH change is made only if the
   *        security system grants this access
   */.
-++MOD(IGC0024D) DISTLIB(LPALIBA).
+++MOD(IGC0024D) DISTLIB(ALPALIB).
 /*
 //SYSUT2   DD  DSN=&&SMPMCS,DISP=(NEW,PASS),UNIT=SYSALLDA,
 //             SPACE=(CYL,3),
