@@ -1,4 +1,5 @@
 ./ ADD NAME=RDEFINE                                                             
+./ ALIAS NAME=RDEF
 )F FUNCTION -                                                                   
   The RDEFINE command defines a resource in a certain class.                    
   It writes one line in the PROFILES member of SYS1.SECURE.CNTL.                
@@ -15,16 +16,17 @@
 )X SYNTAX -                                                                     
   RDEFINE 'resource' CLASS(clasname) UACC(NONE/READ/UPDATE/CONTROL  
                                      ALTER)
+  ALIAS RDEF
                                                                                 
   REQUIRED - 'resource'                                                         
            - CLASS(classname)                                                   
                                                                                 
   DEFAULT  - UACC(NONE)                                                         
                                                                                 
-  EXAMPLE  - RDEFINE $TSTVS.* CLASS(FACILITY) UACC(READ)                        
+  EXAMPLE  - RDEFINE $TSTVS CLASS(FACILITY) UACC(READ)                        
                                                                                 
   The operands can be shortened to the shortest unique abbreviation.            
-  So, RDEFINE $TSTVS.* C(FACILITY) U(READ) is also valid.                       
+  So, RDEF $TSTVS C(FACILITY) U(READ) is also valid.                       
                                                                                 
   RETURN CODES:                                                                 
                                                                                 
