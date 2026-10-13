@@ -1,3 +1,4 @@
+./ ALIAS NAME=RDEL                                                              
 )F FUNCTION -                                                                   
   The RDELETE command delete one or more profiles or resources.                 
   It deletes lines from the PROFILES member of SYS1.SECURE.CNTL.                
@@ -14,35 +15,38 @@
 )X SYNTAX -                                                                     
   RDELETE 'resource' CLASS(classname) ID(group)                                 
                                                                                 
+  ALIAS - RDEL                                                                  
+                                                                                
   REQUIRED - 'resource'                                                         
              CLASS(classname)                                                   
-             ID(group)                                                          
                                                                                 
-  EXAMPLE  - RDELETE $TSTVS.* CLASS(FACILITY) ID(ADMIN)                         
+  OPTIONAL - ID(group)                                                          
                                                                                 
-  OR       - RDELETE $TSTVS.* CLASS(FACILITY) ID(ALL)                           
+  EXAMPLE  - RDELETE $TSTVS CLASS(FACILITY) ID(ADMIN)                           
                                                                                 
-  NOTE     - ID(ALL) deletes all $TSTVS.* records, including                    
-             the universal access record.                                       
+  OR       - RDELETE $TSTVS CLASS(FACILITY)                                     
+                                                                                
+  NOTE     - If ID is omitted, all $TSTVS records, including                    
+             the universal access record are deleted.                           
              This record is the record without the GROUP and                    
              are created by ADDSD or RDEFINE.                                   
                                                                                 
   The operands can be shortened to the shortest unique abbreviation.            
-  So, RDELETE $TSTVS.* C(FACILITY) I(ADMIN) is also valid.                      
+  So, RDEL $TSTVS C(FACILITY) I(ADMIN) is also valid.                           
                                                                                 
   RETURN CODES:                                                                 
                                                                                 
      0 - The resource is created.                                               
      8 - An error occurs. A suitable message will be given to                   
          the user.                                                              
-                                                                                 
-   SPECIAL REQUIREMENTS:                                                         
-                                                                                 
-      The issuing user should have the SPECIAL authority.                        
-      Update access to the SYS1.SECURE.* dataset is necessary or                 
-      the issuing user should have the OPERATIONS authority along                
-      with the SPECIAL authority.                                                
-                                                                                 
+                                                                                
+  SPECIAL REQUIREMENTS:                                                         
+                                                                                
+     The issuing user should have the SPECIAL authority.                        
+     Update access to the SYS1.SECURE.* dataset is necessary or                 
+     the issuing user should have the OPERATIONS authority along                
+     with the SPECIAL authority.                                                
+                                                                                
 )O OPERANDS -                                                                   
 ))'resource' - the generalized resource in the specified class. The             
   length can be up to 44 bytes. Generic resources can be created.               
