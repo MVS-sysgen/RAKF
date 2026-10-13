@@ -22,6 +22,14 @@ for i in ../SRCLIB/*; do
     cat $i
 done
 
+
+for i in ../SAMPLIB/*; do
+    filename=$(basename -- "$i")
+    filename="${filename%.*}"
+    echo "++MAC($filename) DISTLIB(ASAMPLIB) SYSLIB(SAMPLIB)."
+    cat $i
+done
+
 for i in ../PROCLIB/*; do
     filename=$(basename -- "$i")
     filename="${filename%.*}"
