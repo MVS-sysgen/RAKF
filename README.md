@@ -139,7 +139,7 @@ the file `TEMPLATES/makerakf.sh` which generates the JCL to assemble and link RA
 
 ### Adding modules LISTUSER, LU and LISTP into IKJEFTE2
 
-The TSO commands LISTUSER with alias LU and LISTP needs APF authorization.
+The TSO commands LISTUSER with alias LU and LISTP need APF authorization.
 Therefore module IKJEFTE2 (the authorized command table) needs to be update to add these entries. This can be arranged by applying usermod ZUM0001. 
 
 ### Members USERS and PROFILES
