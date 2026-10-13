@@ -218,12 +218,14 @@
  INCLUDE SYSPUNCH(ADDSD)                                                        
  ALIAS   AD                                                                     
  ALIAS   RDEFINE                                                                
+ ALIAS   RDEF                                                                   
  NAME    ADDSD(R)                                                               
  INCLUDE SYSPUNCH(PERMIT)                                                       
  ALIAS   PE                                                                     
  NAME    PERMIT(R)                                                              
  INCLUDE SYSPUNCH(RDELETE)                                                      
  ENTRY   RDELETE                                                                
+ ALIAS   RDEL                                                                   
  NAME    RDELETE(R)                                                             
  INCLUDE SYSPUNCH(LISTP)                                                        
  ENTRY   LISTP                                                                  
