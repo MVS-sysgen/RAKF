@@ -44,7 +44,18 @@ arg_parser.add_argument('--upgrade-from', default=None, metavar='FMID',
                         help="Previous RAKF function FMID whose elements {} replaces. "
                              "Implies --upgrade (default: {} when --upgrade is given)."
                              .format(RAKF_FUNCTION, DEFAULT_UPGRADE_FROM))
+arg_parser.add_argument('--userid', default=None,
+                        help="Put USER= on the RAKFINST and shadow-recovery job cards "
+                             "(1 to 7 characters)")
+arg_parser.add_argument('--password', default=None,
+                        help="Put PASSWORD= on those job cards (1 to 8 characters)")
 args = arg_parser.parse_args()
+if bool(args.userid) != bool(args.password):
+    sys.exit('generate_release.py: --userid and --password must be given together')
+if args.userid and len(args.userid) > 7:
+    sys.exit('generate_release.py: --userid is longer than 7 characters')
+if args.password and len(args.password) > 8:
+    sys.exit('generate_release.py: --password is longer than 8 characters')
 if args.upgrade_from:
     args.upgrade = True
     args.upgrade_from = args.upgrade_from.upper()
@@ -286,6 +297,43 @@ def _data_file(arg, default):
     return fn if os.path.isabs(fn) else os.path.join(running_folder, fn)
 
 
+def _with_job_credentials(lines):
+    """Put USER= and PASSWORD= on the job card's CLASS= continuation."""
+    if not args.userid:
+        return lines
+    cred = 'USER={},PASSWORD={}'.format(args.userid.upper(), args.password.upper())
+    out = []
+    in_card = True
+    replaced = False
+    for raw in lines:
+        line = raw.rstrip('\n')
+        if in_card and not line.startswith('//'):
+            in_card = False
+        if in_card and not replaced and 'CLASS=' in line.upper():
+            kept = []
+            for part in line.split(','):
+                word = part.lstrip().upper()
+                if word.startswith('USER=') or word.startswith('PASSWORD='):
+                    continue
+                kept.append(part)
+            line = ','.join(kept)
+            if not line.endswith(','):
+                line += ','
+            class_at = line.upper().find('CLASS=')
+            comma = line.find(',', class_at)
+            line = line[:comma + 1] + cred + ',' + line[comma + 1:]
+            while ',,' in line:
+                line = line.replace(',,', ',')
+            replaced = True
+        out.append(line)
+        if in_card and line.startswith('//') and not line.rstrip().endswith(','):
+            in_card = False
+    if not replaced:
+        sys.exit('generate_release.py: job card has no CLASS= line for '
+                 'USER and PASSWORD')
+    return out
+
+
 def emit_header(filename):
     """Emit 01_header.template with the fixes needed by an upgrade.
 
@@ -301,7 +349,7 @@ def emit_header(filename):
     must not be searched for ++VER.
     """
     with open(filename) as f:
-        lines = f.readlines()
+        lines = _with_job_credentials(f.readlines())
 
     # The V2 target/distribution libraries named by the LIBS step are release
     # work libraries.  On an upgrade/retry they may already exist from an
@@ -682,7 +730,11 @@ def emit_shadow_recovery(shadow):
     """
     dsn = args.shadow_dsn.upper()
     emit("//RAKFSHAD JOB (RAKF),'RAKF SHADOW RECOVERY',CLASS=A,MSGCLASS=A,")
-    emit("//         MSGLEVEL=(1,1),REGION=4096K,USER=IBMUSER,PASSWORD=SYS1")
+    jobtail = "//         MSGLEVEL=(1,1),REGION=4096K"
+    if args.userid:
+        jobtail += ",USER={},PASSWORD={}".format(
+            args.userid.upper(), args.password.upper())
+    emit(jobtail)
     emit("//* Recreate the RAKF V2 password shadow file")
     emit("//DELETE   EXEC PGM=IDCAMS")
     emit("//SYSPRINT DD SYSOUT=*")
