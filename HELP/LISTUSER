@@ -5,12 +5,15 @@
   their authorities and the connected groups.                                   
                                                                                 
 )X SYNTAX -                                                                     
-  LISTUSER userid                                                               
+  LISTUSER userid (or a part of userid)                                                              
                                                                                 
   ALIAS - LU                                                                    
                                                                                 
   REQUIRED - userid                                                             
-                                                                                
+                                                                                  
+  EXAMPLE - LISTUSER HERC                                                       
+            Displays all userids starting with 'HERC'                           
+
   RETURN CODES:                                                                 
                                                                                 
      0 - The user was listed.                                                   
