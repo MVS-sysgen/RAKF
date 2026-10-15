@@ -634,6 +634,7 @@ PWCHK    DS    0H                                                       00062700
          TM    PASSFLG,$PWPRES         Was keyword present?             00063400
          BNZ   PW02                    Yes: good                        00063500
          LA    R15,4                   Return code 4                    00063600
+         B     PWEXIT                  Return                           00063610
 PW02     DS    0H                                                       00063700
          LH    R1,PASSL                Length                           00063800
          CH    R1,=H'3'                At least 4 bytes long            00063900
