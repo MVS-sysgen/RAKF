@@ -34,16 +34,8 @@ arg_parser.add_argument('--shadow-volume', default=None,
 arg_parser.add_argument('--run-rakfuser', action='store_true',
                         help="After shadow recovery, EXEC the installed RAKFUSER procedure "
                              "to reload the in-core user table (otherwise IPL/reload later)")
-RAKF_FUNCTION = 'TRKF200'
-DEFAULT_UPGRADE_FROM = 'TRKF126'
-
 arg_parser.add_argument('--upgrade', action='store_true',
-                        help="Generate an in-place RAKF upgrade job instead of a fresh install. "
-                             "Implied by --upgrade-from.")
-arg_parser.add_argument('--upgrade-from', default=None, metavar='FMID',
-                        help="Previous RAKF function FMID whose elements {} replaces. "
-                             "Implies --upgrade (default: {} when --upgrade is given)."
-                             .format(RAKF_FUNCTION, DEFAULT_UPGRADE_FROM))
+                        help="Generate an in-place RAKF upgrade job instead of a fresh install.")
 arg_parser.add_argument('--userid', default=None,
                         help="Put USER= on the RAKFINST and shadow-recovery job cards "
                              "(1 to 7 characters)")
@@ -56,13 +48,6 @@ if args.userid and len(args.userid) > 7:
     sys.exit('generate_release.py: --userid is longer than 7 characters')
 if args.password and len(args.password) > 8:
     sys.exit('generate_release.py: --password is longer than 8 characters')
-if args.upgrade_from:
-    args.upgrade = True
-    args.upgrade_from = args.upgrade_from.upper()
-elif args.upgrade:
-    args.upgrade_from = DEFAULT_UPGRADE_FROM
-else:
-    args.upgrade_from = DEFAULT_UPGRADE_FROM
 
 running_folder = os.path.dirname(os.path.abspath(__file__))
 
@@ -341,12 +326,8 @@ def emit_header(filename):
     During an upgrade ICHSFR00 must remain in LPALIB because SMP can use the
     existing LMOD as link-edit input while changing functional ownership.
 
-    01_header.template also contains the FUNCTION's ++VER MCS, so an upgrade
-    from a different FMID rewrites DELETE(...) to --upgrade-from and adds
-    VERSION(...) there.  Reworking TRKF200 in place (--upgrade-from TRKF200)
-    leaves ++VER alone: DELETE/VERSION of the function being installed is
-    invalid.  JCLIN/TRKF200.jcl contains only the JCLIN body and therefore
-    must not be searched for ++VER.
+    ++VER is emitted as written.  DELETE(TRKF120,TRKF126) already covers
+    an upgrade from RAKF 1.2.0 or 1.2.6, so the generator does not rewrite it.
     """
     with open(filename) as f:
         lines = _with_job_credentials(f.readlines())
@@ -373,7 +354,6 @@ def emit_header(filename):
                     upgrade_lib_dsns.append(dsn)
 
     last_control = ''
-    found_ver = False
     cleanup_emitted = False
     for l in lines:
         stripped = l.strip()
@@ -400,46 +380,10 @@ def emit_header(filename):
             # generates a replacement SYSIN.
             continue
 
-        if args.upgrade and stripped.startswith('++VER('):
-            found_ver = True
-            up = args.upgrade_from.upper()
-            # Same-FMID rework is not a function replacement.
-            if up != RAKF_FUNCTION and 'VERSION(' not in stripped.upper():
-                # Keep VERSION on a continuation card.  Appending it to the
-                # ++VER line itself (VERSION(TRKF126) is 17 characters) makes
-                # the current header 81 bytes; encode() then emits a 81-byte
-                # "card" and every later 80-column record — including
-                # RECEIVER's DLM and //SMPCNTL — starts in column 2.
-                r = l.rstrip()
-                period = r.endswith('.')
-                if period:
-                    r = r[:-1].rstrip()
-                # Fresh-install ++VER deletes TRKF120.  An upgrade must
-                # DELETE/VERSION the function that is actually on the CDS.
-                dpos = r.upper().find('DELETE(')
-                if dpos >= 0:
-                    dend = r.find(')', dpos)
-                    if dend < 0:
-                        sys.exit('generate_release.py: unterminated DELETE( '
-                                 'on ++VER in TEMPLATES/01_header.template')
-                    r = r[:dpos] + 'DELETE({})'.format(up) + r[dend + 1:]
-                else:
-                    r = r + ' DELETE({})'.format(up)
-                if not r.endswith(','):
-                    r += ','
-                emit(r)
-                l = ' VERSION({})'.format(up)
-                if period:
-                    l += '.'
-
         emit(l.rstrip())
         check_step(l, filename)
         if stripped and not stripped.startswith('***'):
             last_control = stripped
-
-    if args.upgrade and not found_ver:
-        sys.exit('generate_release.py: no ++VER statement found in '
-                 'TEMPLATES/01_header.template')
 
 
 def emit_trkf200_jclin(filename):
