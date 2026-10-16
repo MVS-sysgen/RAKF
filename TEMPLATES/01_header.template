@@ -93,7 +93,8 @@
 //RECEIVER EXEC SMPREC
 //SMPPTFIN DD DATA,DLM='??'
 ++FUNCTION(TRKF200).
-++VER(Z038) DELETE(TRKF120) SUP(RRKF006,RRKF007,RRKF008,RRKF009)
+++VER(Z038) DELETE(TRKF120,TRKF126) 
+            SUP(RRKF006,RRKF007,RRKF008,RRKF009)
   /*                                                             
                                                                  
    PROBLEM DESCRIPTON:                                           
