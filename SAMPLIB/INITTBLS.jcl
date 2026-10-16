@@ -18,12 +18,12 @@
 //SYSPRINT DD SYSOUT=*                                                          
 //SYSIN    DD *                                                                 
 ./ ADD NAME=USERS                                                               
-HERC01   RAKFADM *CUL8TR   Y Y                                          00005000
-HERC01   ADMIN    CUL8TR   Y Y                                          00010000
-HERC02   ADMIN    CUL8TR   Y N                                          00020000
-HERC03   USER     PASS4U   N N                                          00030000
-HERC04   USER     PASS4U   N N                                          00040000
-IBMUSER  ADMIN    IBMPASS  Y Y                                          00050000
+HERC01   RAKFADM *         Y Y                                          00005000
+HERC01   ADMIN             Y Y                                          00010000
+HERC02   ADMIN   *         N N                                          00020000
+HERC03   USER    *         N N                                          00030000
+HERC04   USER    *         N N                                          00040000
+IBMUSER  ADMIN   *IBMPASS  Y Y                                          00050000
 ./ ADD NAME=PROFILES                                                            
 DASDVOL *                                                   ALTER       00010000
 DATASET *                                                   ALTER       00020000
