@@ -147,7 +147,7 @@ APFCTABL DS    0D                      ALIGNMENT
          DC    C'SPY     '             SPY CONSOLE MONITOR
          DC    C'BREXX   '             BREXX/370
          DC    C'REXX    '             BREXX/370
-         DC    C'RX      '             BREXX/37
+         DC    C'RX      '             BREXX/370
          DC    C'NJE38   '             NJE38 Command
          DC    C'RECEIVE '             NJE38 RECEIVE
          DC    C'RECV    '             NJE38 RECEIVE Alias
