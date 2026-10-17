@@ -1,4 +1,4 @@
-//ZUM0001  JOB SYS,'ZUM0001',CLASS=A,REGION=4096K,TYPRUN=HOLD,                  
+//ZUM0001  JOB SYS,'ZUM0001',CLASS=A,REGION=4096K,              
 //             MSGLEVEL=(1,1),MSGCLASS=X                                        
 //*                                                                             
 //* Name: USERMOD.TRKF200(ZUM0001)                                              
@@ -14,7 +14,8 @@
 //*                                                                             
 //RESTORE EXEC SMPACC                                                           
 //SMPCNTL  DD  *                                                                
- RESTORE S(ZUM0001) DIS(WRITE).                                                 
+ RESTORE S(ZUM0001) DIS(WRITE). 
+ RESETRC.
 /*                                                                              
 //*                                                                             
 //ASM     EXEC PGM=IFOX00,PARM='OBJECT,NODECK,NOTERM,XREF(SHORT)'               
