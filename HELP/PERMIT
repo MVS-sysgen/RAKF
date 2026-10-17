@@ -1,6 +1,6 @@
 ./ ALIAS NAME=PE                                                                
 )F FUNCTION -                                                                   
-  The PERMIT command grants acces to a resource in a certain class.             
+  The PERMIT command grants access to a resource in a certain class.             
   It writes one line in the PROFILES member of SYS1.SECURE.CNTL.                
                                                                                 
   PERMIT updates the control data sets on disk only.  Reload the in             
@@ -29,12 +29,12 @@
   DEFAULT  - ACCESS(NONE)                                                       
              CLASS(DATASET)                                                     
                                                                                 
-  EXAMPLE  - PERMIT $TSTVS.* CLASS(FACILITY) ID(ADMIN) ACCESS(READ)             
+  EXAMPLE  - PERMIT $TSTVS CLASS(FACILITY) ID(ADMIN) ACCESS(READ)             
                                                                                 
   OR         PERMIT SYS1.LINKLIB ID(ADMIN) ACCESS(READ)                         
                                                                                 
   The operands can be shortened to the shortest unique abbreviation.            
-  So, PE $TSTVS.* C(FACILITY) I(ADMIN) A(READ)                                  
+  So, PE $TSTVS C(FACILITY) I(ADMIN) A(READ)                                  
   is also valid.                                                                
                                                                                 
   RETURN CODES:                                                                 
