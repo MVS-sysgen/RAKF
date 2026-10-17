@@ -175,6 +175,7 @@ APFCTABL DS    0D                      ALIGNMENT
 ++ USERMOD(JLM0003) REWORK(20261008)      .                                     
 ++ VER(Z038)                                                                    
    FMID(EBB1102)                                                                
+   SUP(NJE0001)
    .                                                                            
 ++ MOD(IKJEFTE2)                                                                
    DISTLIB(AOST4)                                                               
