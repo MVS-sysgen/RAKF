@@ -13,7 +13,9 @@
 //*                                                                             
 //RESTORE EXEC SMPACC                                                           
 //SMPCNTL  DD  *                                                                
- RESTORE S(JLM0003) DIS(WRITE). 
+ RESTORE S(NJE0001,JLM0003) DIS(WRITE).
+ RESETRC.
+ RESTORE S(JLM0003) DIS(WRITE).
  RESETRC.
 /*                                                                              
 //*                                                                             
@@ -123,6 +125,7 @@ APFCTABL DS    0D                      ALIGNMENT
          SPACE 2
          DC    C'#       '             CMDSBSYS
          DC    C'CMDSBSYS'             CMDSBSYS
+         DC    C'CDSCB   '
          DC    C'IM      '             IMON/370
          DC    C'LISTD   '             TSO LIST DATASET
          DC    C'LISTDS  '             TSO LIST DATASET
@@ -145,7 +148,11 @@ APFCTABL DS    0D                      ALIGNMENT
          DC    C'BREXX   '             BREXX/370
          DC    C'REXX    '             BREXX/370
          DC    C'RX      '             BREXX/370
-         DC    C'CDSCB   '
+         DC    C'NJE38   '             NJE38 Command
+         DC    C'RECEIVE '             NJE38 RECEIVE
+         DC    C'RECV    '             NJE38 RECEIVE Alias
+         DC    C'TRANSMIT'             NJE38 TRANSMIT
+         DC    C'XMIT    '             NJE38 TRANSMIT Alias
          DC    C'        '             TERMINATOR
          SPACE 2
                END
