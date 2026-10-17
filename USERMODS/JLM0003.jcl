@@ -176,6 +176,7 @@ APFCTABL DS    0D                      ALIGNMENT
 /*                                                                              
 //IKJEFTE2 DD  DSN=&&OBJ2(IKJEFTE2),DISP=(OLD,PASS)                             
 //SMPCNTL  DD  *                                                                
+  REJECT SELECT(JLM0003).
   RECEIVE SELECT(JLM0003).                                                      
 /*                                                                              
 //*       APPLY JLM0003                                                         
