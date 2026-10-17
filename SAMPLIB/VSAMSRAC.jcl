@@ -1,6 +1,6 @@
 //VSAMSRAC JOB (RACIND),                                                        
 //             'SET RACF INDICATOR',                                            
-//             CLASS=A,REGION=4M,                                               
+//             CLASS=A,REGION=8M,                                               
 //             MSGCLASS=X,                                                      
 //             MSGLEVEL=(1,1)                                                   
 //********************************************************************          
