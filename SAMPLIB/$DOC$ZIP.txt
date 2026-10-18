@@ -1052,7 +1052,9 @@ changed.
   the userid, an 8-byte salt and the digest. Protected by the existing
   SYS1.SECURE.* profile at UACC(NONE).
 - RAKFUSER loads the shadow into the in-core table at IPL through the new
-  RAKFSHAD DD, added to MSTJCL00 by usermod ZPY0001.
+  RAKFSHAD DD, added to MSTJCL00 by the reworked usermod ZJW0003.
+- Define the Class Descriptor table in RACSTAT and test all classes against
+  this table.
 - New ADDUSER, ALTUSER', 'DELUSER', 'LISTUSER', 'ADDSD', 'RDEFINE', PERMIT 
   and 'RDELETE' command processors,
   installed into SYS1.CMDLIB, with TSO HELP members in
@@ -1065,6 +1067,13 @@ changed.
   generate_release.py blanks the password column and emits the shadow
   records into the install stream, so no clear-text password reaches the
   system and there is no chicken-and-egg with the tools above.
+- Rename RAKFUSER to its original name CJYUIDS with alias RAKFUSER.
+- Rename RAKFPROF to its original name CJYRPOF with alias RAKFPROF and check 
+  the class names against the CDT.
+- Rename RAKFPWUP to CJYPWUP and call CJYRUIDS to process the changed
+  passwords immediately.
+- Bring the SAMPLIB members back into the system.
+
 
 Appendix A - Generating your own release
 ----------------------------------------
