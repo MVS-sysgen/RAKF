@@ -949,12 +949,12 @@ ENTYERR1 MVC   WORKWTO+4(60),WTOMSG3 PROFS IN ERROR                     00094100
 ENTYWARN OI    WORKENTY,4          RC = 4                               00094900
          TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00095000
          BO    AUTHWARN            SORRY ....                           00095100
-         MVC   WORKWTO+4(60),WTOMSG8 INVALID ACCESS TO RESOURCE         00095200
+         MVC   WORKWTO+4(60),WTOMSG8 Undefined resource ... allow  @rp2 00095200
          WTO   MF=(E,WORKWTO)      WRITE IT                             00095300
          MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00095400
          MVC   WORKWTO+4(9),=C'RAKF000B ' USERID/CLASS                  00095500
          BAL   R4,ENTYENTY         ENTY COMMON                          00095600
-         B     AUTHGOOD            ALLOW ACCESS                         00095700
+         B     AUTHWARN            Warn Access RC=4, RSN=0         @rp2 00095700
 *                                                                       00095800
 ENTYFAIL OI    WORKENTY,8          RC = 8                               00095900
          TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00096000
