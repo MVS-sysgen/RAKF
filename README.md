@@ -1024,7 +1024,9 @@ changed.
   the userid, an 8-byte salt and the digest. Protected by the existing
   `SYS1.SECURE.*` profile at `UACC(NONE)`.
 - `RAKFUSER` loads the shadow into the in-core table at IPL through the new
-  `RAKFSHAD` DD, added to `MSTJCL00` by usermod `ZPY0001`.
+  `RAKFSHAD` DD, added to `MSTJCL00` by the reworked usermod `ZJW0003`.
+- Define the Class Descriptor table in RACSTAT and test all classes against
+  this table.
 - New `ADDUSER`, `ALTUSER', 'DELUSER', 'LISTUSER', 'ADDSD', 'RDEFINE', PERMIT
   and 'RDELETE' command processors, installed into
   `SYS1.CMDLIB`, with TSO HELP members in `SYS2.HELP`. They locate the
