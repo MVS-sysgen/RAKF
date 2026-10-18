@@ -72,7 +72,7 @@ CARD_HOST        = "localhost"
 CARD_PORT        = 3505
 
 # Subdirectories to skip during auto-discovery (not PDS-style libraries)
-SKIP_DIRS = frozenset({"TEMPLATES", "AUX", "JCLIN", "USERMODS", "TOOLS"})
+SKIP_DIRS = frozenset({"TEMPLATES", "AUX", "JCLIN", "USERMODS", "TOOLS", "TK5"})
 
 # Libraries fully reloaded (delete+alloc+load) with --only when assembling,
 # because they contain macros required by the assembler.
