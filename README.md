@@ -1017,7 +1017,7 @@ changed.
 
 - Salted **SHA-256** password hashing. `RAKFHASH` is pure S/370 HLASM,
   validated against the NIST FIPS 180-4 vectors; `RAKFPWH` wraps it as
-  `SHA256(salt || password)`. The sign-on path (`ICHSFR00`) and the
+  `SHA256(salt || password)`. The SAF router (`ICHSFR00`) and the
   administration tools call the same routine, so a stored digest and a login
   attempt are compared byte for byte.
 - New shadow file `SYS1.SECURE.SHADOW`, one 48-byte record per user holding
@@ -1037,6 +1037,10 @@ changed.
   `generate_release.py` blanks the password column and emits the shadow
   records into the install stream, so no clear-text password reaches the
   system and there is no chicken-and-egg with the tools above.
+- Rename RAKFUSER to its original name CJYUIDS with alias RAKFUSER.
+- Rename RAKFPROF to its original name CJYRPOF with alias RAKFPROF and check the class names against the CDT.
+- Rename RAKFPWUP to CJYPWUP and call CJYRUIDS to process the changed passwords immediately.
+- Bring the SAMPLIB members back into the system.
 
 ## Appendix A - Generating your own release
 
