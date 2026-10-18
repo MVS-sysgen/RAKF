@@ -45,6 +45,7 @@ FACILITYRAKFADM                                     RAKFADM READ
 FACILITYRAKFADM                                     STCGROUPREAD
 FACILITYSVC244                                              NONE
 FACILITYSVC244                                      ADMIN   READ
+FACILITYSVC244                                      STARTED READ
 FACILITYSVC244                                      STCGROUPREAD
 TAPEVOL *                                                   READ
 TAPEVOL *                                           ADMIN   ALTER
