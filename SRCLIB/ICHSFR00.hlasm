@@ -981,11 +981,11 @@ ENTYJOBN MVC   WORKWTO+4+WTOMSGEJ(L'WTOMSGEJ),0(R3) MOVE JOBNAME        00097500
          B     ENTYWTO2            Set ENTITY in WTO               @rp2 00098100
 ENTYWTO1 L     R1,WORKSTAT+4       Default entity len from RACSTAT @rp2 00098200
          BCTR  R1,0                Minus 1 for EX instruction      @rp2 00098300
-         LA    R2,L'WTOMSGEE-1     Maximum room in WTO             @rp2 00098400
+ENTYWTO2 LA    R2,L'WTOMSGEE-1     Maximum room in WTO             @rp2 00098400
          CR    R2,R1               Too long?                       @rp2 00098500
-         BH    ENTYWTO2            No: good                        @rp2 00098600
+         BH    ENTYWTO3            No: good                        @rp2 00098600
          LR    R1,R2               Yes: truncate                   @rp2 00098700
-ENTYWTO2 EX    R1,ENTYERRX         MVC WORKWTO+4+WTOMSGEE(0),0(ENTYREG) 00098800
+ENTYWTO3 EX    R1,ENTYERRX         MVC WORKWTO+4+WTOMSGEE(0),0(ENTYREG) 00098800
          WTO   MF=(E,WORKWTO)      WRITE IT                             00098900
          BR    R4                  RETURN                               00099000
 *                                                                       00099100
