@@ -1067,8 +1067,8 @@ changed.
   generate_release.py blanks the password column and emits the shadow
   records into the install stream, so no clear-text password reaches the
   system and there is no chicken-and-egg with the tools above.
-- Rename RAKFUSER to its original name CJYUIDS with alias RAKFUSER.
-- Rename RAKFPROF to its original name CJYRPOF with alias RAKFPROF and check 
+- Rename RAKFUSER to its original name CJYRUIDS with alias RAKFUSER.
+- Rename RAKFPROF to its original name CJYRPROF with alias RAKFPROF and check 
   the class names against the CDT.
 - Rename RAKFPWUP to CJYPWUP and call CJYRUIDS to process the changed
   passwords immediately.
