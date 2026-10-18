@@ -11,7 +11,7 @@
 //* Note: Skip the RESTORE step if JLM0003 is not applied.                      
 //*                                                                             
 //*                                                                             
-//RESTORE EXEC SMPACC                                                           
+//RESTORE EXEC SMPAPP                                                           
 //SMPCNTL  DD  *                                                                
  RESTORE S(NJE0001,JLM0003) DIS(WRITE).
  RESETRC.
@@ -190,7 +190,7 @@ APFCTABL DS    0D                      ALIGNMENT
 /*                                                                              
 //*       APPLY JLM0003                                                         
 //*                                                                             
-//APPLY   EXEC SMPACC                                                           
+//APPLY   EXEC SMPAPP                                                           
 //IKJEFTE2 DD  DSN=&&OBJ2(IKJEFTE2),DISP=(OLD,DELETE)                           
 //SMPCNTL  DD  *                                                                
   APPLY SELECT(JLM0003) DIS(WRITE).                                             
