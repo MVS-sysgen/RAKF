@@ -610,7 +610,7 @@ RACIACEE LA    R2,255              PRE-FILL WITH LSQA SUBPOOL           00060600
 RACINDGM GETMAIN RC,LV=ACEEL,SP=(R2) DO GETMAIN                         00061000
          LR    ACEEREG,R1          ADDRESS AREA                         00061100
          XC    ACEE(ACEEL),ACEE    CLEAR IT                             00061200
-         MVC   ACEEACEE,=C'ACEE'   ACEE NAME                            00061300
+         MVC   ACEEACEE,=C'ACEE'   Acronym                         @rp2 00061300
          STC   R2,ACEESP           Subpool to GETRAIN              @rp2 00061400
          MVC   ACEEAPLN,=CL8' '    Application name                @rp2 00061500
          ICM   R2,B'1111',48(R8)   APPL specified in RACINIT?      @rp2 00061600
@@ -823,8 +823,8 @@ ENTYCHCK MVI   WORKENTL,0          Nullify Entity length           @rp2 00081700
          ICM   R2,B'1111',CJYPROFS-CJYRCVTD(R2) OUR STUFF?              00082300
          BZ    ENTYERR1            WHO KNOWS?                           00082400
          USING RPECBLK,R2          ADDRESS CBLK                         00082500
-         CLC   WORKCLAS(8),=CL8' '    CLASS blank?                      00082600
-         BNE   ENTYNBLK                  --> no, continue               00082700
+         CLC   WORKCLAS(8),=CL8' ' Is the CLASS specified?         @rp2 00082600
+         BNE   ENTYNBLK            No: carry on                    @rp2 00082700
          MVC   WORKCLAS(8),=CL8'DATASET' --> yes, assume DATASET        00082800
 ENTYNBLK CLC   =C'DATASET',WORKCLAS  CHECK FOR OUR OWN DSNS.            00082900
          BNE   ENTYCLLP            NO, GO ON                            00083000
@@ -872,297 +872,300 @@ ENTYCLL2 IC    R1,RPECLASL         Get length from Profile entry   @rp2 00086200
          BE    ENTYENFN            FOUND ENTITY                         00087200
 ENTYNCLS ICM   R2,B'1111',RPENEXT  GET NEXT                             00087300
          BNZ   ENTYCLLP            GO FOR NEXT                          00087400
-ENTYNFND B     ENTYWARN            RETURN WARN                          00087500
-ENTYEXEC CLC   RPECLASN(0),WORKCLAS SAME CLASS? << executed >>          00087600
-ENTYEXEN CLC   RPEENTYN(0),0(ENTYREG) CHECK ENTITY                      00087700
-ENTYEXUS CLC   0(0,ENTYREG),ACEEUSRI US?                                00087800
-*                                                                       00087900
-ENTYENFN ICM   R3,B'1111',RPEACCPT POINTER TO ACCESSES                  00088000
-         BZ    ENTYUACC            GO CHECK UACC                        00088100
-*                                                                       00088200
-         USING RPEACCLE,R3         VARIABLE SECTION                     00088300
-ENTYULOP CLC   RPEAUSR,ACEEUSRI    USER EXCEPTION?                      00088400
-         BE    ENTYEXCP            MATCH, GO CHECK                      00088500
-         ICM   R3,B'1111',RPEANEXT NEXT POINTER                         00088600
-         BNZ   ENTYULOP            GO CHECK NEXT                        00088700
-*                                                                       00088800
-ENTYCONN ICM   R4,B'1111',ACEECGRP CONNECT GROUPS                       00088900
-         BZ    ENTYUACC            NONE, GO ON                          00089000
-         USING CONNGRUP,R4         ADDRESS IT                           00089100
-ENTYCONL L     R3,RPEACCPT         GET POINTER AGAIN                    00089200
-ENTYCON2 CLC   RPEAUSR,CONNGRPN    GROUP EXCEPTION?                     00089300
-         BNE   ENTYNCRP            NO, NEXT RPE                         00089400
-         OI    WORKFLAG,WORKOPRB   SET OPER BYPASS                      00089500
-         CLC   WORKAUTH,RPEACS     SUFFICENT ACCESS IN PERMIT?          00089600
-         BH    ENTYNCRP            NO, CHECK NEXT AUTH.                 00089700
-         B     AUTHGOOD            YES, GO ON ...                       00089800
-ENTYNCRP ICM   R3,B'1111',RPEANEXT NEXT POINTER                         00089900
-         BNZ   ENTYCON2            GO CHECK NEXT EXCEPTION              00090000
-ENTYNCON ICM   R4,B'1111',CONNNEXT NEXT POINTER                         00090100
-         BNZ   ENTYCONL            GO CHECK NEXT CONNECT                00090200
-         TM    WORKFLAG,WORKOPRB   BYPASS OPER CHECK?                   00090300
-         BNO   ENTYUACC            NO, GO UACC                          00090400
-         B     ENTYFAIL            ALL CONN.S FAILED                    00090500
-*                                                                       00090600
-ENTYUACC CLC   WORKAUTH,RPEUACC    SUFFICENT ACCESS IN UACC?            00090700
-         BH    ENTYOPER            NO, RETURN CHECK FOR OP. AUTH        00090800
-         B     AUTHGOOD            YES, GO ON ...                       00090900
-*                                                                       00091000
-ENTYEXCP CLC   WORKAUTH,RPEACS     SUFFICENT ACCESS IN PERMIT?          00091100
-         BH    ENTYFAIL            NO, RETURN CHECK FOR OP. AUTH        00091200
-         B     AUTHGOOD            YES, GO ON ...                       00091300
-*---------------------------------------------------------------------* 00091400
-*        Users with the OPERATIONS authority are permitted to         * 00091500
-*        use all resources in the DATASET, DASDVOL and TAPEVOL class. * 00091600
-*---------------------------------------------------------------------* 00091700
-ENTYOPER CLC   =C'DATASET',RPECLASN  DATASET CLASS                      00091800
-         BE    ENTYOPR2            YES, CHECK OPER AUTH                 00091900
-         CLC   =C'DASDVOL',RPECLASN DASDVOL CLASS                       00092000
+ENTYNFND XC    WORKENTL,WORKENTL   Entry length is not valid,      @rp2 00087500
+*                                  because the entity is not found @rp2 00087600
+         B     ENTYWARN            Give message and set Rc=4       @rp2 00087700
+ENTYEXEC CLC   RPECLASN(0),WORKCLAS SAME CLASS? << executed >>          00087800
+ENTYEXEN CLC   RPEENTYN(0),0(ENTYREG) CHECK ENTITY                      00087900
+ENTYEXUS CLC   0(0,ENTYREG),ACEEUSRI US?                                00088000
+*                                                                       00088100
+ENTYENFN ICM   R3,B'1111',RPEACCPT POINTER TO ACCESSES                  00088200
+         BZ    ENTYUACC            GO CHECK UACC                        00088300
+*                                                                       00088400
+         USING RPEACCLE,R3         VARIABLE SECTION                     00088500
+ENTYULOP CLC   RPEAUSR,ACEEUSRI    USER EXCEPTION?                      00088600
+         BE    ENTYEXCP            MATCH, GO CHECK                      00088700
+         ICM   R3,B'1111',RPEANEXT NEXT POINTER                         00088800
+         BNZ   ENTYULOP            GO CHECK NEXT                        00088900
+*                                                                       00089000
+ENTYCONN ICM   R4,B'1111',ACEECGRP CONNECT GROUPS                       00089100
+         BZ    ENTYUACC            NONE, GO ON                          00089200
+         USING CONNGRUP,R4         ADDRESS IT                           00089300
+ENTYCONL L     R3,RPEACCPT         GET POINTER AGAIN                    00089400
+ENTYCON2 CLC   RPEAUSR,CONNGRPN    GROUP EXCEPTION?                     00089500
+         BNE   ENTYNCRP            NO, NEXT RPE                         00089600
+         OI    WORKFLAG,WORKOPRB   SET OPER BYPASS                      00089700
+         CLC   WORKAUTH,RPEACS     SUFFICENT ACCESS IN PERMIT?          00089800
+         BH    ENTYNCRP            NO, CHECK NEXT AUTH.                 00089900
+         B     AUTHGOOD            YES, GO ON ...                       00090000
+ENTYNCRP ICM   R3,B'1111',RPEANEXT NEXT POINTER                         00090100
+         BNZ   ENTYCON2            GO CHECK NEXT EXCEPTION              00090200
+ENTYNCON ICM   R4,B'1111',CONNNEXT NEXT POINTER                         00090300
+         BNZ   ENTYCONL            GO CHECK NEXT CONNECT                00090400
+         TM    WORKFLAG,WORKOPRB   BYPASS OPER CHECK?                   00090500
+         BNO   ENTYUACC            NO, GO UACC                          00090600
+         B     ENTYFAIL            ALL CONN.S FAILED                    00090700
+*                                                                       00090800
+ENTYUACC CLC   WORKAUTH,RPEUACC    SUFFICENT ACCESS IN UACC?            00090900
+         BH    ENTYOPER            NO, RETURN CHECK FOR OP. AUTH        00091000
+         B     AUTHGOOD            YES, GO ON ...                       00091100
+*                                                                       00091200
+ENTYEXCP CLC   WORKAUTH,RPEACS     SUFFICENT ACCESS IN PERMIT?          00091300
+         BH    ENTYFAIL            NO, RETURN CHECK FOR OP. AUTH        00091400
+         B     AUTHGOOD            YES, GO ON ...                       00091500
+*---------------------------------------------------------------------* 00091600
+*        Users with the OPERATIONS authority are permitted to         * 00091700
+*        use all resources in the DATASET, DASDVOL and TAPEVOL class. * 00091800
+*---------------------------------------------------------------------* 00091900
+ENTYOPER CLC   =C'DATASET',RPECLASN  DATASET CLASS                      00092000
          BE    ENTYOPR2            YES, CHECK OPER AUTH                 00092100
-         CLC   =C'TAPEVOL',RPECLASN TAPEVOL class?                 @rp2 00092200
-         BE    ENTYOPR2            Yes: check operations privilege @rp2 00092300
-         B     ENTYFAIL            TOUGH                                00092400
-ENTYOPR2 TM    ACEEFLG1,ACEEOPER   MAKE OPER AUTH.                      00092500
-         BNO   ENTYFAIL            TOUGH                                00092600
-*                                                                       00092700
-         DROP  R4,R3,R2            RPEACCLE CONNGRUP RPECBLK       @rp2 00092800
-         CLC   =C'PROD',ACEEUSRI   PROD USERID?                         00092900
-         BNE   AUTHGOOD            NO MSG NEC. -> OPER ALLOWED          00093000
-         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00093100
-         BO    AUTHGOOD            YES, NO MESS..                       00093200
-         MVC   WORKWTO+4(60),WTOMSG7 INVALID ACCESS TO RESOURCE         00093300
-         MVC   WORKWTO+4+WTOMSG7U(L'WTOMSG7U),ACEEUSRI MOVE USERID      00093400
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00093500
-         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00093600
-         MVC   WORKWTO+4(9),=C'RAKF0006 ' USERID/CLASS                  00093700
-         BAL   R4,ENTYENTY         ENTY COMMON                          00093800
-         B     AUTHGOOD            ALLOW ACCESS                         00093900
-*                                                                       00094000
-ENTYERR1 MVC   WORKWTO+4(60),WTOMSG3 PROFS IN ERROR                     00094100
-         MVC   WORKWTO+4+WTOMSG3U(L'WTOMSG3U),ACEEUSRI MOVE USERID      00094200
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00094300
-         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00094400
-         MVC   WORKWTO+4(9),=C'RAKF0009 ' USERID/CLASS                  00094500
-         BAL   R4,ENTYENTY         ENTY COMMON                          00094600
-         B     AUTHGOOD            ALLOW ACCESS                         00094700
-*                                                                       00094800
-ENTYWARN OI    WORKENTY,4          RC = 4                               00094900
-         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00095000
-         BO    AUTHWARN            SORRY ....                           00095100
-         MVC   WORKWTO+4(60),WTOMSG8 Undefined resource ... allow  @rp2 00095200
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00095300
-         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00095400
-         MVC   WORKWTO+4(9),=C'RAKF000B ' USERID/CLASS                  00095500
-         BAL   R4,ENTYENTY         ENTY COMMON                          00095600
-         B     AUTHWARN            Warn Access RC=4, RSN=0         @rp2 00095700
-*                                                                       00095800
-ENTYFAIL OI    WORKENTY,8          RC = 8                               00095900
-         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00096000
-         BO    AUTHFAIL            SORRY ....                           00096100
-         MVC   WORKWTO+4(60),WTOMSG5 INVALID ACCESS TO RESOURCE         00096200
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00096300
-         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00096400
-         MVC   WORKWTO+4(9),=C'RAKF000A ' USERID/CLASS                  00096500
-         BAL   R4,ENTYENTY         ENTY COMMON                          00096600
-         B     AUTHFAIL            FAIL ACCESS                          00096700
-*                                                                       00096800
-ENTYENTY MVC   WORKWTO+4+WTOMSGEU(L'WTOMSGEU),ACEEUSRI MOVE USERID      00096900
-         MVC   WORKWTO+4+WTOMSGEC(L'WTOMSGEC),WORKCLAS MOVE CLASS       00097000
-         L     R2,PSAAOLD          ASCB ADDRESS                         00097100
-         ICM   R3,B'1111',ASCBJBNI-ASCB(R2) JOBNAME SPEC.?              00097200
-         BNZ   ENTYJOBN            YES, GO USE NAME                     00097300
-         L     R3,ASCBJBNS-ASCB(R2) STC ... NAME                        00097400
-ENTYJOBN MVC   WORKWTO+4+WTOMSGEJ(L'WTOMSGEJ),0(R3) MOVE JOBNAME        00097500
-         XR    R1,R1               Entity length                   @rp2 00097600
-         IC    R1,WORKENTL         Saved entity length             @rp2 00097700
-         LTR   R1,R1               Length is zero?                 @rp2 00097800
-         BZ    ENTYWTO1            Yes: assume some lengths        @rp2 00097900
-         BCTR  R1,0                Minus 1 for EX                  @rp2 00098000
-         B     ENTYWTO2            Set ENTITY in WTO               @rp2 00098100
-ENTYWTO1 L     R1,WORKSTAT+4       Default entity len from RACSTAT @rp2 00098200
-         BCTR  R1,0                Minus 1 for EX instruction      @rp2 00098300
-ENTYWTO2 LA    R2,L'WTOMSGEE-1     Maximum room in WTO             @rp2 00098400
-         CR    R2,R1               Too long?                       @rp2 00098500
-         BH    ENTYWTO3            No: good                        @rp2 00098600
-         LR    R1,R2               Yes: truncate                   @rp2 00098700
-ENTYWTO3 EX    R1,ENTYERRX         MVC WORKWTO+4+WTOMSGEE(0),0(ENTYREG) 00098800
-         WTO   MF=(E,WORKWTO)      WRITE IT                             00098900
-         BR    R4                  RETURN                               00099000
-*                                                                       00099100
-ENTYERRX MVC   WORKWTO+4+WTOMSGEE(0),0(ENTYREG) MOVE ENTITY             00099200
-*                                                                  @rp2 00099300
-*        Report unknown CLASS (not present in the CDT)             @rp2 00099400
+         CLC   =C'DASDVOL',RPECLASN DASDVOL CLASS                       00092200
+         BE    ENTYOPR2            YES, CHECK OPER AUTH                 00092300
+         CLC   =C'TAPEVOL',RPECLASN TAPEVOL class?                 @rp2 00092400
+         BE    ENTYOPR2            Yes: check operations privilege @rp2 00092500
+         B     ENTYFAIL            TOUGH                                00092600
+ENTYOPR2 TM    ACEEFLG1,ACEEOPER   MAKE OPER AUTH.                      00092700
+         BNO   ENTYFAIL            TOUGH                                00092800
+*                                                                       00092900
+         DROP  R4,R3,R2            RPEACCLE CONNGRUP RPECBLK       @rp2 00093000
+         CLC   =C'PROD',ACEEUSRI   PROD USERID?                         00093100
+         BNE   AUTHGOOD            NO MSG NEC. -> OPER ALLOWED          00093200
+         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00093300
+         BO    AUTHGOOD            YES, NO MESS..                       00093400
+         MVC   WORKWTO+4(60),WTOMSG7 INVALID ACCESS TO RESOURCE         00093500
+         MVC   WORKWTO+4+WTOMSG7U(L'WTOMSG7U),ACEEUSRI MOVE USERID      00093600
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00093700
+         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00093800
+         MVC   WORKWTO+4(9),=C'RAKF0006 ' USERID/CLASS                  00093900
+         BAL   R4,ENTYENTY         ENTY COMMON                          00094000
+         B     AUTHGOOD            ALLOW ACCESS                         00094100
+*                                                                       00094200
+ENTYERR1 MVC   WORKWTO+4(60),WTOMSG3 PROFS IN ERROR                     00094300
+         MVC   WORKWTO+4+WTOMSG3U(L'WTOMSG3U),ACEEUSRI MOVE USERID      00094400
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00094500
+         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00094600
+         MVC   WORKWTO+4(9),=C'RAKF0009 ' USERID/CLASS                  00094700
+         BAL   R4,ENTYENTY         ENTY COMMON                          00094800
+         B     AUTHGOOD            ALLOW ACCESS                         00094900
+*                                                                       00095000
+ENTYWARN OI    WORKENTY,4          RC = 4                               00095100
+         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00095200
+         BO    AUTHWARN            SORRY ....                           00095300
+         MVC   WORKWTO+4(60),WTOMSG8 Undefined resource ... allow  @rp2 00095400
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00095500
+         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00095600
+         MVC   WORKWTO+4(9),=C'RAKF000B ' USERID/CLASS                  00095700
+         BAL   R4,ENTYENTY         ENTY COMMON                          00095800
+         B     AUTHWARN            Warn Access RC=4, RSN=0         @rp2 00095900
+*                                                                       00096000
+ENTYFAIL OI    WORKENTY,8          RC = 8                               00096100
+         TM    WORKFLAG,WORKNLOG   NO LOG REQUESTED?                    00096200
+         BO    AUTHFAIL            SORRY ....                           00096300
+         MVC   WORKWTO+4(60),WTOMSG5 INVALID ACCESS TO RESOURCE         00096400
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00096500
+         MVC   WORKWTO+4(60),WTOMSGE ENTITY SKELETON                    00096600
+         MVC   WORKWTO+4(9),=C'RAKF000A ' USERID/CLASS                  00096700
+         BAL   R4,ENTYENTY         ENTY COMMON                          00096800
+         B     AUTHFAIL            FAIL ACCESS                          00096900
+*                                                                       00097000
+ENTYENTY MVC   WORKWTO+4+WTOMSGEU(L'WTOMSGEU),ACEEUSRI MOVE USERID      00097100
+         MVC   WORKWTO+4+WTOMSGEC(L'WTOMSGEC),WORKCLAS MOVE CLASS       00097200
+         L     R2,PSAAOLD          ASCB ADDRESS                         00097300
+         ICM   R3,B'1111',ASCBJBNI-ASCB(R2) JOBNAME SPEC.?              00097400
+         BNZ   ENTYJOBN            YES, GO USE NAME                     00097500
+         L     R3,ASCBJBNS-ASCB(R2) STC ... NAME                        00097600
+ENTYJOBN MVC   WORKWTO+4+WTOMSGEJ(L'WTOMSGEJ),0(R3) MOVE JOBNAME        00097700
+         XR    R1,R1               Entity length                   @rp2 00097800
+         IC    R1,WORKENTL         Saved entity length             @rp2 00097900
+         LTR   R1,R1               Length is zero?                 @rp2 00098000
+         BZ    ENTYWTO1            Yes: assume some lengths        @rp2 00098100
+         BCTR  R1,0                Minus 1 for EX                  @rp2 00098200
+         B     ENTYWTO2            Set ENTITY in WTO               @rp2 00098300
+ENTYWTO1 L     R1,WORKSTAT+4       Default entity len from RACSTAT @rp2 00098400
+         BCTR  R1,0                Minus 1 for EX instruction      @rp2 00098500
+ENTYWTO2 LA    R2,L'WTOMSGEE-1     Maximum room in WTO             @rp2 00098600
+         CR    R2,R1               Too long?                       @rp2 00098700
+         BH    ENTYWTO3            No: good                        @rp2 00098800
+         LR    R1,R2               Yes: truncate                   @rp2 00098900
+ENTYWTO3 EX    R1,ENTYERRX         MVC WORKWTO+4+WTOMSGEE(0),0(ENTYREG) 00099000
+         WTO   MF=(E,WORKWTO)      WRITE IT                             00099100
+         BR    R4                  RETURN                               00099200
+*                                                                       00099300
+ENTYERRX MVC   WORKWTO+4+WTOMSGEE(0),0(ENTYREG) MOVE ENTITY             00099400
 *                                                                  @rp2 00099500
-WTOUNKN  MVC   WORKWTO(REALWTOL),REALWTO Initialize WTO            @rp2 00099600
-         MVC   WORKWTO+4(60),WTOMSG12 Move message                 @rp2 00099700
-         MVC   WORKWTO+4+WTMSG12C(8),WORKCLAS   Move class name    @rp2 00099800
-         WTO   MF=(E,WORKWTO)      Inform operator                 @rp2 00099900
-         BR    R10                 Return                          @rp2 00100000
-*                                                                       00100100
-*                                                                       00100200
-* Report when hardcoded STC account is used                             00100300
-*                                                                       00100400
-WTOSTC   MVC   WORKWTO(REALWTOL),REALWTO INIT WTO                       00100500
-         MVC   WORKWTO+4(60),WTOMSG10 MOVE MESSAGE                      00100600
-         ICM   R2,B'1111',X'C'(R8) GET STC PROC NAME PTR                00100700
-         BZR   R10                 No proc name, no message        @rp2 00100800
-         MVC   WORKWTO+4+WTMSG10P(8),0(R2) MOVE PROC NAME               00100900
-WTOSTC1  WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        00101000
-         BR    R10                 RETURN                               00101100
-*                                                                       00101200
-* Report when hardcoded PROD account is used                            00101300
-*                                                                       00101400
-WTOPROD  MVC   WORKWTO(REALWTOL),REALWTO INIT WTO                       00101500
-         MVC   WORKWTO+4(60),WTOMSG11 MOVE MESSAGE                      00101600
-         ICM   R2,B'1111',PSAAOLD  GET ASCB                             00101700
-         BZ    WTOPROD1            NO ASCB                              00101800
-         ICM   R2,B'1111',ASCBJBNI-ASCB(R2)  Point to jobname           00101900
-         BZ    WTOPROD1            No Jobname                           00102000
-         MVC   WORKWTO+4+WTMSG11J(8),0(R2) Move Jobname                 00102100
-WTOPROD1 WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        00102200
-         BR    R10                 RETURN                               00102300
-*                                                                       00102400
-         TITLE 'CONSTANTS AND SUCH'                                     00102500
-         LTORG                                                          00102600
-*---------------------------------------------------------------------* 00102700
-*        STCUID  is the default for a STC, if no user is specified    * 00102800
-*                in the USERS table.                                  * 00102900
-*        PRODUID is the default for a JOB, if no user is specified    * 00103000
-*                or inherited.                                        * 00103100
-*        Both entries have the same layout as the USER entry in       * 00103200
-*                CJYUCBLK mapped by the CBLK DSECT.                   * 00103300
-*---------------------------------------------------------------------* 00103400
-STCUID   DC    AL4(0),X'03',CL8'STC',X'08',C'STCGROUP'                  00103500
-STCPASS  DC    X'08251C06253A1F362D',C'Y',C'N'                     @rp2 00103600
-STCGROUP DC    AL4(0),AL1(8),CL8'STCGROUP'                              00103700
-*                                                                       00103800
-PRODUID  DC    AL4(0),X'04',CL8'PROD',X'08',C'PRDGROUP'                 00103900
-PRODPASS DC    X'08251C06253A1F362D',C'N',C'N'                     @rp2 00104000
-PRDGROUP DC    AL4(0),AL1(8),CL8'PRDGROUP'                              00104100
-*                                                                       00104200
-REALWTO  WTO   '1234567 101234567 201234567 301234567 401234567 5012345X00104300
-               67 60',MF=L                                              00104400
-REALWTOL EQU   *-REALWTO           LENGTH                               00104500
-*                                                                       00104600
-WTOMSG1  DC    CL60'RAKF0001 USERID TABLE INVALID OR MISSING'           00104700
-WTOMSG2  DC    C'RAKF0002 STC ACCESS ALLOWED: USER:'                    00104800
-WTOMSG2U EQU   *-WTOMSG2,8                                              00104900
-         DC    CL8' ',CL(60-(*-WTOMSG2))' '                             00105000
-WTOMSG3  DC    C'RAKF0003 RESOURCE TABLE INVALID/MISSING: ALLOWED:'     00105100
-*        DC    C': USER ALLOWED:'                                       00105200
-WTOMSG3U EQU   *-WTOMSG3,8                                              00105300
-         DC    CL8' ',CL(60-(*-WTOMSG3))' '                             00105400
-WTOMSG4  DC    C'RAKF0004 INVALID ATTEMPT TO ACCESS SYSTEM:  USER:'     00105500
-WTOMSG4U EQU   *-WTOMSG4,8                                              00105600
-         DC    CL8' ',CL(60-(*-WTOMSG4))' '                             00105700
-WTOMSG5  DC    CL60'RAKF0005 INVALID ATTEMPT TO ACCESS RESOURCE'        00105800
-WTOMSG7  DC    C'RAKF0007 ACCESS ALLOWED VIA OPERATIONS:  USER:'        00105900
-WTOMSG7U EQU   *-WTOMSG7,8                                              00106000
-         DC    CL8' ',CL(60-(*-WTOMSG7))' '                             00106100
-WTOMSG8  DC    CL60'RAKF0008 UNDEFINED RESOURCE - ACCESS ALLOWED'       00106200
-WTOMSG10 DC    C'RAKF0010I STC '                                        00106300
-WTMSG10P EQU   *-WTOMSG10,8                                             00106400
-         DC    CL8' ',C' STARTED USING DEFAULT STC ACCOUNT'             00106500
-         DC    CL(60-(*-WTOMSG10))' '                                   00106600
-WTOMSG11 DC    C'RAKF0011I JOB '                                        00106700
-WTMSG11J EQU   *-WTOMSG11,8                                             00106800
-         DC    CL8' ',C' STARTED USING DEFAULT PROD ACCOUNT'            00106900
-         DC    CL(60-(*-WTOMSG11))' '                                   00107000
-WTOMSG12 DC    C'RAKF0012 UNDEFINED CLASS '                        @rp2 00107100
-WTMSG12C EQU   *-WTOMSG12,8                                        @rp2 00107200
-         DC    CL8' '                  To contain unknown class    @rp2 00107300
-         DC    CL(60-(*-WTOMSG12))' '                              @rp2 00107400
-WTOMSGE  DC    C'XXXXXXXXX '                                            00107500
-WTOMSGEU EQU   *-WTOMSGE,8                                              00107600
-         DC    CL8' ',C','                                              00107700
-WTOMSGEJ EQU   *-WTOMSGE,8                                              00107800
-         DC    CL8' ',C','                                              00107900
-WTOMSGEC EQU   *-WTOMSGE,8                                              00108000
-         DC    CL8' ',C','                                              00108100
-WTOMSGEE EQU   *-WTOMSGE,20                                             00108200
-         DC    CL20' ',CL(60-(*-WTOMSGE))' '                            00108300
-         DC    CL133' '                                                 00108400
-*                                  spaceholder blanks removed       @02 00108500
-         DC    CL23' '             rest of spaceholder blanks       @02 00108600
-         TITLE 'REGISTERS AND SUCH'                                     00108700
-R0       EQU   0                                                        00108800
-R1       EQU   1                                                        00108900
-R2       EQU   2                                                        00109000
-R3       EQU   3                                                        00109100
-R4       EQU   4                                                        00109200
-R5       EQU   5                                                        00109300
-ENTYREG  EQU   6                                                        00109400
-ACEEREG  EQU   7                                                        00109500
-R8       EQU   8                                                        00109600
-R9       EQU   9                                                        00109700
-R10      EQU   10                                                       00109800
-R11      EQU   11                                                       00109900
-R12      EQU   12                                                       00110000
-R13      EQU   13                                                       00110100
-R14      EQU   14                                                       00110200
-R15      EQU   15                                                       00110300
-         PRINT NOGEN                                                    00110400
-         TITLE 'DSECTS AND SUCH'                                        00110500
-*                                                                       00110600
-*        WORKAREA is the area provided by the caller of                 00110700
-*        RACROUTE (the WORKA paramer). The maximum length = 512 bytes   00110800
+*        Report unknown CLASS (not present in the CDT)             @rp2 00099600
+*                                                                  @rp2 00099700
+WTOUNKN  MVC   WORKWTO(REALWTOL),REALWTO Initialize WTO            @rp2 00099800
+         MVC   WORKWTO+4(60),WTOMSG12 Move message                 @rp2 00099900
+         MVC   WORKWTO+4+WTMSG12C(8),WORKCLAS   Move class name    @rp2 00100000
+         WTO   MF=(E,WORKWTO)      Inform operator                 @rp2 00100100
+         BR    R10                 Return                          @rp2 00100200
+*                                                                       00100300
+*        Report when hardcoded STC account is used                      00100400
+*                                                                       00100500
+WTOSTC   MVC   WORKWTO(REALWTOL),REALWTO INIT WTO                       00100600
+         MVC   WORKWTO+4(60),WTOMSG10 MOVE MESSAGE                      00100700
+         ICM   R2,B'1111',X'C'(R8) GET STC PROC NAME PTR                00100800
+         BZR   R10                 No proc name, no message        @rp2 00100900
+         MVC   WORKWTO+4+WTMSG10P(8),0(R2) MOVE PROC NAME               00101000
+WTOSTC1  WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        00101100
+         BR    R10                 RETURN                               00101200
+*                                                                       00101300
+*        Report when hardcoded PROD account is used                     00101400
+*                                                                       00101500
+WTOPROD  MVC   WORKWTO(REALWTOL),REALWTO INIT WTO                       00101600
+         MVC   WORKWTO+4(60),WTOMSG11 MOVE MESSAGE                      00101700
+         ICM   R2,B'1111',PSAAOLD  GET ASCB                             00101800
+         BZ    WTOPROD1            NO ASCB                              00101900
+         ICM   R2,B'1111',ASCBJBNI-ASCB(R2)  Point to jobname           00102000
+         BZ    WTOPROD1            No Jobname                           00102100
+         MVC   WORKWTO+4+WTMSG11J(8),0(R2) Move Jobname                 00102200
+WTOPROD1 WTO   MF=(E,WORKWTO)      ISSUE MESSAGE                        00102300
+         BR    R10                 RETURN                               00102400
+*                                                                       00102500
+         TITLE 'CONSTANTS AND SUCH'                                     00102600
+         LTORG                                                          00102700
+*---------------------------------------------------------------------* 00102800
+*        STCUID  is the default for a STC, if no user is specified    * 00102900
+*                in the USERS table.                                  * 00103000
+*        PRODUID is the default for a JOB, if no user is specified    * 00103100
+*                or inherited.                                        * 00103200
+*        Both entries have the same layout as the USER entry in       * 00103300
+*                CJYUCBLK mapped by the CBLK DSECT.                   * 00103400
+*---------------------------------------------------------------------* 00103500
+STCUID   DC    AL4(0),X'03',CL8'STC',X'08',C'STCGROUP'                  00103600
+STCPASS  DC    X'08251C06253A1F362D'                               @rp2 00103700
+STCOPSP  DC    C'Y',C'N'           Operations/Nospecial            @rp2 00103800
+STCGROUP DC    AL4(0),AL1(8),CL8'STCGROUP'                              00103900
+*                                                                       00104000
+PRODUID  DC    AL4(0),X'04',CL8'PROD',X'08',C'PRDGROUP'                 00104100
+PRODPASS DC    X'08251C06253A1F362D'                               @rp2 00104200
+PRODOPSP DC    C'N',C'N'           Nooperations/Nospecial          @rp2 00104300
+PRDGROUP DC    AL4(0),AL1(8),CL8'PRDGROUP'                              00104400
+*                                                                       00104500
+REALWTO  WTO   '1234567 101234567 201234567 301234567 401234567 5012345X00104600
+               67 60',MF=L                                              00104700
+REALWTOL EQU   *-REALWTO           LENGTH                               00104800
+*                                                                       00104900
+WTOMSG1  DC    CL60'RAKF0001 USERID TABLE INVALID OR MISSING'           00105000
+WTOMSG2  DC    C'RAKF0002 STC ACCESS ALLOWED: USER:'                    00105100
+WTOMSG2U EQU   *-WTOMSG2,8                                              00105200
+         DC    CL8' ',CL(60-(*-WTOMSG2))' '                             00105300
+WTOMSG3  DC    C'RAKF0003 RESOURCE TABLE INVALID/MISSING: ALLOWED:'     00105400
+*        DC    C': USER ALLOWED:'                                       00105500
+WTOMSG3U EQU   *-WTOMSG3,8                                              00105600
+         DC    CL8' ',CL(60-(*-WTOMSG3))' '                             00105700
+WTOMSG4  DC    C'RAKF0004 INVALID ATTEMPT TO ACCESS SYSTEM:  USER:'     00105800
+WTOMSG4U EQU   *-WTOMSG4,8                                              00105900
+         DC    CL8' ',CL(60-(*-WTOMSG4))' '                             00106000
+WTOMSG5  DC    CL60'RAKF0005 INVALID ATTEMPT TO ACCESS RESOURCE'        00106100
+WTOMSG7  DC    C'RAKF0007 ACCESS ALLOWED VIA OPERATIONS:  USER:'        00106200
+WTOMSG7U EQU   *-WTOMSG7,8                                              00106300
+         DC    CL8' ',CL(60-(*-WTOMSG7))' '                             00106400
+WTOMSG8  DC    CL60'RAKF0008 UNDEFINED RESOURCE - ACCESS ALLOWED'       00106500
+WTOMSG10 DC    C'RAKF0010I STC '                                        00106600
+WTMSG10P EQU   *-WTOMSG10,8                                             00106700
+         DC    CL8' ',C' STARTED USING DEFAULT STC ACCOUNT'             00106800
+         DC    CL(60-(*-WTOMSG10))' '                                   00106900
+WTOMSG11 DC    C'RAKF0011I JOB '                                        00107000
+WTMSG11J EQU   *-WTOMSG11,8                                             00107100
+         DC    CL8' ',C' STARTED USING DEFAULT PROD ACCOUNT'            00107200
+         DC    CL(60-(*-WTOMSG11))' '                                   00107300
+WTOMSG12 DC    C'RAKF0012 UNDEFINED CLASS '                        @rp2 00107400
+WTMSG12C EQU   *-WTOMSG12,8                                        @rp2 00107500
+         DC    CL8' '                  To contain unknown class    @rp2 00107600
+         DC    CL(60-(*-WTOMSG12))' '                              @rp2 00107700
+WTOMSGE  DC    C'XXXXXXXXX '                                            00107800
+WTOMSGEU EQU   *-WTOMSGE,8                                              00107900
+         DC    CL8' ',C','                                              00108000
+WTOMSGEJ EQU   *-WTOMSGE,8                                              00108100
+         DC    CL8' ',C','                                              00108200
+WTOMSGEC EQU   *-WTOMSGE,8                                              00108300
+         DC    CL8' ',C','                                              00108400
+WTOMSGEE EQU   *-WTOMSGE,20                                             00108500
+         DC    CL20' ',CL(60-(*-WTOMSGE))' '                            00108600
+         DC    CL133' '                                                 00108700
+*                                  spaceholder blanks removed       @02 00108800
+         DC    CL23' '             rest of spaceholder blanks       @02 00108900
+         TITLE 'REGISTERS AND SUCH'                                     00109000
+R0       EQU   0                                                        00109100
+R1       EQU   1                                                        00109200
+R2       EQU   2                                                        00109300
+R3       EQU   3                                                        00109400
+R4       EQU   4                                                        00109500
+R5       EQU   5                                                        00109600
+ENTYREG  EQU   6                                                        00109700
+ACEEREG  EQU   7                                                        00109800
+R8       EQU   8                                                        00109900
+R9       EQU   9                                                        00110000
+R10      EQU   10                                                       00110100
+R11      EQU   11                                                       00110200
+R12      EQU   12                                                       00110300
+R13      EQU   13                                                       00110400
+R14      EQU   14                                                       00110500
+R15      EQU   15                                                       00110600
+         PRINT NOGEN                                                    00110700
+         TITLE 'DSECTS AND SUCH'                                        00110800
 *                                                                       00110900
-WORKAREA DSECT                     168 BYTE AREA                   @rp2 00111000
-WORKSAVE DS    18F                 Our save area                        00111100
-WORKSTAT DS    D                   Parameter for RACSTAT           @rp2 00111200
-*                                  Word 1 = address of class name  @rp2 00111300
-*                                  Word 2 = Max. length of class   @rp2 00111400
-WORKWTO  DS    XL(REALWTOL)        FOR WTO                              00111500
-WORKKEY  DS    X                   RACINIT KEY SAVE                     00111600
-WORKENTY DS    X                   ENTITY RETURN                        00111700
-WORKENTL DS    X                   Entity length                   @rp2 00111800
-WORKFLAG DS    X                   FLAG BYTES                           00111900
-WORKSUPO EQU   X'80'                  WE SET SUPERVISOR STATE           00112000
-WORKNLOG EQU   X'40'                  NO LOG IF FAILURE                 00112100
-WORKOPRB EQU   X'20'                  RPE MATCH ON USERID/CLASS         00112200
-WORKPASS DS    XL9                 RACINIT LEN/PSWD                     00112300
-         ORG   WORKPASS                                                 00112400
-WORKSTC  DS    XL9                 To receive L + START=value      @rp2 00112500
-WORKCLAS DS    XL8                 RACHECK/DEF/FRAC CLASS               00112600
-WORKAUTH DS    X                   RACHECK/DEF/FRAC AUTHORITY REQ.      00112700
-         ORG                                                            00112800
-         DS    XL(168-(*-WORKAREA)) MAKE SURE                      @rp2 00112900
-WORKAREL EQU   *-WORKAREA           S.B 168                        @rp2 00113000
-*                                                                       00113100
-*        GETMAIN'd scratch for the RAKFPWH password-hash call           00113200
-HASHWKD  DSECT                                                          00113300
-HWPL     DS    5F                  Parmlist (salt,pw,pwlen,out,work)    00113400
-HWPWLEN  DS    F                   Candidate password length            00113500
-HWR13    DS    F                   Saved caller save-area pointer       00113600
-HWOUT    DS    CL32                Computed SHA-256 hash                00113700
-HWSAVE   DS    18F                 Save area for the RAKFPWH call       00113800
-HWWORK   DS    CL640               RAKFPWH work area (>= RPWWORKL)      00113900
-HASHWKL  EQU   *-HASHWKD           Total length to GETMAIN              00114000
-*                                                                       00114100
-AUTHDS   DSECT                     USED FOR RETURN FROM SUBS(R10)       00114200
-AUTHGOOD DS    F'0'                                                     00114300
-AUTHWARN DS    F'0'                                                     00114400
-AUTHFAIL DS    F'0'                                                     00114500
-*                                                                       00114600
-         COPY  CJYUCBLK            USERID CBLK                          00114700
-*                                                                       00114800
-         COPY  CJYPCBLK            PROFILE CBLK                         00114900
-*                                                                       00115000
-         COPY  CJYRCVTD            RCVT CBLK                            00115100
-*                                                                       00115200
-         CVT     DSECT=YES,LIST=NO                                      00115300
-         ICHACHKL                                                       00115400
-         ICHPRCVT                                                       00115500
-         ICHRDDFL                                                       00115600
-         ICHSAFP                                                        00115700
-         IEFAJCTB                                                       00115800
-         IEZJSCB                                                        00115900
-         IHAASCB DSECT=YES                                              00116000
-         IHAASXB DSECT=YES                                              00116100
-         IHACDE                                                         00116200
-         IHAPSA  DSECT=YES                                              00116300
-         IKJRB   DSECT=YES                                              00116400
-         IKJTCB  DSECT=YES,LIST=NO                                      00116500
-         IHAACEE                                                        00116600
-ACEEL    EQU   *-ACEE                                                   00116700
-         END                                                            00116800
+*        WORKAREA is the area provided by the caller of                 00111000
+*        RACROUTE (the WORKA paramer). The maximum length = 512 bytes   00111100
+*                                                                       00111200
+WORKAREA DSECT                     168 BYTE AREA                   @rp2 00111300
+WORKSAVE DS    18F                 Our save area                        00111400
+WORKSTAT DS    D                   Parameter for RACSTAT           @rp2 00111500
+*                                  Word 1 = address of class name  @rp2 00111600
+*                                  Word 2 = Max. length of class   @rp2 00111700
+WORKWTO  DS    XL(REALWTOL)        FOR WTO                              00111800
+WORKKEY  DS    X                   RACINIT KEY SAVE                     00111900
+WORKENTY DS    X                   ENTITY RETURN                        00112000
+WORKENTL DS    X                   Entity length                   @rp2 00112100
+WORKFLAG DS    X                   FLAG BYTES                           00112200
+WORKSUPO EQU   X'80'                  WE SET SUPERVISOR STATE           00112300
+WORKNLOG EQU   X'40'                  NO LOG IF FAILURE                 00112400
+WORKOPRB EQU   X'20'                  RPE MATCH ON USERID/CLASS         00112500
+WORKPASS DS    XL9                 RACINIT LEN/PSWD                     00112600
+         ORG   WORKPASS                                                 00112700
+WORKSTC  DS    XL9                 To receive L + START=value      @rp2 00112800
+WORKCLAS DS    XL8                 RACHECK/DEF/FRAC CLASS               00112900
+WORKAUTH DS    X                   RACHECK/DEF/FRAC AUTHORITY REQ.      00113000
+         ORG                                                            00113100
+         DS    XL(168-(*-WORKAREA)) MAKE SURE                      @rp2 00113200
+WORKAREL EQU   *-WORKAREA           S.B 168                        @rp2 00113300
+*                                                                       00113400
+*        GETMAIN'd scratch for the RAKFPWH password-hash call           00113500
+HASHWKD  DSECT                                                          00113600
+HWPL     DS    5F                  Parmlist (salt,pw,pwlen,out,work)    00113700
+HWPWLEN  DS    F                   Candidate password length            00113800
+HWR13    DS    F                   Saved caller save-area pointer       00113900
+HWOUT    DS    CL32                Computed SHA-256 hash                00114000
+HWSAVE   DS    18F                 Save area for the RAKFPWH call       00114100
+HWWORK   DS    CL640               RAKFPWH work area (>= RPWWORKL)      00114200
+HASHWKL  EQU   *-HASHWKD           Total length to GETMAIN              00114300
+*                                                                       00114400
+AUTHDS   DSECT                     USED FOR RETURN FROM SUBS(R10)       00114500
+AUTHGOOD DS    F'0'                                                     00114600
+AUTHWARN DS    F'0'                                                     00114700
+AUTHFAIL DS    F'0'                                                     00114800
+*                                                                       00114900
+         COPY  CJYUCBLK            USERID CBLK                          00115000
+*                                                                       00115100
+         COPY  CJYPCBLK            PROFILE CBLK                         00115200
+*                                                                       00115300
+         COPY  CJYRCVTD            RCVT CBLK                            00115400
+*                                                                       00115500
+         CVT     DSECT=YES,LIST=NO                                      00115600
+         ICHACHKL                                                       00115700
+         ICHPRCVT                                                       00115800
+         ICHRDDFL                                                       00115900
+         ICHSAFP                                                        00116000
+         IEFAJCTB                                                       00116100
+         IEZJSCB                                                        00116200
+         IHAASCB DSECT=YES                                              00116300
+         IHAASXB DSECT=YES                                              00116400
+         IHACDE                                                         00116500
+         IHAPSA  DSECT=YES                                              00116600
+         IKJRB   DSECT=YES                                              00116700
+         IKJTCB  DSECT=YES,LIST=NO                                      00116800
+         IHAACEE                                                        00116900
+ACEEL    EQU   *-ACEE                                                   00117000
+         END                                                            00117100
