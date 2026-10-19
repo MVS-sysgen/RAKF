@@ -223,9 +223,6 @@ PERM005  DS    0H                                                       00021800
 *---------------------------------------------------------------------* 00022300
          XR    R5,R5                   Clear record counter             00022400
          L     R6,ADRPROF              Start of Profile table           00022500
-         CLC   CLASS,=CL8'DATASET'     Is CLASS=DATASET                 00022600
-         BNE   READPROF                No: continue                     00022700
-         OI    SW,$UACREC              Yes: don't test on UACC          00022800
 READPROF DS    0H                                                       00022900
          MVC   GROUP,=CL8' '           Blank ID(group) in PROFCMP       00023000
          GET   RAKFPROF,PROFREC        Read a record                    00023100
