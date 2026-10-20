@@ -19,6 +19,7 @@
 //SYSIN    DD *                                                                 
 ./ ADD NAME=USERS                                                               
 BSPPILOT STARTED *         N N                                                  
+BSPSETPF STARTED *         N N                                                  
 FTPD     STARTED *         N N                                                  
 HERC01   ADMIN   *         Y Y                                                  
 HERC01   RAKFADM           Y Y                                                  
