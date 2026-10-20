@@ -158,9 +158,9 @@ LISTP009 DS    0H                                                       00015700
          MVC   MSG3+13(8),RPECLASN     Move class name                  00015800
          XR    R2,R2                   Clear register                   00015900
          IC    R2,RPEENTYL             Length of entity/profile         00016000
-         LTR   R2,R2                   0?                               00016100
-         BNZ   *+8                     No: good                         00016200
-         LA    R2,1                    Default 1                        00016300
+         C     R2,=F'43'               Max. length of profile           00016100
+         BH    *+8                     Yes: good                        00016200
+         LA    R2,1(,R2)               Else +1                          00016300
          BCTR  R2,0                    Minus 1 for EX                   00016400
          EX    R2,MVEENT               Move profile in message          00016500
          LA    R1,MSG3+30              Point to profile placeholder     00016600
