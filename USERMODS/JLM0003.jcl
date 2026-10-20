@@ -144,6 +144,7 @@ APFCTABL DS    0D                      ALIGNMENT
          DC    C'RFE     '             REVIEW FRONT END
          DC    C'RPF     '             RPF
          DC    C'RPFMAIN '             RPF
+         DC    C'RPFV    '             RPF DSLIST PROCESSOR
          DC    C'SPY     '             SPY CONSOLE MONITOR
          DC    C'BREXX   '             BREXX/370
          DC    C'REXX    '             BREXX/370
