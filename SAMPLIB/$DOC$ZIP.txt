@@ -226,6 +226,7 @@ Users Table
 
 Below is an example USERS table:
 
+   ----x----1----x----2----x----3     
    HMVS01   ADMIN   *         Y Y
    HMVS01   RAKFADM           Y Y
    HERC01   ADMIN   *         Y Y
