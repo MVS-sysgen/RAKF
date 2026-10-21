@@ -335,6 +335,10 @@ If GROUP is omitted, all user records are deleted.
 CONNECT userid GROUP(group)
 
 LISTUSER userid
+'userid' is a (part) of a userid.
+Example:
+LISTUSER HERC lists all users starting with 'HERC'
+
 An alias of LISTUSER is LU
 Example output:
 listuser herc01
@@ -356,7 +360,7 @@ PASSWORD may be coded as PWD, GROUP as GRP and DFLTGRP as DGRP.
 - **DELUSER** removes a user from SYS1.SECURE.SHADOW and SYS1.SECURE.CNTL(USERS).
   if GROUP is omitted. If GROUP is specified only the GROUP will be deleted (disconnect).
 - **CONNECT** connects a UserId to a GROUP.
-- **LISTUSER** list a UserId from the RAKF in core users table.
+- **LISTUSER** list one or more UserIds from the RAKF in core users table.
 
 **Note:** To use these TSO commands, the SPECIAL authority is required.
 
