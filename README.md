@@ -224,8 +224,8 @@ Below is an example `USERS` table:
 ```
 HMVS01   ADMIN   *         Y Y
 HMVS01   RAKFADM           Y Y
-HMVS01   ADMIN   *         Y Y
-HMVS01   RAKFADM           Y Y
+HERC01   ADMIN   *         Y Y
+HERC01   RAKFADM           Y Y
 HMVS02   USER              N N
 IBMUSER  ADMIN   *         Y Y
 IBMUSER  RAKFADM *         Y Y
