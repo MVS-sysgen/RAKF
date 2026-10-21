@@ -222,6 +222,7 @@ stopped upon the first hit.
 Below is an example `USERS` table:
 
 ```
+0---x----1----x----2----x----3     
 HMVS01   ADMIN   *         Y Y
 HMVS01   RAKFADM           Y Y
 HERC01   ADMIN   *         Y Y
