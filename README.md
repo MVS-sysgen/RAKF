@@ -325,10 +325,15 @@ LISTUSER lists the UserId in the Users core table.
 ```
 ADDUSER userid PASSWORD(pw) DFLTGRP(group) [GROUP(g2 g3 ...)] [OPERATIONS] [SPECIAL]
 An alias of ADDUSER is AU.
+
 ALTUSER userid [PASSWORD(pw)] [DFLTGRP(group)] [OPERATIONS|NOOPERATIONS] [SPECIAL|NOSPECIAL]
 An alias of ALTUSER is ALU.
-DELUSER userid GROUP(group) /* GROUP is optional */ 
+
+DELUSER userid GROUP(group) /* GROUP is optional */
+If GROUP is omitted, all user records are deleted.
+
 CONNECT userid GROUP(group)
+
 LISTUSER userid
 An alias of LISTUSER is LU
 Example output:
