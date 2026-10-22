@@ -1,7 +1,7 @@
 //SPECIAL JOB 01,'SET SPECIAL',CLASS=A,MSGCLASS=X,NOTIFY=&SYSUID                
 //*                                                                             
 //* Name: SPECIAL                                                               
-//* Last update:                                                                
+//* Last update: 2026/10/22 14:24                                               
 //*                                                                             
 //* Desc: set the SPECIAL authority of certain users.                           
 //*       This is a one time job to migrate from                                
