@@ -254,7 +254,7 @@ READPROF DS    0H                                                       00024400
          BAL   R14,CLOSE               Close RAKFPROF                   00025400
          BAL   R14,FREE                Free the data sets               00025500
          B     RC08                    Return code 8                    00025600
-ADDP010  CLC   PROFPRF,PROFILE         Match found of Profile?          00025700
+ADDP010  CLC   PROFCPR,CLPROF          Match found of Class/Profile?    00025700
          BNE   ADDP011                 No: good                         00025800
          LA    R1,MSG4                 Msg: 'PROFILE already defined'   00025900
          LA    R0,L'MSG4               Length                           00026000
@@ -550,74 +550,76 @@ PUTIOPL  DS    4F                      IKJIOPL                          00054900
 PUTBLOK  PUTLINE MF=L                                                   00055000
 PUTLINE  DS    CL84                    Output area PUTLINE              00055100
 CMDNAME  DS    CL8                   Name of command (ADDSD or RDEFINE) 00055200
-CLASS    DS    CL8                     Resource class                   00055300
-PROFILE  DS    CL44                    To receive Profile               00055400
-RAKFPROF DS    CL(MDLPLEN)             RAKFPROF dcb                     00055500
-*                                                                       00055600
-DCBCOMP  DS    H                       Completion code in DCBABEND      00055700
-*                                                                       00055800
-         DS    C                       -1                               00055900
-PROFREC  DS    0CL80                   Profile record                   00056000
-PROFCLS  DS    CL8                     Contains Class                   00056100
-PROFPRF  DS    CL44                    Profile name                     00056200
-PROFGRP  DS    CL8                     Group name                       00056300
-PROFACC  DS    CL8                 Access level NONE/READ/UPDATE/ALTER  00056400
-         DS    CL12                    Filler                           00056500
-*                                                                       00056600
-PPL#LA   DS    F                       \___ Length + address PPL ____/  00056700
-PPL#PTR  DS    F                       /                             \  00056800
-*                                                                       00056900
-DAIR08   DS    CL84                    Allocation parm block            00057000
-DAIR18   DS    CL40                    Unallocation parm block          00057100
-*                                                                       00057200
-MSG2     DS    CL(L'MSG2X)                                              00057300
-MSG3     DS    CL(L'MSG3X)                                              00057400
-MSG4     DS    CL(L'MSG4X)                                              00057500
-MSG5     DS    CL(L'MSG5X)                                              00057600
-MSG7     DS    CL(L'MSG7X)                                              00057700
-MSGA     DS    CL(L'MSGAX)                                              00057800
-MSGY     DS    CL(L'MSGYX)                                              00057900
-MSGZ     DS    CL(L'MSGZX)                                              00058000
-MSG9     DS    0CL(L'MSG9X)                                             00058100
-         DS    CL9                                                      00058200
-MSG9CLS  DS    CL8                                                      00058300
-         DS    CL18                                                     00058400
-MSG9PROF DS    CL44                                                     00058500
-SW       DS    X                       Flags                            00058600
-$913     EQU   128                     913 abend occurred               00058700
-*                                                                       00058800
-WORKL    EQU   *-WORKAREA              Length of working storage        00058900
+CLPROF   DS    0CL52              \    Class+Profile together           00055300
+CLASS    DS    CL8                |    Resource class                   00055400
+PROFILE  DS    CL44               /    To receive Profile               00055500
+RAKFPROF DS    CL(MDLPLEN)             RAKFPROF dcb                     00055600
+*                                                                       00055700
+DCBCOMP  DS    H                       Completion code in DCBABEND      00055800
+*                                                                       00055900
+         DS    C                       -1                               00056000
+PROFREC  DS    0CL80                   Profile record                   00056100
+PROFCPR  DS    0CL52                                                    00056200
+PROFCLS  DS    CL8                     Contains Class                   00056300
+PROFPRF  DS    CL44                    Profile name                     00056400
+PROFGRP  DS    CL8                     Group name                       00056500
+PROFACC  DS    CL8                 Access level NONE/READ/UPDATE/ALTER  00056600
+         DS    CL12                    Filler                           00056700
+*                                                                       00056800
+PPL#LA   DS    F                       \___ Length + address PPL ____/  00056900
+PPL#PTR  DS    F                       /                             \  00057000
+*                                                                       00057100
+DAIR08   DS    CL84                    Allocation parm block            00057200
+DAIR18   DS    CL40                    Unallocation parm block          00057300
+*                                                                       00057400
+MSG2     DS    CL(L'MSG2X)                                              00057500
+MSG3     DS    CL(L'MSG3X)                                              00057600
+MSG4     DS    CL(L'MSG4X)                                              00057700
+MSG5     DS    CL(L'MSG5X)                                              00057800
+MSG7     DS    CL(L'MSG7X)                                              00057900
+MSGA     DS    CL(L'MSGAX)                                              00058000
+MSGY     DS    CL(L'MSGYX)                                              00058100
+MSGZ     DS    CL(L'MSGZX)                                              00058200
+MSG9     DS    0CL(L'MSG9X)                                             00058300
+         DS    CL9                                                      00058400
+MSG9CLS  DS    CL8                                                      00058500
+         DS    CL18                                                     00058600
+MSG9PROF DS    CL44                                                     00058700
+SW       DS    X                       Flags                            00058800
+$913     EQU   128                     913 abend occurred               00058900
 *                                                                       00059000
-         CVT   DSECT=YES,LIST=NO                                        00059100
-         IKJCPPL                                                        00059200
-         IKJUPT                                                         00059300
-         IKJPPL                        Parse parameter list             00059400
-PPL#L    EQU   *-PPL                                                    00059500
-         IKJDAPL                                                        00059600
-         IKJDAP08                      IKJDAIR allocation parm block    00059700
-         IKJDAP18                      IKJDAIR unallocation parm block  00059800
-         IHAPSA                                                         00059900
-         IHAASCB                                                        00060000
-         IHAASXB                                                        00060100
-         IHAACEE                                                        00060200
-         ICHPRCVT                                                       00060300
-         PRINT NOGEN                                                    00060400
-         DCBD  DSORG=PS,DEVD=DA                                         00060500
-*                                                                       00060600
-R0       EQU   0                                                        00060700
-R1       EQU   1                                                        00060800
-R2       EQU   2                                                        00060900
-R3       EQU   3                                                        00061000
-R4       EQU   4                                                        00061100
-R5       EQU   5                      Counter number of PROFILE records 00061200
-R6       EQU   6                      Address of PROFILE entry in table 00061300
-R7       EQU   7                                                        00061400
-R8       EQU   8                       Address of IKJPARS PDL           00061500
-R9       EQU   9                                                        00061600
-R10      EQU   10                                                       00061700
-R11      EQU   11                                                       00061800
-R12      EQU   12                      Base register                    00061900
-R13      EQU   13                      Address of working storage       00062000
-R14      EQU   14                                                       00062100
-R15      EQU   15                                                       00062200
-         END                                                            00062300
+WORKL    EQU   *-WORKAREA              Length of working storage        00059100
+*                                                                       00059200
+         CVT   DSECT=YES,LIST=NO                                        00059300
+         IKJCPPL                                                        00059400
+         IKJUPT                                                         00059500
+         IKJPPL                        Parse parameter list             00059600
+PPL#L    EQU   *-PPL                                                    00059700
+         IKJDAPL                                                        00059800
+         IKJDAP08                      IKJDAIR allocation parm block    00059900
+         IKJDAP18                      IKJDAIR unallocation parm block  00060000
+         IHAPSA                                                         00060100
+         IHAASCB                                                        00060200
+         IHAASXB                                                        00060300
+         IHAACEE                                                        00060400
+         ICHPRCVT                                                       00060500
+         PRINT NOGEN                                                    00060600
+         DCBD  DSORG=PS,DEVD=DA                                         00060700
+*                                                                       00060800
+R0       EQU   0                                                        00060900
+R1       EQU   1                                                        00061000
+R2       EQU   2                                                        00061100
+R3       EQU   3                                                        00061200
+R4       EQU   4                                                        00061300
+R5       EQU   5                      Counter number of PROFILE records 00061400
+R6       EQU   6                      Address of PROFILE entry in table 00061500
+R7       EQU   7                                                        00061600
+R8       EQU   8                       Address of IKJPARS PDL           00061700
+R9       EQU   9                                                        00061800
+R10      EQU   10                                                       00061900
+R11      EQU   11                                                       00062000
+R12      EQU   12                      Base register                    00062100
+R13      EQU   13                      Address of working storage       00062200
+R14      EQU   14                                                       00062300
+R15      EQU   15                                                       00062400
+         END                                                            00062500
