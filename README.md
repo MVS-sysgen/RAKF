@@ -222,7 +222,7 @@ stopped upon the first hit.
 Below is an example `USERS` table:
 
 ```
-----x----1----x----2----x----3     
+----.----1----.----2----.----3     
 HMVS01   ADMIN   *         Y Y
 HMVS01   RAKFADM           Y Y
 HERC01   ADMIN   *         Y Y
@@ -347,7 +347,7 @@ An alias of LISTUSER is LU
 Example output:
 listuser herc01
 LISTUSER: UserID=HERC01
-          Authority=  OPERATONS,  SPECIAL
+          Authority=  OPERATIONS,  SPECIAL
           Connected GROUPS:
           ADMIN    (DFLTGRP)
           RAKFADM                         
@@ -651,7 +651,7 @@ An alias of PERMIT is PE
 
 RDELETE profile CLASS(class) ID(group)
 Required: 'profile', CLASS, ID.
-If ID(ALL) is specified, all records of 'profile' are deleted
+If ID is omitted, all records of 'profile' are deleted
 including the Universal Access record.
 
 LISTP profile or the beginning part of the profile
@@ -667,12 +667,28 @@ LISTP: Class=DATASET  Resource=RAKF.*                   UACC=NONE
        ADMIN    ALTER                                             
        RAKFADM  ALTER                                             
 
- 
-
-
 
 ```
+## Defined classes in RAKF
 
+All classes in the PROFILES table need to be defined in RAKF. The classes are in the Class Descriptor Table (CDT).
+The following classes are defined:
+
+| CLASS    | Maximum entity length  |
+|:--------:|:-----------------------|
+| ACCTNUM  | 8                      |
+| APPL     | 8                      |
+| DASDVOL  | 6                      |
+| DATASET  | 44                     |
+| FACILITY | 39                     |
+| JESSPOOL | 8                      |
+| PERFGRP  | 8                      |
+| PROPCNTL | 8                      |
+| TAPEVOL  | 6                      |
+| TERMINAL | 8                      |
+| TSOAUTH  | 8                      |
+
+An entity with a class not in the above table will be rejected.
 
 ## Batch Jobs and Started Task Considerations
 
