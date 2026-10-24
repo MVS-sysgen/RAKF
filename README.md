@@ -683,10 +683,12 @@ The following classes are defined:
 | FACILITY | 39                     |
 | JESSPOOL | 8                      |
 | PERFGRP  | 8                      |
+| PROGRAM  | 8                      |
 | PROPCNTL | 8                      |
 | TAPEVOL  | 6                      |
 | TERMINAL | 8                      |
 | TSOAUTH  | 8                      |
+| TSOPROC  | 8                      |
 
 An entity with a class not in the above table will be rejected.
 
