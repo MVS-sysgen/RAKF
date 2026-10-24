@@ -347,7 +347,7 @@ An alias of LISTUSER is LU
 Example output:
 listuser herc01
 LISTUSER: UserID=HERC01
-          Authority=  OPERATONS,  SPECIAL
+          Authority=  OPERATIONS,  SPECIAL
           Connected GROUPS:
           ADMIN    (DFLTGRP)
           RAKFADM                         

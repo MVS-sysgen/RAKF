@@ -160,14 +160,14 @@ LISTU009 MVI   MSG3,C' '               Blank message                    00015000
          MVI   MSG3,C' '               Blank message                    00016000
          MVC   MSG3+1(L'MSG3-1),MSG3                                    00016100
          MVC   MSG3+10(10),=C'Authority=' 2nd line                      00016200
-         MVC   MSG3+20(12),=C'NOOPERATONS,'                             00016300
-         MVC   MSG3+32(09),=C'NOSPECIAL'                                00016400
+         MVC   MSG3+20(13),=C'NOOPERATIONS,'                            00016300
+         MVC   MSG3+33(09),=C'NOSPECIAL'                                00016400
          CLI   CBLKFLG1,C'Y'           Operations?                      00016500
          BNE   *+10                    No: nooperations                 00016600
          MVC   MSG3+20(2),=CL2' '      Blank 'NO'                       00016700
          CLI   CBLKSPEC,C'Y'           Special?                         00016800
          BNE   *+10                    No: nospecial                    00016900
-         MVC   MSG3+32(2),=CL2' '      Blank 'NO'                       00017000
+         MVC   MSG3+33(2),=CL2' '      Blank 'NO'                       00017000
          LA    R1,MSG3                                                  00017100
          LA    R0,L'MSG3               Length                           00017200
          BAL   R14,TPUT                Inform user                      00017300
