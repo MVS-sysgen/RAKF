@@ -660,7 +660,8 @@ More information of these commands can be found by issuing HELP command name.
 
 ## Defined classes in RAKF
 
-All classes in the PROFILES table need to be defined in RAKF. The classes are in the Class Descriptor Table (CDT).
+All classes in the PROFILES table need to be defined in RAKF.
+The classes are in the Class Descriptor Table (CDT).
 The following classes are defined:
 
 CLASS    | Maximum entity length  
