@@ -11,7 +11,7 @@ User's Guide
 > as a result adding new users requires using the TSO command ADDUSER
 > and changing requires ALTUSER. Read the HELP/ files for more details
 
-August 2026
+October 2026
 
     **********************************************************************
     *                                                                    *
@@ -65,7 +65,6 @@ special started tasks, this can be done in one of two ways:
    or in the hercules console /S RAKFPROF and /S RAKFUSER
 2. From JCL:
 
-[jcl]
     //RAKFUPDT JOB (RAKF),'UPDATE RAKF',CLASS=A,MSGCLASS=A
     //RAKFUSER EXEC RAKFUSER
     //RAKFPROF EXEC RAKFPROF
@@ -226,7 +225,7 @@ Users Table
 
 Below is an example USERS table:
 
-   ----x----1----x----2----x----3     
+   ----.----1----.----2----.----3     
    HMVS01   ADMIN   *         Y Y
    HMVS01   RAKFADM           Y Y
    HERC01   ADMIN   *         Y Y
@@ -888,7 +887,6 @@ To set or clear the RACF indicator of any catalog entry (the catalog cluster
 itself, any VSAM objects and their components) the RACIND utility is used. It
 is called as follows:
 
-[jcl]
     //RACIND  EXEC PGM=RACIND
     //SYSPRINT DD  SYSOUT=*
     //SYSIN    DD  *
@@ -1123,7 +1121,6 @@ Appendix B - Add users to UADS
 
 This job is for use with MVSCE and Jay Moseley sysgen
 
-[jcl]
     //NEWUSER  JOB (TSO),'New User',CLASS=S,MSGCLASS=A,
     //         REGION=8192K,MSGLEVEL=(1,1),
     //* Replace NEWUSER with the user you wish to use
@@ -1137,7 +1134,6 @@ Appendix C - SORT job
 
 Below is an MVTSORT job which will sort the USERS and PROFILES members
 
-[jcl]
     //RAKFUPST JOB (TSO),
     //             'UP',
     //             CLASS=S,
@@ -1194,7 +1190,6 @@ Appendix D - USERMOD RAK0001
 
 This usermod installs an updated SVC244 that uses RAKF for authorization.
 
-[jcl]
     //RAK00011 EXEC PGM=IEBGENER
     //SYSPRINT DD  SYSOUT=*
     //SYSUT1   DD  *
@@ -1332,7 +1327,6 @@ This usermod installs an updated SVC244 that uses RAKF for authorization.
 Appendix E - RACIND Example
 ---------------------------
 
-[jcl]
     //RACIND   JOB
     //********************************************************************
     //*
