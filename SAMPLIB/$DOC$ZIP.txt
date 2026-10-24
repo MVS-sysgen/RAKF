@@ -347,7 +347,7 @@ LISTUSER lists the UserId in the Users core table.
     Example output:
     listuser herc01
     LISTUSER: UserID=HERC01
-              Authority=  OPERATONS,  SPECIAL
+              Authority=  OPERATIONS,  SPECIAL
               Connected GROUPS:
               ADMIN    (DFLTGRP)
               RAKFADM                         
@@ -643,7 +643,7 @@ More information of these commands can be found by issuing HELP command name.
 
     RDELETE profile CLASS(class) ID(group)
     Required: 'profile', CLASS, ID.
-    If ID(ALL) is specified, all records of 'profile' are deleted
+    If ID is omitted, all records of 'profile' are deleted
     including the Universal Access record.
 
     LISTP profile or the beginning part of the profile    
@@ -658,6 +658,29 @@ More information of these commands can be found by issuing HELP command name.
            Access list:                                               
            ADMIN    ALTER                                             
            RAKFADM  ALTER    
+
+## Defined classes in RAKF
+
+All classes in the PROFILES table need to be defined in RAKF. The classes are in the Class Descriptor Table (CDT).
+The following classes are defined:
+
+CLASS    | Maximum entity length  
+---------+------------------------
+ACCTNUM  | 8                      
+APPL     | 8                      
+DASDVOL  | 6                      
+DATASET  | 44                     
+FACILITY | 39                     
+JESSPOOL | 8                      
+PERFGRP  | 8                      
+PROGRAM  | 8                      
+PROPCNTL | 8                      
+TAPEVOL  | 6                      
+TERMINAL | 8                      
+TSOAUTH  | 8                      
+TSOPROC  | 8                      
+
+An entity with a class not in the above table will be rejected.
 
 Batch Jobs and Started Task Considerations
 ------------------------------------------
