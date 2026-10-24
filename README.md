@@ -9,7 +9,7 @@ A Security System for MVS 3.8j
 > as a result adding new users requires using the TSO command ADDUSER
 > and changing requires ALTUSER. Read the HELP/ files for more defails 
 
-August 2026
+October 2026
 
 ```
 **********************************************************************
