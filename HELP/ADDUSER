@@ -96,7 +96,7 @@
   At most 5 groups are kept.                                                    
   An alias of GROUP is GRP.                                                     
 ))OPERATIONS - marks every line of the user with the operations                 
-  attribute (Y).  Optional.  The default is NOOPERATONS with                    
+  attribute (Y).  Optional.  The default is NOOPERATIONS with                    
   the attribute (N).                                                            
 ))SPECIAL - marks every line of the user with the SPECIAL attribute             
   (y).  Optional.  The default is NOSPECIAL with attribute(N).                  
